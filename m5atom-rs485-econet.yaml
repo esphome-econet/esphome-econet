@@ -71,7 +71,7 @@ captive_portal:
 uart:
     rx_pin: 32
     tx_pin: 26
-    baud_rate: 38400   #50us time base or 20khz measured on this pin - 38400 maybe for econet?
+    baud_rate: 38400   # 38400 for econet
     rx_buffer_size: 1900
     debug: # Minimal debug configuration example, logs hex strings by default
       after:
