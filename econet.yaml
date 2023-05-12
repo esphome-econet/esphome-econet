@@ -75,7 +75,7 @@ sensor:
   - name: "Ignition Cycles"
     accuracy_decimals: 0
   - name: "Instant BTUs"
-    unit_of_measurement: kbtu
+    unit_of_measurement: kbtu/hr
     accuracy_decimals: 3
 
 binary_sensor:
