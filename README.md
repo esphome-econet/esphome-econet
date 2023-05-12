@@ -37,3 +37,8 @@ Object Strings
 | WTR_BTUS      |               | Y            |              |          |
 | IGNCYCLS      |               | Y            |              |          |
 | BURNTIME      |               | Y            |              |          |
+
+Credits:
+
+https://github.com/syssi/esphome-solax-x1-mini
+https://github.com/glmnet/esphome_devices
