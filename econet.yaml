@@ -1,8 +1,8 @@
 substitutions:
   name: econet
   device_description: "Communicate with Econet Netork"
-  tx_pin: GPIO16
-  rx_pin: GPIO17
+  tx_pin: GPIO19
+  rx_pin: GPIO22
 
 esphome:
   name: ${name}
@@ -32,10 +32,8 @@ uart:
   baud_rate: 38400
   tx_pin: 
     number: ${tx_pin}
-    inverted: false
   rx_pin:
     number: ${rx_pin}
-    inverted: false
 
 custom_component:
 - id: my_econet
