@@ -1,0 +1,16 @@
+# esphome-econet
+
+RS485 Kit:
+https://www.digikey.com/en/products/detail/m5stack-technology-co-ltd/K045/14318599 
+
+Cable:
+https://www.digikey.com/en/products/detail/assmann-wsw-components/AT-S-26-6-4-S-7-OE/1972674
+
+Tankless Water Heater
+
+
+Heat Pump Water Heater
+
+
+Electric Water Heater
+
