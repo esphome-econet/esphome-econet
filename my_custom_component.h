@@ -88,8 +88,6 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 	
 		void setup() override {
 		// nothing to do here
-			pinMode(0, OUTPUT);
-			digitalWrite(0, LOW);
 		}
 
 		uint16_t gen_crc16(const uint8_t *data, uint16_t size)
@@ -672,7 +670,7 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 				wbuffer[wdata_len+14] = (uint8_t) crc;
 				wbuffer[wdata_len+14+1] = (uint8_t) (crc >> 8);
 
-				digitalWrite(0, HIGH);
+				// digitalWrite(0, HIGH);
 
 				// delay(100);
 
@@ -680,7 +678,7 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 				flush();
 				// delay(100);
 
-				digitalWrite(0, LOW);
+				// digitalWrite(0, LOW);
 
 				ESP_LOGD("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, wdata_len+14+2).c_str());
 			}
