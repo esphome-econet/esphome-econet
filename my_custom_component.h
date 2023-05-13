@@ -340,7 +340,8 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 				ESP_LOGD("econet", "  Length  : %d", data_len);
 				ESP_LOGD("econet", "  Command : %d", command);
 				ESP_LOGD("econet", "  Data    : %s", format_hex_pretty((const uint8_t *) data, data_len).c_str());
-				if(command == 30)
+				if(false){
+        if(command == 30)
 				{
 					// READ
 					uint8_t type = data[0];
@@ -463,6 +464,7 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 							item_num++;
 						}
 					}
+          }
 				}
 			}
 			else
