@@ -7,6 +7,16 @@
 
 class EconetRS485;
 
+class DataObject
+{
+  public:
+    std::string label;
+    uint8_t type; // 0 = FLOAT, 2 = ENUMERATED TEXT
+    float float_val;
+    uint8_t enum_val;
+    std::string str_val;
+}
+
 using namespace esphome;
 
 class WHEnabledSwitch : public switch_::Switch
@@ -179,7 +189,7 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 			
 			if(dst_adr == WIFI_MODULE && src_adr == SMARTEC_TRANSLATOR)
 			{
-				if(msg_len == 115)
+				if(command == ACK && msg_len == 115)
 				{
 					recognized = true;
 					
@@ -318,17 +328,6 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 			}
 			else if(dst_adr == SMARTEC_TRANSLATOR && src_adr == WIFI_MODULE)
 			{
-				if(msg_len == 88)
-				{
-					// recognized = true;
-				}
-				else if(msg_len == 28)
-				{
-					if(command == READ_COMMAND && data[0] == 0x01 && data[1] == 0x01 && data[2] == 0x00 && data[3] == 0x00 && data[4] == 0x41 && data[5] == 0x4C && data[6] == 0x41 && data[7] == 0x52 && data[8] == 0x4D && data[8] == 0x53 )
-					{
-						// recognized = true;
-					}
-				}
 				// Filter these for now
 			}
 			
@@ -473,66 +472,77 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 			}
 		}
 	
-		int read_next() {
+		int read_buffer(int bytes_available) {
 			
-			uint8_t byte;
+      // Limit to Read 255 bytes
+      int bytes_to_read = std::min(bytes_available,255);
+      
+			uint8_t bytes[bytes_to_read];
 			
+      // Read multiple bytes at the same time
+      if(read_array(bytes,bytes_to_read) == false)
+      {
+        return -1; 
+      }
+      /*
 			if (!read_byte(&byte)) {
 				return -1;
 			}
+      */
 			
-			// static int pos = 0;
-			// int rpos;
-			if(pos == DST_ADR_POS)
-			{
-				if(byte == 0x80)
-				{
-					buffer[pos] = byte;
-					pos++;
-				}
-				else
-				{
-					// Not the byte we are looking for	
-					pos = 0;
-				}
-			}
-			else if(pos == SRC_ADR_POS)
-			{
-				if(byte == 0x80)
-				{
-					buffer[pos] = byte;
-					pos++;
-				}
-				else
-				{
-					// Not the byte we are looking for	
-					// TODO
-					// Loop through and check if we were off by a couple bytes
-					pos = 0;
-				}
-			}
-			else if(pos == LEN_POS)
-			{
-				data_len = byte;
-				msg_len = data_len + MSG_HEADER_SIZE + MSG_CRC_SIZE;
-				buffer[pos] = byte;
-				pos++;
-			}
-			else
-			{
-				buffer[pos] = byte;
-				pos++;	
-			}
-			
-			if(pos == msg_len && msg_len != 0)
-			{
-				// We have a full message
-				parse_message();
-				pos = 0;
-				msg_len = 0;
-				data_len = 0;
-			}
+      for(int i=0;i<bytes_to_read;i++)
+      {
+        uint8_t byte = bytes[i];
+        if(pos == DST_ADR_POS)
+        {
+          if(byte == 0x80)
+          {
+            buffer[pos] = byte;
+            pos++;
+          }
+          else
+          {
+            // Not the byte we are looking for	
+            pos = 0;
+          }
+        }
+        else if(pos == SRC_ADR_POS)
+        {
+          if(byte == 0x80)
+          {
+            buffer[pos] = byte;
+            pos++;
+          }
+          else
+          {
+            // Not the byte we are looking for	
+            // TODO
+            // Loop through and check if we were off by a couple bytes
+            pos = 0;
+          }
+        }
+        else if(pos == LEN_POS)
+        {
+          data_len = byte;
+          msg_len = data_len + MSG_HEADER_SIZE + MSG_CRC_SIZE;
+          buffer[pos] = byte;
+          pos++;
+        }
+        else
+        {
+          buffer[pos] = byte;
+          pos++;	
+        }
 
+        if(pos == msg_len && msg_len != 0)
+        {
+          // We have a full message
+          parse_message();
+          pos = 0;
+          msg_len = 0;
+          data_len = 0;
+        }
+      }
 			return -1;
 		}
 		
@@ -685,36 +695,43 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 				ESP_LOGD("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, wdata_len+14+2).c_str());
 			}
 		}
-	
+	  void read_the_buffer() 
+    {
+      
+    }
 		void loop() override {
 			const uint32_t now = millis();
 			bool flag = false;
+      
+      // Read Every 50ms After 10s afer boot
+      if (now - this->last_read_ > 50 && now > 10000) {
+        this->last_read_ = now;
+        // Read Everything that is in the buffer
+        int bytes_available = available();
+        if(bytes_available > 0)
+        {
+          flag = true;
+          if(read_buffer(bytes_available) > 0) {
 
-			if (now - this->last_read_ > 50) {
-				this->last_read_ = now;
-				// Read Everything that is in the buffer
-				while (available()) {
-					flag = true;
-					if(read_next() > 0) {
-
-					}
-				}
-				if(flag == false)
-				{
-					// Bus is Assumbed Available
-					// At most every 5 seconds
-					if (now - this->last_request_ > 1000) {
-						this->last_request_ = now;
-						make_request();
-						req_id++;
-						if(req_id > 0)
-						{
-							req_id = 0;	
-						}
-					}
-				}
-				// publish_state(buffer);
-			}
+          }
+        }
+        if(flag == false)
+        {
+          // Bus is Assumbed Available For Sending
+          // This currently attempts a request every 1000ms
+          // Only start requesting data 15s after boot
+          if (now - this->last_request_ > 1000 && now > 15000) {
+            this->last_request_ = now;
+            make_request();
+            req_id++;
+            if(req_id > 0)
+            {
+              req_id = 0;	
+            }
+          }
+        }
+        // publish_state(buffer);
+      }
 		}
 		
 		binary_sensor::BinarySensor *get_wh_enabled_binary_sensor()

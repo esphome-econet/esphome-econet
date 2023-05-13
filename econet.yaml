@@ -23,7 +23,7 @@ wifi:
 ota:
 
 logger:
-  level: VERBOSE
+  level: DEBUG
 
 api:
 
