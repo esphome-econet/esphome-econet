@@ -34,18 +34,19 @@ Commands
 
 Object Strings
 
-| String        | Units         | Gas Tankless | Heat Pump    | Electric |
-| ------------- | ------------- |------------- |------------- |--------- |
-| WHTRENAB      |               | Y            |              |          |
-| WHTRSETP      |               | Y            |              |          |
-| WHTRMODE      |               | Y            |              |          |
-| FLOWRATE      |               | Y            |              |          |
-| TEMP_OUT      |               | Y            |              |          |
-| TEMP__IN      |               | Y            |              |          |
-| WTR_USED      |               | Y            |              |          |
-| WTR_BTUS      |               | Y            |              |          |
-| IGNCYCLS      |               | Y            |              |          |
-| BURNTIME      |               | Y            |              |          |
+| String        | Units         | Gas Tankless | Heat Pump    | Electric | Values     |
+| ------------- | ------------- |------------- |------------- |--------- |------------|
+| WHTRENAB      |               | Y            |Y             |          | 1,0        |
+| WHTRSETP      |               | Y            |Y             |          |            |
+| WHTRMODE      |               | Y            |              |          |            |
+| WHTRCNFG      |               |              |Y             |          | 0,1,2,3,4  |
+| FLOWRATE      |               | Y            |              |          |            |
+| TEMP_OUT      |               | Y            |              |          |            |
+| TEMP__IN      |               | Y            |              |          |            |
+| WTR_USED      |               | Y            |              |          |            |
+| WTR_BTUS      |               | Y            |              |          |            |
+| IGNCYCLS      |               | Y            |              |          |            |
+| BURNTIME      |               | Y            |              |          |            |
 
 Credits:
 
