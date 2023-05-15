@@ -26,7 +26,9 @@ Electric Water Heater
 Protocol Documentation
 
 Example command to change a heat pump water heater to 124F, more examples here https://github.com/stockmopar/esphome-econet/blob/main/m5atom-rs485-econet.yaml
+
 [0x80, 0x00, 0x12, 0x80, 0x00, 0x80, 0x00, 0x03, 0x40, 0x00, 0x12, 0x00, 0x00, 0x1F, 0x01, 0x01, 0x00, 0x07, 0x00, 0x00, 0x57, 0x48, 0x54, 0x52, 0x53, 0x45, 0x54, 0x50, 0x42, 0xF8, 0x00, 0x00, 0xE4, 0xEE]
+
 Decode this into Charcode here https://gchq.github.io/CyberChef/#recipe=From_Charcode('Space',16)Strings('Single%20byte',4,'Alphanumeric%20%2B%20punctuation%20(A)',false,false,false/disabled)&input=MHg4MCwgMHgwMCwgMHgxMiwgMHg4MCwgMHgwMCwgMHg4MCwgMHgwMCwgMHgwMywgMHg0MCwgMHgwMCwgMHgxMiwgMHgwMCwgMHgwMCwgMHgxRiwgMHgwMSwgMHgwMSwgMHgwMCwgMHgwNywgMHgwMCwgMHgwMCwgMHg1NywgMHg0OCwgMHg1NCwgMHg1MiwgMHg1MywgMHg0NSwgMHg1NCwgMHg1MCwgMHg0MiwgMHhGOCwgMHgwMCwgMHgwMCwgMHhFNCwgMHhFRQ
 
 
