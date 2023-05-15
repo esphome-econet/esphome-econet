@@ -11,9 +11,9 @@ https://www.digikey.com/en/products/detail/assmann-wsw-components/AT-S-26-6-4-S-
 
 https://www.mouser.com/ProductDetail/Bel/BC-64SS007F?qs=wnTfsH77Xs4cyAAV7TLsUQ%3D%3D
 
-Or many other similar RJ11/12 cables as long as they are 6P/6C or 6P/4C - we only need 4 wires for this but the 6 wire version is fine too. 
+Or any other similar RJ11/12 cable as long as it is 6P/6C or 6P/4C - we only need 4 wires for this but the 6 wire version is fine too. 
 
-You can also use many other ESP32 development boards with the required RS485 converter - this just an easy pre-wired setup that only requires you to cut, strip, attach 3 wires to the screw terminal, no soldering. 
+You can also use many other ESP32 development boards with the required RS485 converter - this is just an easy pre-wired setup that only requires you to cut, strip, attach 3 wires to the screw terminal, no soldering. 
 
 Tankless Water Heater
 
