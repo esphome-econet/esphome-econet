@@ -1,15 +1,14 @@
 # esphome-econet
+You will need one M5Stack ATOM RS485 K045 Kit:
 
-M5Stack ATOM RS485 K045 Kit:
-Digikey:
 https://www.digikey.com/en/products/detail/m5stack-technology-co-ltd/K045/14318599 
-Or Mouser:
+
 https://www.mouser.com/ProductDetail/M5Stack/K045?qs=81r%252BiQLm7BQ2ho0A5VkoNw%3D%3D
 
-Cable:
-Digikey:
+And one cable:
+
 https://www.digikey.com/en/products/detail/assmann-wsw-components/AT-S-26-6-4-S-7-OE/1972674
-Or Mouser:
+
 https://www.mouser.com/ProductDetail/Bel/BC-64SS007F?qs=wnTfsH77Xs4cyAAV7TLsUQ%3D%3D
 
 Or many other similar RJ11/12 cables as long as they are 6P/6C or 6P/4C - we only need 4 wires for this but the 6 wire version is fine too. 
