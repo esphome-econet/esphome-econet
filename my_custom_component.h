@@ -98,6 +98,7 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 	
 		void setup() override {
 		// nothing to do here
+      ESP_LOGD("econet", "Setup Complete");
 		}
 
 		uint16_t gen_crc16(const uint8_t *data, uint16_t size)
@@ -160,11 +161,11 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 					  reinterpret_cast<char*>(&result));
 			return result;
 		} 
-		bool parse_message()
-		{
+		void parse_message()
+		{      
 			bool logvals = true;
 			
-			uint8_t data[255];
+			uint8_t pdata[255];
 			
 			uint32_t dst_adr = ((buffer[0] & 0x7f) << 24) + (buffer[1] << 16) + (buffer[2] << 8) + buffer[3];
 			uint8_t dst_bus = buffer[4];
@@ -182,7 +183,7 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 			
 			for(int i = 0; i < data_len; i++)
 			{
-				data[i] = buffer[MSG_HEADER_SIZE + i];
+				pdata[i] = buffer[MSG_HEADER_SIZE + i];
 			}
 			
 			bool recognized = false;
@@ -191,7 +192,7 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 			{
 				if(command == ACK && msg_len == 115)
 				{
-					recognized = true;
+					recognized = false;
 					
 					int tpos = 0;
 					uint8_t item_num = 1;
@@ -203,18 +204,18 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 					
 					while(tpos < data_len)
 					{
-						uint8_t item_len = data[tpos];
-						uint8_t item_type = data[tpos+1] & 0x7F;
+						uint8_t item_len = pdata[tpos];
+						uint8_t item_type = pdata[tpos+1] & 0x7F;
 						
 						if(item_type == 0)
 						{
-							float item_value = bytesToFloat(data[tpos+4],data[tpos+5],data[tpos+6],data[tpos+7]);
+							float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
 							if(logvals){
 								if(item_num == 1)
 								{
 									flow_rate = item_value/3.785;
 									flow_rate_sensor->publish_state(item_value/3.785);
-									ESP_LOGD("econet", "FLOWRATE: %f", item_value/3.785);
+									// ESP_LOGD("econet", "FLOWRATE: %f", item_value/3.785);
 								}
 								else if(item_num == 999)
 								{
@@ -224,18 +225,18 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 								{
 									temp_out = item_value;
 									temp_out_sensor->publish_state(item_value);
-									ESP_LOGD("econet", "TEMP_OUT: %f", item_value);
+									// ESP_LOGD("econet", "TEMP_OUT: %f", item_value);
 								}
 								else if(item_num == 3)
 								{
 									temp_in = item_value;
 									temp_in_sensor->publish_state(item_value);
-									ESP_LOGD("econet", "TEMP_IN: %f", item_value);
+									// ESP_LOGD("econet", "TEMP_IN: %f", item_value);
 								}
 								else if(item_num == 6)
 								{
 									setpoint_temp_sensor->publish_state(item_value);
-									ESP_LOGD("econet", "WHTRSETP: %f", item_value);
+									// ESP_LOGD("econet", "WHTRSETP: %f", item_value);
 								}
 								else if(item_num == 7)
 								{
@@ -258,16 +259,16 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 						{
 							// Enumerated Text
 							
-							uint8_t item_value = data[tpos+4];
+							uint8_t item_value = pdata[tpos+4];
 							
-							uint8_t item_text_len = data[tpos+5];
+							uint8_t item_text_len = pdata[tpos+5];
 							
 							// uint8_t str_arr[item_text_len];
 							char char_arr[item_text_len];
 							
 							for (int a = 0; a < item_text_len; a++) {
-								// str_arr[a] = data[tpos+a+6];
-								char_arr[a] = data[tpos+a+6];
+								// str_arr[a] = pdata[tpos+a+6];
+								char_arr[a] = pdata[tpos+a+6];
 							}
 							
 							std::string s(char_arr, sizeof(char_arr));
@@ -338,12 +339,12 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 				ESP_LOGD("econet", "  Src Adr : 0x%x", src_adr);
 				ESP_LOGD("econet", "  Length  : %d", data_len);
 				ESP_LOGD("econet", "  Command : %d", command);
-				ESP_LOGD("econet", "  Data    : %s", format_hex_pretty((const uint8_t *) data, data_len).c_str());
+				ESP_LOGD("econet", "  Data    : %s", format_hex_pretty((const uint8_t *) pdata, data_len).c_str());
 				if(false){
         if(command == 30)
 				{
 					// READ
-					uint8_t type = data[0];
+					uint8_t type = pdata[0];
 					ESP_LOGD("econet", "  Type    : %d", type);
 					
 					if(type == 1)
@@ -351,7 +352,7 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 						char char_arr[data_len - 6];
 
 						for (int a = 0; a < data_len - 6; a++) {
-							char_arr[a] = data[a+4];
+							char_arr[a] = pdata[a+4];
 						}
 
 						std::string s(char_arr, sizeof(char_arr));
@@ -367,33 +368,33 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 						{
 							ESP_LOGD("econet", "  Item[%d] ", item_num);
 
-							uint8_t item_len = data[tpos];
-							uint8_t item_type = data[tpos+1] & 0x7F;
+							uint8_t item_len = pdata[tpos];
+							uint8_t item_type = pdata[tpos+1] & 0x7F;
 
 							ESP_LOGD("econet", "  ItemLen : %d", item_len);
 							ESP_LOGD("econet", "  ItemType: %d", item_type);
 
 							if(item_type == 0)
 							{
-								float item_value = bytesToFloat(data[tpos+4],data[tpos+5],data[tpos+6],data[tpos+7]);
+								float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
 								ESP_LOGD("econet", "  ItemVal : %f", item_value);
 							}
 							else if(item_type == 2)
 							{
 								// Enumerated Text
 
-								uint8_t item_value = data[tpos+4];
+								uint8_t item_value = pdata[tpos+4];
 
 								ESP_LOGD("econet", "  ItemVal : %d", item_value);
 
-								uint8_t item_text_len = data[tpos+5];
+								uint8_t item_text_len = pdata[tpos+5];
 
 								// uint8_t str_arr[item_text_len];
 								char char_arr[item_text_len];
 
 								for (int a = 0; a < item_text_len; a++) {
-									// str_arr[a] = data[tpos+a+6];
-									char_arr[a] = data[tpos+a+6];
+									// str_arr[a] = pdata[tpos+a+6];
+									char_arr[a] = pdata[tpos+a+6];
 								}
 
 								std::string s(char_arr, sizeof(char_arr));
@@ -409,7 +410,7 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 				{
 					// ACK
 					
-					uint8_t type = data[0] & 0x7F;
+					uint8_t type = pdata[0] & 0x7F;
 					
 					// 
 					if(type == 0)
@@ -425,33 +426,33 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 						{
 							ESP_LOGD("econet", "  Item[%d] ", item_num);
 
-							uint8_t item_len = data[tpos];
-							uint8_t item_type = data[tpos+1] & 0x7F;
+							uint8_t item_len = pdata[tpos];
+							uint8_t item_type = pdata[tpos+1] & 0x7F;
 
 							ESP_LOGD("econet", "  ItemLen : %d", item_len);
 							ESP_LOGD("econet", "  ItemType: %d", item_type);
 
 							if(item_type == 0)
 							{
-								float item_value = bytesToFloat(data[tpos+4],data[tpos+5],data[tpos+6],data[tpos+7]);
+								float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
 								ESP_LOGD("econet", "  ItemVal : %f", item_value);
 							}
 							else if(item_type == 2)
 							{
 								// Enumerated Text
 
-								uint8_t item_value = data[tpos+4];
+								uint8_t item_value = pdata[tpos+4];
 
 								ESP_LOGD("econet", "  ItemVal : %d", item_value);
 
-								uint8_t item_text_len = data[tpos+5];
+								uint8_t item_text_len = pdata[tpos+5];
 
 								// uint8_t str_arr[item_text_len];
 								char char_arr[item_text_len];
 
 								for (int a = 0; a < item_text_len; a++) {
-									// str_arr[a] = data[tpos+a+6];
-									char_arr[a] = data[tpos+a+6];
+									// str_arr[a] = pdata[tpos+a+6];
+									char_arr[a] = pdata[tpos+a+6];
 								}
 
 								// std::string item_string = reinterpret_cast<char *>(str_arr); 
@@ -470,6 +471,7 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 			{
 				// ESP_LOGD("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, msg_len).c_str());	
 			}
+      // return true;
 		}
 	
 		int read_buffer(int bytes_available) {
@@ -534,13 +536,18 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
           pos++;	
         }
 
-        if(pos == msg_len && msg_len != 0)
+        if(pos == msg_len && msg_len != 0 && pos != 0)
         {
           // We have a full message
+          
           parse_message();
           pos = 0;
           msg_len = 0;
           data_len = 0;
+        }
+        else if(pos == msg_len && msg_len != 0)
+        {
+          ESP_LOGD("econet", "This would have cuased problems");
         }
       }
 			return -1;
@@ -694,21 +701,21 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
 
 				ESP_LOGD("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, wdata_len+14+2).c_str());
 			}
+      return false;
 		}
-	  void read_the_buffer() 
-    {
-      
-    }
 		void loop() override {
 			const uint32_t now = millis();
 			bool flag = false;
       
+      
+      
       // Read Every 50ms After 10s afer boot
-      if (now - this->last_read_ > 50 && now > 10000) {
+      if (now - this->last_read_ > 50) {
         this->last_read_ = now;
         // Read Everything that is in the buffer
         int bytes_available = available();
-        if(bytes_available > 0)
+        
+        if(bytes_available > 0 && true)
         {
           flag = true;
           if(read_buffer(bytes_available) > 0) {
@@ -720,7 +727,7 @@ class EconetRS485 : public Component, public UARTDevice, public Sensor {
           // Bus is Assumbed Available For Sending
           // This currently attempts a request every 1000ms
           // Only start requesting data 15s after boot
-          if (now - this->last_request_ > 1000 && now > 15000) {
+          if (now - this->last_request_ > 1000) {
             this->last_request_ = now;
             make_request();
             req_id++;
