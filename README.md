@@ -15,6 +15,19 @@ Or any other similar RJ11/12 cable as long as it is 6P/6C or 6P/4C - we only nee
 
 You can also use many other ESP32 development boards with the required RS485 converter - this is just an easy pre-wired setup that only requires you to cut, strip, attach 3 wires to the screw terminal, no soldering. 
 
+```
+    6P4C RJ11/RJ12 male connector end view   
+    
+               +---------+
+            1  ---       |
+            2  ---       +--+      
+Red     B   3  ---          |     
+Green   A   4  ---          |        
+Yellow  GND 6  ---       +--+
+            6  ---       |
+               +---------+
+```
+
 Tankless Water Heater
 
 
