@@ -15,7 +15,7 @@ class DataObject
     float float_val;
     uint8_t enum_val;
     std::string str_val;
-}
+};
 
 using namespace esphome;
 
