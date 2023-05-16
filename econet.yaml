@@ -28,7 +28,7 @@ logger:
 api:
 
 uart:
-  id: uart0
+  id: uart_0
   baud_rate: 38400
   tx_pin: 
     number: ${tx_pin}
@@ -38,7 +38,7 @@ uart:
 custom_component:
 - id: my_econet
   lambda: |-
-    auto my_econet_component = new EconetRS485(id(uart0));
+    auto my_econet_component = new EconetRS485(id(uart_0));
     return {my_econet_component};
 
 sensor:
