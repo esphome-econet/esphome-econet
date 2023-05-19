@@ -24,6 +24,7 @@ class Econet : public Component {
 	void parse_message();
 	void set_enable_state(bool state);
 	
+	uint8_t get_type_id() { return this->type_id_; }
 	float get_temp_in() { return this->temp_in; }
 	float get_temp_out() { return this->temp_out; }
 	float get_flow_rate() { return this->flow_rate; }
@@ -32,7 +33,7 @@ class Econet : public Component {
 	float get_btus_used() { return this->btus_used; }
 	float get_ignition_cycles() { return this->ignition_cycles; }
 	float get_instant_btus() { return this->instant_btus; }
-	float get_hotwater() { return this->hotwater; }
+	float get_hot_water() { return this->hot_water; }
 	bool get_enable_state() { return this->enable_state; }
 	void register_listener(uint8_t datapoint_id, const std::function<void(float)> &func);
 	
@@ -54,7 +55,7 @@ class Econet : public Component {
 	float btus_used = 0;
 	float ignition_cycles = 0;
 	float instant_btus = 0;
-	float hotwater = 0;
+	float hot_water = 0;
 	bool enable_state = false;
 	
 	uint8_t req_id = 0;
@@ -76,6 +77,7 @@ class Econet : public Component {
 	uint32_t WIFI_MODULE =    				832	;	// 80 00 03 40
 	uint32_t SMARTEC_TRANSLATOR = 			4160;	// 80 00 10 40
 	uint32_t INTERNAL = 					4736; 	// 80 00 10 40
+	uint32_t HEAT_PUMP_WATER_HEATER =       0x1280;
 
 	uint8_t DST_ADR_POS = 0;
 	uint8_t SRC_ADR_POS = 5;

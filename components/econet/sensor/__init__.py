@@ -34,6 +34,7 @@ CONF_WATER_USED = "water_used"
 CONF_BTUS_USED = "btus_used"
 CONF_IGNITION_CYCLES = "ignition_cycles"
 CONF_INSTANT_BTUS = "instant_btus"
+CONF_HOT_WATER = "hot_water"
 
 CONFIG_SCHEMA = (
     cv.COMPONENT_SCHEMA.extend(
@@ -103,6 +104,13 @@ CONFIG_SCHEMA = (
                 unit_of_measurement="kbtu/hr",
                 accuracy_decimals=3,
             )
+        },
+		{
+            cv.GenerateID(): cv.declare_id(EconetSensor),
+            cv.Optional(CONF_HOT_WATER): sensor.sensor_schema(
+                unit_of_measurement="%",
+                accuracy_decimals=0,
+            )
         }
     )
     .extend(ECONET_CLIENT_SCHEMA)
@@ -142,4 +150,6 @@ async def to_code(config):
     if CONF_INSTANT_BTUS in config:
         sens = await sensor.new_sensor(config[CONF_INSTANT_BTUS])
         cg.add(var.set_instant_btus_sensor(sens))
-		
+    if CONF_HOT_WATER in config:
+        sens = await sensor.new_sensor(config[CONF_HOT_WATER])
+        cg.add(var.set_hot_water_sensor(sens))

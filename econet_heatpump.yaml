@@ -43,12 +43,12 @@ uart:
 # The base UART communication hub.
 econet:
   uart: uart_0
-  type: tankless
+  model: "Heatpump"
 
 # Optional additional sensors.
 sensor:
   - platform: econet
-    how_water:
+    hot_water:
       name: "Hot Water"
 
 binary_sensor:

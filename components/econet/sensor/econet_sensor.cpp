@@ -8,6 +8,9 @@ static const char *const TAG = "econet.sensor";
 void EconetSensor::update() {
 	if (!this->econet->is_ready())
 		return;
+	
+	// ESP_LOGD("econet", "econet->get_type_id() = %d", this->econet->get_type_id());
+	
 	if (this->temp_in_sensor_ != nullptr) {
 		this->temp_in_sensor_->publish_state(this->econet->get_temp_in());
 	}
@@ -31,6 +34,9 @@ void EconetSensor::update() {
 	}
 	if (this->instant_btus_sensor_ != nullptr) {
 		this->instant_btus_sensor_->publish_state(this->econet->get_instant_btus());
+	}
+	if (this->hot_water_sensor_ != nullptr) {
+		this->hot_water_sensor_->publish_state(this->econet->get_hot_water());
 	}
 }
 

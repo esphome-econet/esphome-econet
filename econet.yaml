@@ -42,6 +42,7 @@ uart:
 # The base UART communication hub.
 econet:
   uart: uart_0
+  model: "Tankless"
 
 # Optional additional sensors.
 sensor:

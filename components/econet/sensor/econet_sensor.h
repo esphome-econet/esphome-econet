@@ -35,6 +35,9 @@ class EconetSensor : public PollingComponent, public EconetClient {
 	void set_instant_btus_sensor(sensor::Sensor *sensor) {
 		this->instant_btus_sensor_ = sensor;
 	}
+	void set_hot_water_sensor(sensor::Sensor *sensor) {
+		this->hot_water_sensor_ = sensor;
+	}
 
  protected:
 	sensor::Sensor *temp_in_sensor_{nullptr};
@@ -45,6 +48,7 @@ class EconetSensor : public PollingComponent, public EconetClient {
 	sensor::Sensor *btus_used_sensor_{nullptr};
 	sensor::Sensor *ignition_cycles_sensor_{nullptr};
 	sensor::Sensor *instant_btus_sensor_{nullptr};
+	sensor::Sensor *hot_water_sensor_{nullptr};
 };
 
 }  // namespace econet

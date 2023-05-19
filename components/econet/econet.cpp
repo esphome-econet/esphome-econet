@@ -93,7 +93,8 @@ void Econet::dump_config() {
 }
 void Econet::make_request()
 {
-	uint32_t dst_adr = 0x1040;
+	uint32_t dst_adr = SMARTEC_TRANSLATOR;
+	if(type_id_ == 1) dst_adr = HEAT_PUMP_WATER_HEATER;
 	//uint32_t dst_adr = 0x340;
 	uint8_t dsr_bus = 0x00;
 
@@ -106,17 +107,27 @@ void Econet::make_request()
 
 	if(req_id == 0)
 	{
-		str_ids.push_back("FLOWRATE");
-		// str_ids.push_back("HTRS__ON");
-		str_ids.push_back("TEMP_OUT");
-		str_ids.push_back("TEMP__IN");
-		str_ids.push_back("WHTRENAB");
-		str_ids.push_back("WHTRMODE");
-		str_ids.push_back("WHTRSETP");
-		str_ids.push_back("WTR_USED");
-		str_ids.push_back("WTR_BTUS");
-		str_ids.push_back("IGNCYCLS");
-		str_ids.push_back("BURNTIME");
+		if(type_id_ == 0)
+		{
+			str_ids.push_back("FLOWRATE");
+			// str_ids.push_back("HTRS__ON");
+			str_ids.push_back("TEMP_OUT");
+			str_ids.push_back("TEMP__IN");
+			str_ids.push_back("WHTRENAB");
+			str_ids.push_back("WHTRMODE");
+			str_ids.push_back("WHTRSETP");
+			str_ids.push_back("WTR_USED");
+			str_ids.push_back("WTR_BTUS");
+			str_ids.push_back("IGNCYCLS");
+			str_ids.push_back("BURNTIME");
+		}
+		else if(type_id_ == 1)
+		{
+			str_ids.push_back("WHTRENAB");
+			str_ids.push_back("WHTRCNFG");
+			str_ids.push_back("WHTRSETP");
+			str_ids.push_back("HOTWATER");
+		}
 	}
 	else
 	{
@@ -266,9 +277,21 @@ void Econet::parse_message()
 
 	bool recognized = false;
 
-	if(dst_adr == WIFI_MODULE && src_adr == SMARTEC_TRANSLATOR)
+	uint32_t exp_dst_adr = WIFI_MODULE;
+	uint32_t exp_src_adr = SMARTEC_TRANSLATOR;
+	int exp_msg_len = 115;
+	
+	if(type_id_ == 1)
 	{
-		if(command == ACK && msg_len == 115)
+		exp_dst_adr = WIFI_MODULE;
+		exp_src_adr = HEAT_PUMP_WATER_HEATER;
+		exp_msg_len = 66;
+	}
+	
+	
+	if(dst_adr == exp_dst_adr && src_adr == exp_src_adr)
+	{
+		if(command == ACK && msg_len == exp_msg_len)
 		{
 			recognized = false;
 
@@ -288,52 +311,47 @@ void Econet::parse_message()
 				if(item_type == 0)
 				{
 					float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
-					if(logvals){
+					
+					if(type_id_ == 0)
+					{
 						if(item_num == 1)
 						{
 							flow_rate = item_value/3.785;
-							// flow_rate_sensor->publish_state(item_value/3.785);
-							// ESP_LOGD("econet", "FLOWRATE: %f", item_value/3.785);
-						}
-						else if(item_num == 999)
-						{
-							// ESP_LOGD("econet", "HTRS__ON: %f", item_value);
 						}
 						else if(item_num == 2)
 						{
 							temp_out = item_value;
-							// temp_out_sensor->publish_state(item_value);
-							// ESP_LOGD("econet", "TEMP_OUT: %f", item_value);
 						}
 						else if(item_num == 3)
 						{
 							this->temp_in = item_value;
-							// temp_in_sensor->publish_state(item_value);
-							// ESP_LOGD("econet", "TEMP_IN: %f", item_value);
 						}
 						else if(item_num == 6)
 						{
 							setpoint = item_value;
-							// setpoint_temp_sensor->publish_state(item_value);
-							// ESP_LOGD("econet", "WHTRSETP: %f", item_value);
 						}
 						else if(item_num == 7)
 						{
 							water_used = item_value;
-							// water_used_sensor->publish_state(item_value);
-							// ESP_LOGD("econet", "WHTRSETP: %f", item_value);
 						}
 						else if(item_num == 8)
 						{
 							btus_used = item_value;
-							// btus_used_sensor->publish_state(item_value);
-							// ESP_LOGD("econet", "WHTRSETP: %f", item_value);
 						}
 						else if(item_num == 9)
 						{
 							ignition_cycles = item_value;
-							// ign_cycle_counts_sensor->publish_state(item_value);
-							// ESP_LOGD("econet", "WHTRSETP: %f", item_value);
+						}
+					}
+					else if(type_id_ == 1)
+					{
+						if(item_num == 3)
+						{
+							setpoint = item_value;
+						}
+						else if(item_num == 4)
+						{
+							hot_water = item_value;
 						}
 					}
 				}
@@ -355,35 +373,46 @@ void Econet::parse_message()
 
 					std::string s(char_arr, sizeof(char_arr));
 
-					if(logvals){
-						// std::string s((const char*)&(), item_len-1);
+					if(type_id_ == 0)
+					{
 						if(item_num == 4)
 						{
 							if(item_value == 0)
 							{
 								enable_state = false;
-								send_datapoint(0,0);
-								// wh_enabled_binary_sensor->publish_state(false);	
-								// wh_enabled_switch->publish_state(false);	
+								// send_datapoint(0,0);
 							}
 							else if(item_value == 1)
 							{
 								enable_state = true;
-								send_datapoint(0,1);
-								// wh_enabled_binary_sensor->publish_state(true);	
-								// wh_enabled_switch->publish_state(true);	
+								// send_datapoint(0,1);
 							}
-							// wh_enabled->publish_state(true);
-							ESP_LOGD("econet", "WHTRENAB (val): %d", item_value);
-							// ESP_LOGD("econet", "WHTRENAB (raw): %s", format_hex_pretty((const uint8_t *) str_arr, item_text_len).c_str());
-							ESP_LOGD("econet", "WHTRENAB (str): %s", s.c_str());
 						}
 						else if(item_num == 5)
 						{
 							ESP_LOGD("econet", "WHTRMODE (val): %d", item_value);
-							// ESP_LOGD("econet", "WHTRENAB (raw): %s", format_hex_pretty((const uint8_t *) str_arr, item_text_len).c_str());
 							ESP_LOGD("econet", "WHTRMODE (str): %s", s.c_str());
 						}
+					}
+					else if(type_id_ == 1)
+					{
+						if(item_num == 1)
+						{
+							if(item_value == 0)
+							{
+								enable_state = false;
+							}
+							else if(item_value == 1)
+							{
+								enable_state = true;
+							}
+						}
+						else if(item_num == 5)
+						{
+							// ESP_LOGD("econet", "WHTRMODE (val): %d", item_value);
+							// ESP_LOGD("econet", "WHTRENAB (raw): %s", format_hex_pretty((const uint8_t *) str_arr, item_text_len).c_str());
+							// ESP_LOGD("econet", "WHTRMODE (str): %s", s.c_str());
+						}	
 					}
 				}
 				tpos += item_len+1;

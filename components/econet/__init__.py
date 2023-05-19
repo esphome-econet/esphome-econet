@@ -1,5 +1,5 @@
 """
-Daikin S21 Mini-Split ESPHome component config validation & code generation.
+Econet ESPHome component config validation & code generation.
 """
 
 import esphome.codegen as cg
@@ -10,6 +10,7 @@ DEPENDENCIES = ["uart"]
 
 CONF_UART = "uart"
 CONF_ECONET_ID = "econet"
+CONF_MODEL = "model"
 
 econet_ns = cg.esphome_ns.namespace("econet")
 Econet = econet_ns.class_("Econet", cg.Component)
@@ -21,6 +22,7 @@ CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(): cv.declare_id(Econet),
         cv.Required(CONF_UART): cv.use_id(UARTComponent),
+		cv.Required("model"): cv.string
     }
 )
 
@@ -36,3 +38,7 @@ async def to_code(config):
     await cg.register_component(var, config)
     uart = await cg.get_variable(config[CONF_UART])
     cg.add(var.set_uart(uart))
+    if config[CONF_MODEL] == "Tankless":
+    	cg.add(var.set_type_id(0))
+    if config[CONF_MODEL] == "Heatpump":
+    	cg.add(var.set_type_id(1))
