@@ -17,6 +17,7 @@ class Econet : public Component {
 	void loop() override;
 	void dump_config() override;
 	void set_uart(uart::UARTComponent *econet_uart);
+	void set_type_id(uint8_t type_id) { this->type_id_ = type_id; }
 	bool is_ready() { return this->ready; }
 	void make_request();
 	void read_buffer(int bytes_available);
@@ -31,10 +32,12 @@ class Econet : public Component {
 	float get_btus_used() { return this->btus_used; }
 	float get_ignition_cycles() { return this->ignition_cycles; }
 	float get_instant_btus() { return this->instant_btus; }
+	float get_hotwater() { return this->hotwater; }
 	bool get_enable_state() { return this->enable_state; }
 	void register_listener(uint8_t datapoint_id, const std::function<void(float)> &func);
 	
  protected:
+	uint8_t type_id_{0};
 	std::vector<DatapointListener> listeners_;
 	void dump_state();
 	void check_uart_settings();
@@ -51,6 +54,7 @@ class Econet : public Component {
 	float btus_used = 0;
 	float ignition_cycles = 0;
 	float instant_btus = 0;
+	float hotwater = 0;
 	bool enable_state = false;
 	
 	uint8_t req_id = 0;
