@@ -10,8 +10,6 @@ esphome:
   project:
     name: "stockmopar.econet"
     version: 0.0.1
-  includes:
-    - my_custom_component.h
 
 esp32:
   board: esp32dev
@@ -22,12 +20,16 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
 
+api:
+
 ota:
 
 logger:
-  level: DEBUG
+  baud_rate: 0  # Disable UART logger if using UART0 (pins 1,3)
 
-api:
+external_components:
+  - source: components
+    #components: [ daikin_s21 ]
 
 uart:
   id: uart_0
@@ -37,63 +39,41 @@ uart:
   rx_pin:
     number: ${rx_pin}
 
-custom_component:
-- id: my_econet
-  lambda: |-
-    auto my_econet_component = new EconetRS485(id(uart_0));
-    return {my_econet_component};
+# The base UART communication hub.
+econet:
+  uart: uart_0
 
+#climate:
+#  - name: My Econet Climate
+#    platform: econet
+
+# Optional additional sensors.
 sensor:
-- platform: custom
-  lambda: |-
-    return {get_econet(my_econet)->flow_rate_sensor,
-            get_econet(my_econet)->temp_out_sensor,
-            get_econet(my_econet)->temp_in_sensor,
-            get_econet(my_econet)->setpoint_temp_sensor,
-            get_econet(my_econet)->water_used_sensor,
-            get_econet(my_econet)->btus_used_sensor,
-            get_econet(my_econet)->ign_cycle_counts_sensor,
-            get_econet(my_econet)->instant_btus_sensor
-            };
-  sensors:
-  - name: "Flow Rate"
-    unit_of_measurement: gpm
-    accuracy_decimals: 2
-  - name: "Temperature Out"
-    unit_of_measurement: °F
-    accuracy_decimals: 1
-  - name: "Temperature In"
-    unit_of_measurement: °F
-    accuracy_decimals: 1
-  - name: "Set Point Temperature"
-    unit_of_measurement: °F
-    accuracy_decimals: 1
-  - name: "Water Used"
-    unit_of_measurement: gal
-    accuracy_decimals: 1
-  - name: "BTUs Used"
-    unit_of_measurement: kbtu
-    accuracy_decimals: 3
-  - name: "Ignition Cycles"
-    accuracy_decimals: 0
-  - name: "Instant BTUs"
-    unit_of_measurement: kbtu/hr
-    accuracy_decimals: 3
+  - platform: econet
+    temp_in:
+      name: "Temperature In"
+    temp_out:
+      name: "Temperature Out"
+    setpoint:
+      name: "Set Point Temperature"
+    btus_used:
+      name: "BTUs Used"
+    water_used:
+      name: "Water Used"
+    flow_rate:
+      name: "Flow Rate"
+    ignition_cycles:
+      name: "Ignition Cycles"
+    instant_btus:
+      name: "Instant BTUs"
 
 binary_sensor:
-- platform: custom
-  lambda: |-
-    return {wh_enabled_binary_sensor(my_econet)
-            };
-  binary_sensors:
-     name: "Water Heater Enabled (Sensor)"
-     id: wh_enabled_sensor
+  - platform: econet
+    enable_state:
+      name: "Water Heater Enabled (Sensor)"
 
 switch:
-- platform: custom
-  lambda: |-
-    return {wh_enabled_switch(my_econet)
-            };
-  switches:
-     name: "Water Heater Enabled"
-     id: wh_enabled_switch
+  - platform: econet
+    name: "Water Heater Enabled"
+    switch_datapoint: 0
+    id: wh_enabled_switch
