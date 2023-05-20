@@ -11,6 +11,15 @@ void EconetBinarySensor::update() {
 	if (this->enable_state_sensor_ != nullptr) {
 		this->enable_state_sensor_->publish_state(this->econet->get_enable_state());
 	}
+	if (this->heatctrl_sensor_ != nullptr) {
+		this->heatctrl_sensor_->publish_state(this->econet->get_heatctrl());
+	}
+	if (this->fan_ctrl_sensor_ != nullptr) {
+		this->fan_ctrl_sensor_->publish_state(this->econet->get_fan_ctrl());
+	}
+	if (this->comp_rly_sensor_ != nullptr) {
+		this->comp_rly_sensor_->publish_state(this->econet->get_comp_rly());
+	}
 }
 
 void EconetBinarySensor::dump_config() {

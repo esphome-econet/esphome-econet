@@ -7,6 +7,15 @@
 namespace esphome {
 namespace econet {
 
+enum class EconetClimateMode : uint8_t {
+  Disabled = '0',
+  Auto = '1',
+  Dry = '2',
+  Cool = '3',
+  Heat = '4',
+  Fan = '6',
+};
+	
 struct DatapointListener {
   uint8_t datapoint_id;
   std::function<void(float)> on_datapoint;
@@ -35,6 +44,9 @@ class Econet : public Component {
 	float get_instant_btus() { return this->instant_btus; }
 	float get_hot_water() { return this->hot_water; }
 	bool get_enable_state() { return this->enable_state; }
+	bool get_heatctrl() { return this->heatctrl; }
+	bool get_fan_ctrl() { return this->fan_ctrl; }
+	bool get_comp_rly() { return this->comp_rly; }
 	void register_listener(uint8_t datapoint_id, const std::function<void(float)> &func);
 	
  protected:
@@ -57,6 +69,9 @@ class Econet : public Component {
 	float instant_btus = 0;
 	float hot_water = 0;
 	bool enable_state = false;
+	bool heatctrl = false;
+	bool fan_ctrl = false;
+	bool comp_rly = false;
 	
 	uint8_t req_id = 0;
 	uint32_t last_request_{0};

@@ -2,21 +2,21 @@
 #include "esphome/core/component.h"
 #include "esphome/core/hal.h"
 #include "esphome/core/log.h"
-#include "daikin_s21_climate.h"
+#include "econet_climate.h"
 
 using namespace esphome;
 
 namespace esphome {
-namespace daikin_s21 {
+namespace econet {
 
 #define SETPOINT_MIN 18
 #define SETPOINT_MAX 32
 #define SETPOINT_STEP 0.5f
 
-static const char *const TAG = "daikin_s21.climate";
+static const char *const TAG = "econet.climate";
 
 void DaikinS21Climate::dump_config() {
-  ESP_LOGCONFIG(TAG, "DaikinS21Climate:");
+  ESP_LOGCONFIG(TAG, "EconetClimate:");
   ESP_LOGCONFIG(TAG, "  Update interval: %u", this->get_update_interval());
   this->dump_traits_(TAG);
 }

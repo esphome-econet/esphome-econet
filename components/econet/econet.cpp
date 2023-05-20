@@ -127,6 +127,9 @@ void Econet::make_request()
 			str_ids.push_back("WHTRCNFG");
 			str_ids.push_back("WHTRSETP");
 			str_ids.push_back("HOTWATER");
+			str_ids.push_back("HEATCTRL");
+			str_ids.push_back("FAN_CTRL");
+			str_ids.push_back("COMP_RLY");
 		}
 	}
 	else
@@ -285,7 +288,9 @@ void Econet::parse_message()
 	{
 		exp_dst_adr = WIFI_MODULE;
 		exp_src_adr = HEAT_PUMP_WATER_HEATER;
-		exp_msg_len = 66;
+		exp_msg_len = 66 + 41;
+		// Original was 66
+		// Added fields are expected to add 41 bytes of data
 	}
 	
 	
@@ -297,11 +302,6 @@ void Econet::parse_message()
 
 			int tpos = 0;
 			uint8_t item_num = 1;
-
-			// float temp_in = 55;
-			// float temp_out = 120;
-
-			// float flow_rate = 1;
 
 			while(tpos < data_len)
 			{
@@ -363,11 +363,9 @@ void Econet::parse_message()
 
 					uint8_t item_text_len = pdata[tpos+5];
 
-					// uint8_t str_arr[item_text_len];
 					char char_arr[item_text_len];
 
 					for (int a = 0; a < item_text_len; a++) {
-						// str_arr[a] = pdata[tpos+a+6];
 						char_arr[a] = pdata[tpos+a+6];
 					}
 
@@ -409,10 +407,19 @@ void Econet::parse_message()
 						}
 						else if(item_num == 5)
 						{
-							// ESP_LOGD("econet", "WHTRMODE (val): %d", item_value);
-							// ESP_LOGD("econet", "WHTRENAB (raw): %s", format_hex_pretty((const uint8_t *) str_arr, item_text_len).c_str());
-							// ESP_LOGD("econet", "WHTRMODE (str): %s", s.c_str());
+							if(item_value == 0) heatctrl = false;
+							else if(item_value == 1) heatctrl = true;
 						}	
+						else if(item_num == 6)
+						{
+							if(item_value == 0) fan_ctrl = false;
+							else if(item_value == 1) fan_ctrl = true;
+						}
+						else if(item_num == 7)
+						{
+							if(item_value == 0) comp_rly = false;
+							else if(item_value == 1) comp_rly = true;
+						}
 					}
 				}
 				tpos += item_len+1;
@@ -701,21 +708,16 @@ void Econet::send_datapoint(uint8_t datapoint_id, float value)
 }
 void Econet::set_enable_state(bool state)
 {
-	ESP_LOGD("econet", "econet->set_enable_state");
 	if(state)
 	{
-		ESP_LOGD("econet", "set_enable_state true");
 		this->send_enable_disable = true;
 		this->enable_disable_cmd = true;
 	}
 	else
 	{
-		ESP_LOGD("econet", "set_enable_state false");
 		this->send_enable_disable = true;
 		this->enable_disable_cmd = false;
 	}
-	// send_enable_disable = true;
-	// enable_disable_cmd = state;
 }
 void Econet::dump_state() {
   

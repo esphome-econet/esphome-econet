@@ -21,18 +21,32 @@ EconetBinarySensor = econet_ns.class_(
 )
 
 CONF_ENABLE_STATE = "enable_state"
+CONF_HEATCTRL = "heatctrl"
+CONF_FAN_CTRL = "fan_ctrl"
+CONF_COMP_RLY = "comp_rly"
 
 CONFIG_SCHEMA = (
     cv.COMPONENT_SCHEMA.extend(
         {
             cv.GenerateID(): cv.declare_id(EconetBinarySensor),
             cv.Optional(CONF_ENABLE_STATE): binary_sensor.binary_sensor_schema()
+        },
+		{
+            cv.GenerateID(): cv.declare_id(EconetBinarySensor),
+            cv.Optional(CONF_HEATCTRL): binary_sensor.binary_sensor_schema()
+        },
+		{
+            cv.GenerateID(): cv.declare_id(EconetBinarySensor),
+            cv.Optional(CONF_FAN_CTRL): binary_sensor.binary_sensor_schema()
+        },
+		{
+            cv.GenerateID(): cv.declare_id(EconetBinarySensor),
+            cv.Optional(CONF_COMP_RLY): binary_sensor.binary_sensor_schema()
         }
     )
     .extend(ECONET_CLIENT_SCHEMA)
     .extend(cv.polling_component_schema("1s"))
 )
-
 
 async def to_code(config):
     """Generate main.cpp code"""
@@ -44,3 +58,12 @@ async def to_code(config):
     if CONF_ENABLE_STATE in config:
         sens = await binary_sensor.new_binary_sensor(config[CONF_ENABLE_STATE])
         cg.add(var.set_enable_state_sensor(sens))
+    if CONF_HEATCTRL in config:
+        sens = await binary_sensor.new_binary_sensor(config[CONF_HEATCTRL])
+        cg.add(var.set_heatctrl_sensor(sens))
+    if CONF_FAN_CTRL in config:
+        sens = await binary_sensor.new_binary_sensor(config[CONF_FAN_CTRL])
+        cg.add(var.set_fan_ctrl_sensor(sens))
+    if CONF_COMP_RLY in config:
+        sens = await binary_sensor.new_binary_sensor(config[CONF_COMP_RLY])
+        cg.add(var.set_comp_rly_sensor(sens))

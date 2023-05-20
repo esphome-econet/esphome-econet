@@ -4,10 +4,10 @@
 #include "esphome/components/climate/climate.h"
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
-#include "../s21.h"
+#include "../econet.h"
 
 namespace esphome {
-namespace daikin_s21 {
+namespace econet {
 
 // clang-format off
 static const climate::ClimateMode OpModes[] = {
@@ -21,23 +21,23 @@ static const climate::ClimateMode OpModes[] = {
 };
 // clang-format on
 
-class DaikinS21Climate : public climate::Climate,
+class EconetClimate : public climate::Climate,
                          public PollingComponent,
-                         public DaikinS21Client {
+                         public EconetClient {
  public:
   void update() override;
   void dump_config() override;
   void control(const climate::ClimateCall &call) override;
 
-  climate::ClimateAction d2e_climate_action();
+  climate::ClimateAction econet_climate_action();
 
-  climate::ClimateMode d2e_climate_mode(DaikinClimateMode mode);
-  DaikinClimateMode e2d_climate_mode(climate::ClimateMode mode);
-  const std::string d2e_fan_mode(DaikinFanMode mode);
-  DaikinFanMode e2d_fan_mode(std::string mode);
-  climate::ClimateSwingMode d2e_swing_mode(bool swing_v, bool swing_h);
-  bool e2d_swing_v(climate::ClimateSwingMode mode);
-  bool e2d_swing_h(climate::ClimateSwingMode mode);
+  climate::ClimateMode econet_climate_mode(EconetClimateMode mode);
+  EconetClimateMode econet_climate_mode(climate::ClimateMode mode);
+  const std::string econet2e_fan_mode(EconetFanMode mode);
+  EconetFanMode e2econet_fan_mode(std::string mode);
+  climate::ClimateSwingMode econet2e_swing_mode(bool swing_v, bool swing_h);
+  bool econet2d_swing_v(climate::ClimateSwingMode mode);
+  bool econet2d_swing_h(climate::ClimateSwingMode mode);
 
  protected:
   climate::ClimateTraits traits() override;
