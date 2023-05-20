@@ -408,17 +408,17 @@ void Econet::parse_message()
 						else if(item_num == 5)
 						{
 							if(item_value == 0) heatctrl = false;
-							else if(item_value == 1) heatctrl = true;
+							else heatctrl = true;
 						}	
 						else if(item_num == 6)
 						{
 							if(item_value == 0) fan_ctrl = false;
-							else if(item_value == 1) fan_ctrl = true;
+							else fan_ctrl = true;
 						}
 						else if(item_num == 7)
 						{
 							if(item_value == 0) comp_rly = false;
-							else if(item_value == 1) comp_rly = true;
+							else comp_rly = true;
 						}
 					}
 				}
