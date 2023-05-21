@@ -7,6 +7,19 @@
 namespace esphome {
 namespace econet {
 
+class ReadRequest {
+	uint32_t dst_adr;
+	uint8_t dst_bus;
+	
+	uint32_t src_adr;
+	uint8_t src_bus;
+	
+	uint8_t read_class;
+	uint8_t read_prop;
+	
+	std::vector<std::string> obj_names;
+};
+	
 enum class EconetClimateMode : uint8_t {
   Disabled = '0',
   Auto = '1',
@@ -32,6 +45,7 @@ class Econet : public Component {
 	void read_buffer(int bytes_available);
 	void parse_message();
 	void set_enable_state(bool state);
+	void set_new_setpoint(float setpoint);
 	
 	uint8_t get_type_id() { return this->type_id_; }
 	float get_temp_in() { return this->temp_in; }
@@ -59,6 +73,8 @@ class Econet : public Component {
 	uart::UARTComponent *econet_uart{nullptr};
 	bool ready = true;
 	
+	// ReadRequest *read_request;
+	
 	float temp_in = 0;
 	float temp_out = 0;
 	float flow_rate = 0;
@@ -81,8 +97,12 @@ class Econet : public Component {
 	int pos = 0;
 	static const int max_message_size = 271;
 	uint8_t buffer[max_message_size];
-	bool send_enable_disable = false;
+	
+	bool send_enable_disable = false;	
 	bool enable_disable_cmd = false;
+	
+	bool send_new_setpoint = false;
+	float new_setpoint = 100;
 	
 	uint8_t wbuffer[max_message_size];
 	uint16_t wmsg_len = 0;

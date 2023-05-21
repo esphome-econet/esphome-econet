@@ -67,6 +67,13 @@ float bytesToFloat(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3)
 			  reinterpret_cast<char*>(&result));
 	return result;
 } 
+uint32_t floatToUint32(float f) 
+{ 
+	uint32_t fbits = 0;
+	memcpy(&fbits, &f, sizeof fbits);
+	
+	return fbits;
+} 
 	
 void Econet::set_uart(uart::UARTComponent *econet_uart) {
   this->econet_uart = econet_uart;
@@ -93,6 +100,16 @@ void Econet::dump_config() {
 }
 void Econet::make_request()
 {
+	/*
+	if(type_id_ == 0) read_request->dst_adr = SMARTEC_TRANSLATOR;
+	else if(type_id_ == 1) read_request->dst_adr = HEAT_PUMP_WATER_HEATER;
+	
+	read_request->dst_bus = 0;
+	
+	read_request->src_adr = WIFI_MODULE;
+	read_request->src_bus = 0;
+	*/
+	
 	uint32_t dst_adr = SMARTEC_TRANSLATOR;
 	if(type_id_ == 1) dst_adr = HEAT_PUMP_WATER_HEATER;
 	//uint32_t dst_adr = 0x340;
@@ -109,6 +126,7 @@ void Econet::make_request()
 	{
 		if(type_id_ == 0)
 		{
+			// str_ids.push_back("TEMP_OUT");
 			str_ids.push_back("FLOWRATE");
 			// str_ids.push_back("HTRS__ON");
 			str_ids.push_back("TEMP_OUT");
@@ -130,6 +148,14 @@ void Econet::make_request()
 			str_ids.push_back("HEATCTRL");
 			str_ids.push_back("FAN_CTRL");
 			str_ids.push_back("COMP_RLY");
+			//
+			str_ids.push_back("AMBIENTT");
+			str_ids.push_back("LOHTRTMP");
+			str_ids.push_back("UPHTRTMP");
+			str_ids.push_back("POWRWATT");
+			str_ids.push_back("EVAPTEMP");
+			str_ids.push_back("SUCTIONT");
+			str_ids.push_back("DISCTEMP");
 		}
 	}
 	else
@@ -139,6 +165,8 @@ void Econet::make_request()
 
 	uint8_t num_of_strs = str_ids.size();
 
+	// num_of_strs = 1;
+	
 	uint8_t command = READ_COMMAND;
 	uint16_t wdata_len = 4+10*num_of_strs;
 
@@ -148,6 +176,7 @@ void Econet::make_request()
 	{
 		ESP_LOGD("econet", "this->send_enable_disable == true");
 	}
+	
 	if(send_enable_disable == true)
 	{
 		command = WRITE_COMMAND;
@@ -166,19 +195,40 @@ void Econet::make_request()
 		}
 		send_enable_disable = false;
 	}
+	else if(send_new_setpoint == true)
+	{
+		
+		command = WRITE_COMMAND;
+		
+		std::vector<uint8_t> base_setpoint_cmd{0x01, 0x01, 0x02, 0x01, 0x00, 0x00, 0x57, 0x48, 0x54, 0x52, 0x53, 0x45, 0x54, 0x50, 0x3F, 0x80, 0x00, 0x00};
+		
+		uint32_t f_to_32 = floatToUint32(new_setpoint);
+		
+		base_setpoint_cmd[14] = (uint8_t)(f_to_32 >> 24);
+		base_setpoint_cmd[15] = (uint8_t)(f_to_32 >> 16);
+		base_setpoint_cmd[16] = (uint8_t)(f_to_32 >> 8);
+		base_setpoint_cmd[17] = (uint8_t)(f_to_32);
+		
+		data = base_setpoint_cmd;
+		wdata_len = 18;
+		
+		send_new_setpoint = false;
+	}
 	else
 	{
 		command = READ_COMMAND;
-
+		
 		if(num_of_strs > 1)
 		{
+			// Read Class
 			data[0] = 2;
 		}
 		else
 		{
 			data[0] = 1;
 		}
-
+		
+		// Read Property
 		data[1] = 1;
 
 		int a = 0;
@@ -463,131 +513,132 @@ void Econet::parse_message()
 		ESP_LOGD("econet", "  Command : %d", command);
 		ESP_LOGD("econet", "  Data    : %s", format_hex_pretty((const uint8_t *) pdata, data_len).c_str());
 		
-		if(false)
+		if(true)
 		{
 			if(command == 30)
 			{
-					// READ
-					uint8_t type = pdata[0];
-					ESP_LOGD("econet", "  Type    : %d", type);
+				// READ
+				uint8_t type = pdata[0];
+				ESP_LOGD("econet", "  Type    : %d", type);
 
-					if(type == 1)
-					{
-						char char_arr[data_len - 6];
+				if(type == 1)
+				{
+					char char_arr[data_len - 6];
 
-						for (int a = 0; a < data_len - 6; a++) {
-							char_arr[a] = pdata[a+4];
-						}
-
-						std::string s(char_arr, sizeof(char_arr));
-
-						ESP_LOGD("econet", "  ValName : %s", s.c_str());
+					for (int a = 0; a < data_len - 6; a++) {
+						char_arr[a] = pdata[a+4];
 					}
-					else if(type == 2)
+
+					std::string s(char_arr, sizeof(char_arr));
+
+					ESP_LOGD("econet", "  ValName : %s", s.c_str());
+				}
+				else if(type == 2)
+				{
+					int tpos = 0;
+					uint8_t item_num = 1;
+
+					while(tpos < data_len)
 					{
-						int tpos = 0;
-						uint8_t item_num = 1;
+						ESP_LOGD("econet", "  Item[%d] ", item_num);
 
-						while(tpos < data_len)
+						uint8_t item_len = pdata[tpos];
+						uint8_t item_type = pdata[tpos+1] & 0x7F;
+
+						ESP_LOGD("econet", "  ItemLen : %d", item_len);
+						ESP_LOGD("econet", "  ItemType: %d", item_type);
+
+						if(item_type == 0)
 						{
-							ESP_LOGD("econet", "  Item[%d] ", item_num);
-
-							uint8_t item_len = pdata[tpos];
-							uint8_t item_type = pdata[tpos+1] & 0x7F;
-
-							ESP_LOGD("econet", "  ItemLen : %d", item_len);
-							ESP_LOGD("econet", "  ItemType: %d", item_type);
-
-							if(item_type == 0)
-							{
-								float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
-								ESP_LOGD("econet", "  ItemVal : %f", item_value);
-							}
-							else if(item_type == 2)
-							{
-								// Enumerated Text
-
-								uint8_t item_value = pdata[tpos+4];
-
-								ESP_LOGD("econet", "  ItemVal : %d", item_value);
-
-								uint8_t item_text_len = pdata[tpos+5];
-
-								// uint8_t str_arr[item_text_len];
-								char char_arr[item_text_len];
-
-								for (int a = 0; a < item_text_len; a++) {
-									// str_arr[a] = pdata[tpos+a+6];
-									char_arr[a] = pdata[tpos+a+6];
-								}
-
-								std::string s(char_arr, sizeof(char_arr));
-
-								ESP_LOGD("econet", "  ItemStr : %s", s.c_str());
-							}
-							tpos += item_len+1;
-							item_num++;
+							float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
+							ESP_LOGD("econet", "  ItemVal : %f", item_value);
 						}
+						else if(item_type == 2)
+						{
+							// Enumerated Text
+
+							uint8_t item_value = pdata[tpos+4];
+
+							ESP_LOGD("econet", "  ItemVal : %d", item_value);
+
+							uint8_t item_text_len = pdata[tpos+5];
+
+							// uint8_t str_arr[item_text_len];
+							char char_arr[item_text_len];
+
+							for (int a = 0; a < item_text_len; a++) {
+								// str_arr[a] = pdata[tpos+a+6];
+								char_arr[a] = pdata[tpos+a+6];
+							}
+
+							std::string s(char_arr, sizeof(char_arr));
+
+							ESP_LOGD("econet", "  ItemStr : %s", s.c_str());
+						}
+						tpos += item_len+1;
+						item_num++;
 					}
 				}
-				else if(command == 6)
+			}
+			else if(command == 6)
+			{
+				// ACK
+
+				uint8_t type = pdata[0] & 0x7F;
+
+				// 
+				if(type == 0)
 				{
-					// ACK
+					float item_value = bytesToFloat(pdata[11],pdata[12],pdata[13],pdata[14]);
+					ESP_LOGD("econet", "  ItemVal : %f", item_value);
+				}
+				else if(type == 2)
+				{
+					int tpos = 0;
+					uint8_t item_num = 1;
 
-					uint8_t type = pdata[0] & 0x7F;
-
-					// 
-					if(type == 0)
+					while(tpos < data_len)
 					{
+						ESP_LOGD("econet", "  Item[%d] ", item_num);
 
-					}
-					else
-					{
-						int tpos = 0;
-						uint8_t item_num = 1;
+						uint8_t item_len = pdata[tpos];
+						uint8_t item_type = pdata[tpos+1] & 0x7F;
 
-						while(tpos < data_len)
+						ESP_LOGD("econet", "  ItemLen : %d", item_len);
+						ESP_LOGD("econet", "  ItemType: %d", item_type);
+
+						if(item_type == 0)
 						{
-							ESP_LOGD("econet", "  Item[%d] ", item_num);
-
-							uint8_t item_len = pdata[tpos];
-							uint8_t item_type = pdata[tpos+1] & 0x7F;
-
-							ESP_LOGD("econet", "  ItemLen : %d", item_len);
-							ESP_LOGD("econet", "  ItemType: %d", item_type);
-
-							if(item_type == 0)
-							{
-								float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
-								ESP_LOGD("econet", "  ItemVal : %f", item_value);
-							}
-							else if(item_type == 2)
-							{
-								// Enumerated Text
-
-								uint8_t item_value = pdata[tpos+4];
-
-								ESP_LOGD("econet", "  ItemVal : %d", item_value);
-
-								uint8_t item_text_len = pdata[tpos+5];
-
-								// uint8_t str_arr[item_text_len];
-								char char_arr[item_text_len];
-
-								for (int a = 0; a < item_text_len; a++) {
-									// str_arr[a] = pdata[tpos+a+6];
-									char_arr[a] = pdata[tpos+a+6];
-								}
-
-								// std::string item_string = reinterpret_cast<char *>(str_arr); 
-								std::string s(char_arr, sizeof(char_arr));
-
-								ESP_LOGD("econet", "  ItemStr : %s", s.c_str());
-							}
-							tpos += item_len+1;
-							item_num++;
+							float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
+							ESP_LOGD("econet", "  ItemVal : %f", item_value);
 						}
+						else if(item_type == 2)
+						{
+							// Enumerated Text
+
+							uint8_t item_value = pdata[tpos+4];
+
+							ESP_LOGD("econet", "  ItemVal : %d", item_value);
+
+							uint8_t item_text_len = pdata[tpos+5];
+
+							// uint8_t str_arr[item_text_len];
+							char char_arr[item_text_len];
+
+							for (int a = 0; a < item_text_len; a++) {
+								// str_arr[a] = pdata[tpos+a+6];
+								char_arr[a] = pdata[tpos+a+6];
+							}
+
+							// std::string item_string = reinterpret_cast<char *>(str_arr); 
+							std::string s(char_arr, sizeof(char_arr));
+
+							ESP_LOGD("econet", "  ItemStr : %s", s.c_str());
+						}
+						tpos += item_len+1;
+						item_num++;
 					}
+				}
 			}
 		}
 	}
@@ -599,8 +650,8 @@ void Econet::parse_message()
 }
 void Econet::read_buffer(int bytes_available) {
 
-	// Limit to Read 255 bytes
-	int bytes_to_read = std::min(bytes_available,255);
+	// Limit to Read 512 bytes
+	int bytes_to_read = std::min(bytes_available,512);
 
 	uint8_t bytes[bytes_to_read];
 
@@ -718,6 +769,11 @@ void Econet::set_enable_state(bool state)
 		this->send_enable_disable = true;
 		this->enable_disable_cmd = false;
 	}
+}
+void Econet::set_new_setpoint(float setpoint)
+{
+	send_new_setpoint = true;
+	new_setpoint = setpoint;
 }
 void Econet::dump_state() {
   

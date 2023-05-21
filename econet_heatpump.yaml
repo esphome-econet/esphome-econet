@@ -28,8 +28,8 @@ logger:
   baud_rate: 0  # Disable UART logger if using UART0 (pins 1,3)
 
 external_components:
-#  - source: github://stockmopar/esphome-econet
-  - source: components
+  - source: github://stockmopar/esphome-econet
+#  - source: components
 
 
 uart:
@@ -44,6 +44,10 @@ uart:
 econet:
   uart: uart_0
   model: "Heatpump"
+
+climate:
+  - platform: econet
+    name: "Water Heater"
 
 # Optional additional sensors.
 sensor:
