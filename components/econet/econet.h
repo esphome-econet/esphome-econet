@@ -70,6 +70,12 @@ class Econet : public Component {
 	float get_suction_temp() { return this->suction_temp; }
 	float get_discharge_temp() { return this->discharge_temp; }
 	
+	float get_current_temp() {
+		if(this->type_id_ == 0) return this->temp_out;
+		else if(this->type_id_ == 1) return this->upper_water_heater_temp;
+		else return this->setpoint;
+	}
+	
 	void register_listener(uint8_t datapoint_id, const std::function<void(float)> &func);
 	
  protected:
@@ -105,6 +111,8 @@ class Econet : public Component {
 	float evap_temp = 0;
 	float suction_temp = 0;
 	float discharge_temp = 0;
+	
+	float current_temp = 0;
 	
 	uint8_t req_id = 0;
 	uint32_t last_request_{0};

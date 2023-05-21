@@ -22,38 +22,50 @@ void EconetClimate::dump_config() {
 }
 
 climate::ClimateTraits EconetClimate::traits() {
-  auto traits = climate::ClimateTraits();
+	auto traits = climate::ClimateTraits();
 
-  traits.set_supports_action(false);
+	traits.set_supports_action(false);
 
-  traits.set_supports_current_temperature(false);
-  traits.set_visual_min_temperature(SETPOINT_MIN);
-  traits.set_visual_max_temperature(SETPOINT_MAX);
-  traits.set_visual_temperature_step(SETPOINT_STEP);
-  traits.set_supports_two_point_target_temperature(false);
+	traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_AUTO});
 
-  return traits;
+	traits.set_supports_current_temperature(true);
+	traits.set_visual_min_temperature(SETPOINT_MIN);
+	traits.set_visual_max_temperature(SETPOINT_MAX);
+	traits.set_visual_temperature_step(SETPOINT_STEP);
+	traits.set_supports_two_point_target_temperature(false);
+
+	return traits;
 }
 
 void EconetClimate::update() {
-  if (this->econet->is_ready()) {
-    this->target_temperature = (this->econet->get_setpoint() - 32)*5/9;
-    this->publish_state();
+	if (this->econet->is_ready()) {
+		this->target_temperature = (this->econet->get_setpoint() - 32)*5/9;
+		this->current_temperature = (this->econet->get_current_temp() - 32)*5/9;
+		if(this->econet->get_enable_state() == true)
+		{
+			// Auto	 CLIMATE_MODE_AUTO
+			this->mode = climate::CLIMATE_MODE_AUTO;
+		}
+		else
+		{
+			// Off	
+			this->mode = climate::CLIMATE_MODE_OFF;
+		}
+		this->publish_state();
   }
 }
 
 void EconetClimate::control(const climate::ClimateCall &call) {
-  float setpoint = this->target_temperature;
+	float setpoint = this->target_temperature;
 
-  bool set_basic = false;
+	bool set_basic = false;
+	if (call.get_target_temperature().has_value()) {
+		setpoint = std::roundf(call.get_target_temperature().value()*9/5 + 32);
 
-  if (call.get_target_temperature().has_value()) {
-    setpoint = std::roundf(call.get_target_temperature().value()*9/5 + 32);
-	
-	this->econet->set_new_setpoint(setpoint);
-    // ESP_LOGD("econet", "Lets change the temp to %f", setpoint);
-	set_basic = true;
-  }
+		this->econet->set_new_setpoint(setpoint);
+		// ESP_LOGD("econet", "Lets change the temp to %f", setpoint);
+		set_basic = true;
+	}
 
 }
 
