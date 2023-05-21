@@ -338,9 +338,10 @@ void Econet::parse_message()
 	{
 		exp_dst_adr = WIFI_MODULE;
 		exp_src_adr = HEAT_PUMP_WATER_HEATER;
-		exp_msg_len = 110;
+		exp_msg_len = 166;
 		// Original was 66
 		// New is 110
+		// New new is 150 + 14 + 2 = 166
 	}
 	
 	
