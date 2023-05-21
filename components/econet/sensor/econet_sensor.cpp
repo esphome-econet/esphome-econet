@@ -38,6 +38,28 @@ void EconetSensor::update() {
 	if (this->hot_water_sensor_ != nullptr) {
 		this->hot_water_sensor_->publish_state(this->econet->get_hot_water());
 	}
+	
+	if (this->ambient_temp_sensor_ != nullptr) {
+		this->ambient_temp_sensor_->publish_state(this->econet->get_ambient_temp());
+	}
+	if (this->lower_water_heater_temp_sensor_ != nullptr) {
+		this->lower_water_heater_temp_sensor_->publish_state(this->econet->get_lower_water_heater_temp());
+	}
+	if (this->upper_water_heater_temp_sensor_ != nullptr) {
+		this->upper_water_heater_temp_sensor_->publish_state(this->econet->get_upper_water_heater_temp());
+	}
+	if (this->power_watt_sensor_ != nullptr) {
+		this->power_watt_sensor_->publish_state(this->econet->get_power_watt());
+	}
+	if (this->evap_temp_sensor_ != nullptr) {
+		this->evap_temp_sensor_->publish_state(this->econet->get_evap_temp());
+	}
+	if (this->suction_temp_sensor_ != nullptr) {
+		this->suction_temp_sensor_->publish_state(this->econet->get_suction_temp());
+	}
+	if (this->discharge_temp_sensor_ != nullptr) {
+		this->discharge_temp_sensor_->publish_state(this->econet->get_discharge_temp());
+	}
 }
 
 void EconetSensor::dump_config() {

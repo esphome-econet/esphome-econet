@@ -54,6 +54,20 @@ sensor:
   - platform: econet
     hot_water:
       name: "Hot Water"
+    ambient_temp:
+      name: "Ambient Temperature"
+    lower_water_heater_temp:
+      name: "Lower Tank Temperature"
+    upper_water_heater_temp:
+      name: "Upper Tank Temperature"
+    power_watt:
+      name: "Power"
+    evap_temp:
+      name: "Evaporator Temperature"
+    suction_temp:
+      name: "Suction Temperature"
+    discharge_temp:
+      name: "Discharge Temperature"
 
 binary_sensor:
   - platform: econet

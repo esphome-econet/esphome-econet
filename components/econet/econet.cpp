@@ -404,6 +404,34 @@ void Econet::parse_message()
 						{
 							hot_water = item_value;
 						}
+						else if(item_num == 8)
+						{
+							ambient_temp = item_value;
+						}
+						else if(item_num == 9)
+						{
+							lower_water_heater_temp = item_value;
+						}
+						else if(item_num == 10)
+						{
+							upper_water_heater_temp = item_value;
+						}
+						else if(item_num == 11)
+						{
+							power_watt = item_value;
+						}
+						else if(item_num == 12)
+						{
+							evap_temp = item_value;
+						}
+						else if(item_num == 13)
+						{
+							suction_temp = item_value;
+						}
+						else if(item_num == 14)
+						{
+							discharge_temp = item_value;
+						}
 					}
 				}
 				else if(item_type == 2)

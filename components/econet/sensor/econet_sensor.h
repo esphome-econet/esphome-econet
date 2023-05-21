@@ -38,7 +38,28 @@ class EconetSensor : public PollingComponent, public EconetClient {
 	void set_hot_water_sensor(sensor::Sensor *sensor) {
 		this->hot_water_sensor_ = sensor;
 	}
-
+	void set_ambient_temp_sensor(sensor::Sensor *sensor) {
+		this->ambient_temp_sensor_ = sensor;
+	}
+	void set_lower_water_heater_temp_sensor(sensor::Sensor *sensor) {
+		this->lower_water_heater_temp_sensor_ = sensor;
+	}
+	void set_upper_water_heater_temp_sensor(sensor::Sensor *sensor) {
+		this->upper_water_heater_temp_sensor_ = sensor;
+	}
+	void set_power_watt_sensor(sensor::Sensor *sensor) {
+		this->power_watt_sensor_ = sensor;
+	}
+	void set_evap_temp_sensor(sensor::Sensor *sensor) {
+		this->evap_temp_sensor_ = sensor;
+	}
+	void set_suction_temp_sensor(sensor::Sensor *sensor) {
+		this->suction_temp_sensor_ = sensor;
+	}
+	void set_discharge_temp_sensor(sensor::Sensor *sensor) {
+		this->discharge_temp_sensor_ = sensor;
+	}
+	
  protected:
 	sensor::Sensor *temp_in_sensor_{nullptr};
 	sensor::Sensor *temp_out_sensor_{nullptr};
@@ -49,6 +70,14 @@ class EconetSensor : public PollingComponent, public EconetClient {
 	sensor::Sensor *ignition_cycles_sensor_{nullptr};
 	sensor::Sensor *instant_btus_sensor_{nullptr};
 	sensor::Sensor *hot_water_sensor_{nullptr};
+	
+	sensor::Sensor *ambient_temp_sensor_{nullptr};
+	sensor::Sensor *lower_water_heater_temp_sensor_{nullptr};
+	sensor::Sensor *upper_water_heater_temp_sensor_{nullptr};
+	sensor::Sensor *power_watt_sensor_{nullptr};
+	sensor::Sensor *evap_temp_sensor_{nullptr};
+	sensor::Sensor *suction_temp_sensor_{nullptr};
+	sensor::Sensor *discharge_temp_sensor_{nullptr};
 };
 
 }  // namespace econet

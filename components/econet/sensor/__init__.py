@@ -35,6 +35,13 @@ CONF_BTUS_USED = "btus_used"
 CONF_IGNITION_CYCLES = "ignition_cycles"
 CONF_INSTANT_BTUS = "instant_btus"
 CONF_HOT_WATER = "hot_water"
+CONF_AMBIENTT = "ambient_temp"
+CONF_LOHTRTMP = "lower_water_heater_temp"
+CONF_UPHTRTMP = "upper_water_heater_temp"
+CONF_POWRWATT = "power_watt"
+CONF_EVAPTEMP = "evap_temp"
+CONF_SUCTIONT = "suction_temp"
+CONF_DISCTEMP = "discharge_temp"
 
 CONFIG_SCHEMA = (
     cv.COMPONENT_SCHEMA.extend(
@@ -111,11 +118,81 @@ CONFIG_SCHEMA = (
                 unit_of_measurement="%",
                 accuracy_decimals=0,
             )
-        }
+        },
+		{
+            cv.GenerateID(): cv.declare_id(EconetSensor),
+            cv.Optional(CONF_AMBIENTT): sensor.sensor_schema(
+                unit_of_measurement="°F",
+                icon=ICON_THERMOMETER,
+                accuracy_decimals=1,
+                device_class=DEVICE_CLASS_TEMPERATURE,
+                state_class=STATE_CLASS_MEASUREMENT,
+            )
+        },
+		{
+            cv.GenerateID(): cv.declare_id(EconetSensor),
+            cv.Optional(CONF_LOHTRTMP): sensor.sensor_schema(
+                unit_of_measurement="°F",
+                icon=ICON_THERMOMETER,
+                accuracy_decimals=1,
+                device_class=DEVICE_CLASS_TEMPERATURE,
+                state_class=STATE_CLASS_MEASUREMENT,
+            )
+        },
+        {
+            cv.GenerateID(): cv.declare_id(EconetSensor),
+            cv.Optional(CONF_UPHTRTMP): sensor.sensor_schema(
+                unit_of_measurement="°F",
+                icon=ICON_THERMOMETER,
+                accuracy_decimals=1,
+                device_class=DEVICE_CLASS_TEMPERATURE,
+                state_class=STATE_CLASS_MEASUREMENT,
+            )
+        },
+        {
+            cv.GenerateID(): cv.declare_id(EconetSensor),
+            cv.Optional(CONF_POWRWATT): sensor.sensor_schema(
+                unit_of_measurement="W",
+                accuracy_decimals=3,
+                state_class=STATE_CLASS_MEASUREMENT,
+            )
+        },
+        {
+            cv.GenerateID(): cv.declare_id(EconetSensor),
+            cv.Optional(CONF_EVAPTEMP): sensor.sensor_schema(
+                unit_of_measurement="°F",
+                icon=ICON_THERMOMETER,
+                accuracy_decimals=1,
+                device_class=DEVICE_CLASS_TEMPERATURE,
+                state_class=STATE_CLASS_MEASUREMENT,
+            )
+        },
+        {
+            cv.GenerateID(): cv.declare_id(EconetSensor),
+            cv.Optional(CONF_SUCTIONT): sensor.sensor_schema(
+                unit_of_measurement="°F",
+                icon=ICON_THERMOMETER,
+                accuracy_decimals=1,
+                device_class=DEVICE_CLASS_TEMPERATURE,
+                state_class=STATE_CLASS_MEASUREMENT,
+            )
+        },
+        {
+            cv.GenerateID(): cv.declare_id(EconetSensor),
+            cv.Optional(CONF_DISCTEMP): sensor.sensor_schema(
+                unit_of_measurement="°F",
+                icon=ICON_THERMOMETER,
+                accuracy_decimals=1,
+                device_class=DEVICE_CLASS_TEMPERATURE,
+                state_class=STATE_CLASS_MEASUREMENT,
+            )
+        },
     )
     .extend(ECONET_CLIENT_SCHEMA)
     .extend(cv.polling_component_schema("5s"))
 )
+
+
 
 
 async def to_code(config):
@@ -153,3 +230,24 @@ async def to_code(config):
     if CONF_HOT_WATER in config:
         sens = await sensor.new_sensor(config[CONF_HOT_WATER])
         cg.add(var.set_hot_water_sensor(sens))
+    if CONF_AMBIENTT in config:
+        sens = await sensor.new_sensor(config[CONF_AMBIENTT])
+        cg.add(var.set_ambient_temp_sensor(sens))
+    if CONF_LOHTRTMP in config:
+        sens = await sensor.new_sensor(config[CONF_LOHTRTMP])
+        cg.add(var.set_lower_water_heater_temp_sensor(sens))
+    if CONF_UPHTRTMP in config:
+        sens = await sensor.new_sensor(config[CONF_UPHTRTMP])
+        cg.add(var.set_upper_water_heater_temp_sensor(sens))
+    if CONF_POWRWATT in config:
+        sens = await sensor.new_sensor(config[CONF_POWRWATT])
+        cg.add(var.set_power_watt_sensor(sens))
+    if CONF_EVAPTEMP in config:
+        sens = await sensor.new_sensor(config[CONF_EVAPTEMP])
+        cg.add(var.set_evap_temp_sensor(sens))
+    if CONF_SUCTIONT in config:
+        sens = await sensor.new_sensor(config[CONF_SUCTIONT])
+        cg.add(var.set_suction_temp_sensor(sens))
+    if CONF_DISCTEMP in config:
+        sens = await sensor.new_sensor(config[CONF_DISCTEMP])
+        cg.add(var.set_discharge_temp_sensor(sens))

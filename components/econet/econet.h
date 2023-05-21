@@ -61,6 +61,15 @@ class Econet : public Component {
 	bool get_heatctrl() { return this->heatctrl; }
 	bool get_fan_ctrl() { return this->fan_ctrl; }
 	bool get_comp_rly() { return this->comp_rly; }
+	
+	float get_ambient_temp() { return this->ambient_temp; }
+	float get_lower_water_heater_temp() { return this->lower_water_heater_temp; }
+	float get_power_watt() { return this->power_watt; }
+	float get_upper_water_heater_temp() { return this->upper_water_heater_temp; }
+	float get_evap_temp() { return this->evap_temp; }
+	float get_suction_temp() { return this->suction_temp; }
+	float get_discharge_temp() { return this->discharge_temp; }
+	
 	void register_listener(uint8_t datapoint_id, const std::function<void(float)> &func);
 	
  protected:
@@ -88,6 +97,14 @@ class Econet : public Component {
 	bool heatctrl = false;
 	bool fan_ctrl = false;
 	bool comp_rly = false;
+	
+	float ambient_temp = 0;
+	float lower_water_heater_temp = 0;
+	float upper_water_heater_temp = 0;
+	float power_watt = 0;
+	float evap_temp = 0;
+	float suction_temp = 0;
+	float discharge_temp = 0;
 	
 	uint8_t req_id = 0;
 	uint32_t last_request_{0};
