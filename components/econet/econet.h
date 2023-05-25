@@ -46,6 +46,7 @@ class Econet : public Component {
 	void parse_message();
 	void set_enable_state(bool state);
 	void set_new_setpoint(float setpoint);
+	void set_new_mode(float mode);
 	
 	uint8_t get_type_id() { return this->type_id_; }
 	float get_temp_in() { return this->temp_in; }
@@ -57,6 +58,7 @@ class Econet : public Component {
 	float get_ignition_cycles() { return this->ignition_cycles; }
 	float get_instant_btus() { return this->instant_btus; }
 	float get_hot_water() { return this->hot_water; }
+	float get_mode() { return this->mode; }
 	bool get_enable_state() { return this->enable_state; }
 	bool get_heatctrl() { return this->heatctrl; }
 	bool get_fan_ctrl() { return this->fan_ctrl; }
@@ -114,6 +116,8 @@ class Econet : public Component {
 	
 	float current_temp = 0;
 	
+	float mode = 0;
+	
 	uint8_t req_id = 0;
 	uint32_t last_request_{0};
 	uint32_t last_read_{0};
@@ -128,6 +132,9 @@ class Econet : public Component {
 	
 	bool send_new_setpoint = false;
 	float new_setpoint = 100;
+	
+	bool send_new_mode = false;
+	float new_mode = 0;
 	
 	uint8_t wbuffer[max_message_size];
 	uint16_t wmsg_len = 0;

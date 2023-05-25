@@ -195,6 +195,33 @@ void Econet::make_request()
 		}
 		send_enable_disable = false;
 	}
+	else if(send_new_mode == true)
+	{
+		// Modes
+		// 0 - Off
+		// 1 - Energy Saver
+		// 2 - Heat Pump
+		// 3 - High Demand
+		// 4 - Electric / Gas
+		
+		command = WRITE_COMMAND;
+		
+		std::vector<uint8_t> base_mode_cmd{0x01, 0x01, 0x00, 0x07, 0x00, 0x00, 0x57, 0x48, 0x54, 0x52, 0x43, 0x4E, 0x46, 0x47, 0x00, 0x00, 0x00, 0x00};
+		
+		uint32_t f_to_32 = floatToUint32(new_mode);
+		
+		base_mode_cmd[14] = (uint8_t)(f_to_32 >> 24);
+		base_mode_cmd[15] = (uint8_t)(f_to_32 >> 16);
+		base_mode_cmd[16] = (uint8_t)(f_to_32 >> 8);
+		base_mode_cmd[17] = (uint8_t)(f_to_32);
+		
+		data = base_mode_cmd;
+		wdata_len = 18;
+		
+		send_new_mode = false;
+	}
+
+	
 	else if(send_new_setpoint == true)
 	{
 		
@@ -483,6 +510,10 @@ void Econet::parse_message()
 							{
 								enable_state = true;
 							}
+						}
+						else if(item_num == 2)
+						{
+							mode = static_cast<int>(item_value);
 						}
 						else if(item_num == 5)
 						{
@@ -803,6 +834,11 @@ void Econet::set_new_setpoint(float setpoint)
 {
 	send_new_setpoint = true;
 	new_setpoint = setpoint;
+}
+void Econet::set_new_mode(float mode)
+{
+	send_new_mode = true;
+	new_mode = mode;
 }
 void Econet::dump_state() {
   
