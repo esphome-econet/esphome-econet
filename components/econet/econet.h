@@ -43,9 +43,12 @@ class Econet : public Component {
 	bool is_ready() { return this->ready; }
 	void make_request();
 	void read_buffer(int bytes_available);
-	void parse_message();
+	void parse_message(bool is_tx);
+	void parse_rx_message();
+	void parse_tx_message();
 	void set_enable_state(bool state);
 	void set_new_setpoint(float setpoint);
+	void set_new_mode(float mode);
 	
 	uint8_t get_type_id() { return this->type_id_; }
 	float get_temp_in() { return this->temp_in; }
@@ -57,6 +60,7 @@ class Econet : public Component {
 	float get_ignition_cycles() { return this->ignition_cycles; }
 	float get_instant_btus() { return this->instant_btus; }
 	float get_hot_water() { return this->hot_water; }
+	float get_mode() { return this->mode; }
 	bool get_enable_state() { return this->enable_state; }
 	bool get_heatctrl() { return this->heatctrl; }
 	bool get_fan_ctrl() { return this->fan_ctrl; }
@@ -114,9 +118,12 @@ class Econet : public Component {
 	
 	float current_temp = 0;
 	
+	float mode = 0;
+	
 	uint8_t req_id = 0;
 	uint32_t last_request_{0};
 	uint32_t last_read_{0};
+	uint32_t act_loop_time_{0};
 	uint8_t data_len = 0;
 	uint16_t msg_len = 0;
 	int pos = 0;
@@ -129,6 +136,9 @@ class Econet : public Component {
 	bool send_new_setpoint = false;
 	float new_setpoint = 100;
 	
+	bool send_new_mode = false;
+	float new_mode = 0;
+	
 	uint8_t wbuffer[max_message_size];
 	uint16_t wmsg_len = 0;
 	
@@ -138,6 +148,8 @@ class Econet : public Component {
 	uint32_t SMARTEC_TRANSLATOR = 			4160;	// 80 00 10 40
 	uint32_t INTERNAL = 					4736; 	// 80 00 10 40
 	uint32_t HEAT_PUMP_WATER_HEATER =       0x1280;
+	uint32_t AIR_HANDLER = 					0x3c0;
+	uint32_t CONTROL_CENTER = 				0x380;
 
 	uint8_t DST_ADR_POS = 0;
 	uint8_t SRC_ADR_POS = 5;

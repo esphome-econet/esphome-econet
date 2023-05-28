@@ -44,39 +44,6 @@ uart:
 # The base UART communication hub.
 econet:
   uart: uart_0
-  model: "Tankless"
-
-climate:
-  - platform: econet
-    name: "Water Heater"
+  model: "HVAC"
 
 # Optional additional sensors.
-sensor:
-  - platform: econet
-    temp_in:
-      name: "Temperature In"
-    temp_out:
-      name: "Temperature Out"
-    setpoint:
-      name: "Set Point Temperature"
-    btus_used:
-      name: "BTUs Used"
-    water_used:
-      name: "Water Used"
-    flow_rate:
-      name: "Flow Rate"
-    ignition_cycles:
-      name: "Ignition Cycles"
-    instant_btus:
-      name: "Instant BTUs"
-
-binary_sensor:
-  - platform: econet
-    enable_state:
-      name: "Water Heater Enabled (Sensor)"
-
-switch:
-  - platform: econet
-    name: "Water Heater Enabled"
-    switch_datapoint: 0
-    id: wh_enabled_switch
