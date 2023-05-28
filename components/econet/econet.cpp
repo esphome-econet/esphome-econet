@@ -112,11 +112,13 @@ void Econet::make_request()
 	
 	uint32_t dst_adr = SMARTEC_TRANSLATOR;
 	if(type_id_ == 1) dst_adr = HEAT_PUMP_WATER_HEATER;
+	else if(type_id_ == 2) dst_adr = AIR_HANDLER;
 	//uint32_t dst_adr = 0x340;
-	uint8_t dsr_bus = 0x00;
+	uint8_t dst_bus = 0x00;
 
 	// uint32_t src_adr = COMPUTER; // WIFI_MODULE; // COMPUTER;
 	uint32_t src_adr = WIFI_MODULE;
+	if(type_id_ == 2) src_adr = CONTROL_CENTER;
 	//uint32_t src_adr = 0x1040;
 	uint8_t src_bus = 0x00;
 
@@ -157,6 +159,15 @@ void Econet::make_request()
 			str_ids.push_back("SUCTIONT");
 			str_ids.push_back("DISCTEMP");
 		}
+		else if(type_id_ == 2)
+		{
+			// str_ids.push_back("AIRHSTAT");
+			str_ids.push_back("AAUX1CFM");
+			str_ids.push_back("AAUX2CFM");
+			str_ids.push_back("AAUX3CFM");
+			str_ids.push_back("AAUX4CFM");
+			
+		}
 	}
 	else
 	{
@@ -170,6 +181,8 @@ void Econet::make_request()
 	uint8_t command = READ_COMMAND;
 	uint16_t wdata_len = 4+10*num_of_strs;
 
+	if(type_id_ == 2 && num_of_strs == 1) wdata_len = wdata_len-2;
+	
 	std::vector<uint8_t> data(wdata_len);
 	
 	if(send_enable_disable == true)
@@ -272,13 +285,17 @@ void Econet::make_request()
 
 			for(int j=0; j<10;j++)
 			{
-				if(j < str_ids[i].length())
+				if( 2+10*i+2 + j < wdata_len)
 				{
-					data[2+10*i+2 + j] = sdata[j];
-				}
-				else
-				{
-					data[2+10*i+2 + j] = 0;
+					if(j < str_ids[i].length())
+					{
+						data[2+10*i+2 + j] = sdata[j];
+					}
+					else
+					{
+
+						data[2+10*i+2 + j] = 0;
+					}
 				}
 			}
 		}
@@ -290,7 +307,7 @@ void Econet::make_request()
 		wbuffer[1] = (uint8_t) (dst_adr >> 16);
 		wbuffer[2] = (uint8_t) (dst_adr >> 8);
 		wbuffer[3] = (uint8_t) dst_adr;
-		wbuffer[4] = dsr_bus;
+		wbuffer[4] = dst_bus;
 
 		wbuffer[5] = 0x80;
 		wbuffer[6] = (uint8_t) (src_adr >> 16);
@@ -552,12 +569,12 @@ void Econet::parse_message()
 	else if(dst_adr == UNKNOWN_HANDLER)
 	{
 		// Filter these for now
-		recognized = true;
+		recognized = false;
 	}
 	else if(src_adr == UNKNOWN_HANDLER)
 	{
 		// Filter these for now
-		recognized = true;
+		recognized = false;
 	}
 	else if(dst_adr == SMARTEC_TRANSLATOR && src_adr == WIFI_MODULE)
 	{
@@ -573,7 +590,7 @@ void Econet::parse_message()
 		ESP_LOGD("econet", "  Command : %d", command);
 		ESP_LOGD("econet", "  Data    : %s", format_hex_pretty((const uint8_t *) pdata, data_len).c_str());
 		
-		if(true)
+		if(false)
 		{
 			if(command == 30)
 			{

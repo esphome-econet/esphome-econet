@@ -145,6 +145,8 @@ class Econet : public Component {
 	uint32_t SMARTEC_TRANSLATOR = 			4160;	// 80 00 10 40
 	uint32_t INTERNAL = 					4736; 	// 80 00 10 40
 	uint32_t HEAT_PUMP_WATER_HEATER =       0x1280;
+	uint32_t AIR_HANDLER = 					0x3c0;
+	uint32_t CONTROL_CENTER = 				0x380;
 
 	uint8_t DST_ADR_POS = 0;
 	uint8_t SRC_ADR_POS = 5;

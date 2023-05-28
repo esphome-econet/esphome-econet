@@ -42,3 +42,5 @@ async def to_code(config):
     	cg.add(var.set_type_id(0))
     if config[CONF_MODEL] == "Heatpump":
     	cg.add(var.set_type_id(1))
+    if config[CONF_MODEL] == "HVAC":
+    	cg.add(var.set_type_id(2))
