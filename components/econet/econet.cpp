@@ -338,13 +338,16 @@ void Econet::make_request()
 
 		// delay(100);
 
-		econet_uart->write_array(wbuffer,wdata_len+14+2);
-		// econet_uart->flush();
-		// delay(100);
+		if(type_id_ != 2)
+		{
+			econet_uart->write_array(wbuffer,wdata_len+14+2);
+			// econet_uart->flush();
+			// delay(100);
 
-		// digitalWrite(0, LOW);
+			// digitalWrite(0, LOW);
 
-		this->parse_tx_message();
+			this->parse_tx_message();
+		}
 
 		// ESP_LOGI("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, wdata_len+14+2).c_str());
 	}
