@@ -29,7 +29,7 @@ climate::ClimateTraits EconetClimate::traits() {
 
 	traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_AUTO});
 	
-	if(this->econet->get_type_id() == 1)
+	if(this->econet->get_type_id() == 1  && false)
 	{
 		traits.add_supported_custom_preset("off");
 		traits.add_supported_custom_preset("eco");
@@ -61,7 +61,7 @@ void EconetClimate::update() {
 			// Off	
 			this->mode = climate::CLIMATE_MODE_OFF;
 		}
-		if(this->econet->get_type_id() == 1)
+		if(this->econet->get_type_id() == 1 && false)
 		{
 			switch((int)this->econet->get_mode())
 			{
@@ -108,9 +108,13 @@ void EconetClimate::control(const climate::ClimateCall &call) {
 	}
 	if(call.get_preset().has_value())
 	{
+		// call.get_preset().value()
 		// Call to this->econet->setMode
-		this->econet->set_new_mode(mode);
+		// this->econet->set_new_mode(mode);
 	}
+	if (call.get_custom_preset().has_value()) {
+		// ESP_LOGI("econet", "Set custom preset: %s", call.get_custom_preset());
+     }
 }
 
 }  // namespace daikin_s21

@@ -339,39 +339,104 @@ void Econet::make_request()
 		// delay(100);
 
 		econet_uart->write_array(wbuffer,wdata_len+14+2);
-		econet_uart->flush();
+		// econet_uart->flush();
 		// delay(100);
 
 		// digitalWrite(0, LOW);
 
-		ESP_LOGD("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, wdata_len+14+2).c_str());
+		this->parse_tx_message();
+
+		// ESP_LOGI("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, wdata_len+14+2).c_str());
 	}
 }
-void Econet::parse_message()
-{      
+void Econet::parse_tx_message()
+{
+	this->parse_message(true);
+}
+void Econet::parse_rx_message()
+{
+	this->parse_message(false);
+}
+void Econet::parse_message(bool is_tx)
+{     
 	bool logvals = true;
 
 	uint8_t pdata[255];
 
-	uint32_t dst_adr = ((buffer[0] & 0x7f) << 24) + (buffer[1] << 16) + (buffer[2] << 8) + buffer[3];
-	uint8_t dst_bus = buffer[4];
-
-	uint32_t src_adr = ((buffer[5] & 0x7f) << 24) + (buffer[6] << 16) + (buffer[7] << 8) + buffer[8];
-	uint8_t src_bus = buffer[9];
-
-	uint8_t data_len = buffer[10];
-
-	uint8_t command = buffer[13];
-
-	uint16_t crc = (buffer[data_len + MSG_HEADER_SIZE]) + (buffer[data_len + MSG_HEADER_SIZE + 1] << 8);
-
-	uint16_t crc_check = gen_crc16(buffer, data_len + 14);
-
-	for(int i = 0; i < data_len; i++)
+	// Receive?
+	uint32_t dst_adr = 0;
+	uint8_t dst_bus = 0;
+	uint32_t src_adr = 0;
+	uint8_t src_bus = 0;
+	uint8_t data_len = 0;
+	uint8_t command = 0;
+	uint16_t crc = 0;
+	uint16_t crc_check = 0;
+	
+	uint16_t pmsg_len = 0; 
+	
+	if(is_tx == false)
 	{
-		pdata[i] = buffer[MSG_HEADER_SIZE + i];
-	}
+		dst_adr = ((buffer[0] & 0x7f) << 24) + (buffer[1] << 16) + (buffer[2] << 8) + buffer[3];
+		dst_bus = buffer[4];
 
+		src_adr = ((buffer[5] & 0x7f) << 24) + (buffer[6] << 16) + (buffer[7] << 8) + buffer[8];
+		src_bus = buffer[9];
+
+		data_len = buffer[10];
+
+		pmsg_len = data_len + MSG_HEADER_SIZE + MSG_CRC_SIZE;
+
+		command = buffer[13];
+
+		crc = (buffer[data_len + MSG_HEADER_SIZE]) + (buffer[data_len + MSG_HEADER_SIZE + 1] << 8);
+
+		crc_check = gen_crc16(buffer, data_len + 14);
+
+		for(int i = 0; i < data_len; i++)
+		{
+			pdata[i] = buffer[MSG_HEADER_SIZE + i];
+		}
+		
+		// data_len + MSG_HEADER_SIZE + MSG_CRC_SIZE
+		
+	}
+	else
+	{
+		dst_adr = ((wbuffer[0] & 0x7f) << 24) + (wbuffer[1] << 16) + (wbuffer[2] << 8) + wbuffer[3];
+		dst_bus = wbuffer[4];
+
+		src_adr = ((wbuffer[5] & 0x7f) << 24) + (wbuffer[6] << 16) + (wbuffer[7] << 8) + wbuffer[8];
+		src_bus = wbuffer[9];
+
+		data_len = wbuffer[10];
+
+		pmsg_len = data_len + MSG_HEADER_SIZE + MSG_CRC_SIZE;
+
+		command = wbuffer[13];
+
+		crc = (wbuffer[data_len + MSG_HEADER_SIZE]) + (wbuffer[data_len + MSG_HEADER_SIZE + 1] << 8);
+
+		crc_check = gen_crc16(wbuffer, data_len + 14);
+
+		for(int i = 0; i < data_len; i++)
+		{
+			pdata[i] = wbuffer[MSG_HEADER_SIZE + i];
+		}
+	}
+	
+	/*
+	
+	uint32_t UNKNOWN_HANDLER =  			241	;	// 80 00 00 F1
+	uint32_t WIFI_MODULE =    				832	;	// 80 00 03 40
+	uint32_t SMARTEC_TRANSLATOR = 			4160;	// 80 00 10 40
+	uint32_t INTERNAL = 					4736; 	// 80 00 10 40
+	uint32_t HEAT_PUMP_WATER_HEATER =       0x1280;
+	uint32_t AIR_HANDLER = 					0x3c0;
+	uint32_t CONTROL_CENTER = 				0x380;
+	
+	*/
+	
 	bool recognized = false;
 
 	uint32_t exp_dst_adr = WIFI_MODULE;
@@ -391,7 +456,7 @@ void Econet::parse_message()
 	
 	if(dst_adr == exp_dst_adr && src_adr == exp_src_adr)
 	{
-		if(command == ACK && msg_len == exp_msg_len)
+		if(command == ACK && pmsg_len == exp_msg_len)
 		{
 			recognized = false;
 
@@ -560,7 +625,7 @@ void Econet::parse_message()
 			// instant_btus_sensor->publish_state(approx_instant_btus/1000);
 
 		}
-		else if(msg_len == 31)
+		else if(pmsg_len == 31)
 		{
 			// recognized = true;
 		}
@@ -583,12 +648,19 @@ void Econet::parse_message()
 
 	if(recognized == false)
 	{
-		ESP_LOGD("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, msg_len).c_str());
-		ESP_LOGD("econet", "  Dst Adr : 0x%x", dst_adr);
-		ESP_LOGD("econet", "  Src Adr : 0x%x", src_adr);
-		ESP_LOGD("econet", "  Length  : %d", data_len);
-		ESP_LOGD("econet", "  Command : %d", command);
-		ESP_LOGD("econet", "  Data    : %s", format_hex_pretty((const uint8_t *) pdata, data_len).c_str());
+		if(is_tx == false)
+		{
+			ESP_LOGI("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, pmsg_len).c_str());
+		}
+		else
+		{
+			ESP_LOGI("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, pmsg_len).c_str());
+		}
+		ESP_LOGI("econet", "  Dst Adr : 0x%x", dst_adr);
+		ESP_LOGI("econet", "  Src Adr : 0x%x", src_adr);
+		ESP_LOGI("econet", "  Length  : %d", data_len);
+		ESP_LOGI("econet", "  Command : %d", command);
+		ESP_LOGI("econet", "  Data    : %s", format_hex_pretty((const uint8_t *) pdata, data_len).c_str());
 		
 		if(false)
 		{
@@ -596,7 +668,7 @@ void Econet::parse_message()
 			{
 				// READ
 				uint8_t type = pdata[0];
-				ESP_LOGD("econet", "  Type    : %d", type);
+				ESP_LOGI("econet", "  Type    : %d", type);
 
 				if(type == 1)
 				{
@@ -727,8 +799,13 @@ void Econet::parse_message()
 }
 void Econet::read_buffer(int bytes_available) {
 
-	// Limit to Read 512 bytes
-	int bytes_to_read = std::min(bytes_available,512);
+	if(bytes_available > 1200)
+	{
+		ESP_LOGI("econet", "BA=%d,LT=%d ms", bytes_available, this->act_loop_time_);
+	}
+
+	// Limit to Read 1200 bytes
+	int bytes_to_read = std::min(bytes_available,1200);
 
 	uint8_t bytes[bytes_to_read];
 
@@ -750,7 +827,10 @@ void Econet::read_buffer(int bytes_available) {
 			}
 			else
 			{
-				// Not the byte we are looking for	
+				buffer[pos] = byte;
+				pos++;
+				// Not the byte we are looking for
+				ESP_LOGI("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, pos).c_str());
 				pos = 0;
 			}
 		}
@@ -763,6 +843,10 @@ void Econet::read_buffer(int bytes_available) {
 			}
 			else
 			{
+				buffer[pos] = byte;
+				pos++;
+				// Not the byte we are looking for
+				ESP_LOGI("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, pos).c_str());
 				// Not the byte we are looking for	
 				// TODO
 				// Loop through and check if we were off by a couple bytes
@@ -785,7 +869,7 @@ void Econet::read_buffer(int bytes_available) {
 		if(pos == msg_len && msg_len != 0 && pos != 0)
 		{
 			// We have a full message
-			this->parse_message();
+			this->parse_rx_message();
 			pos = 0;
 			msg_len = 0;
 			data_len = 0;
@@ -802,6 +886,7 @@ void Econet::loop() {
 	
 	// Read Every 50ms After 10s afer boot
 	if (now - this->last_read_ > 50) {
+		this->act_loop_time_ = now - this->last_read_;
 		this->last_read_ = now;
 		// Read Everything that is in the buffer
 		int bytes_available = econet_uart->available();

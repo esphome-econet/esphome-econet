@@ -43,7 +43,9 @@ class Econet : public Component {
 	bool is_ready() { return this->ready; }
 	void make_request();
 	void read_buffer(int bytes_available);
-	void parse_message();
+	void parse_message(bool is_tx);
+	void parse_rx_message();
+	void parse_tx_message();
 	void set_enable_state(bool state);
 	void set_new_setpoint(float setpoint);
 	void set_new_mode(float mode);
@@ -121,6 +123,7 @@ class Econet : public Component {
 	uint8_t req_id = 0;
 	uint32_t last_request_{0};
 	uint32_t last_read_{0};
+	uint32_t act_loop_time_{0};
 	uint8_t data_len = 0;
 	uint16_t msg_len = 0;
 	int pos = 0;
