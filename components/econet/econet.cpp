@@ -504,22 +504,25 @@ void Econet::parse_message(bool is_tx)
 					
 					if(mflag == true)
 					{
-						char char_arr[str_len];
+						if(str_len > 0)
+						{
+							char char_arr[str_len];
 
-						for (int a = 0; a < str_len; a++) {
-							if(start + a > 0 && start + a < data_len)
-							{
-								char_arr[a] = pdata[start+a];
+							for (int a = 0; a < str_len; a++) {
+								if(start + a > 0 && start + a < data_len)
+								{
+									char_arr[a] = pdata[start+a];
+								}
 							}
+
+							std::string s(char_arr, sizeof(char_arr));
+
+							obj_names.push_back(s);
+
+							ESP_LOGI("econet", "  ValName : %s", s.c_str());
+							
+							start = tpos+1;
 						}
-
-						std::string s(char_arr, sizeof(char_arr));
-
-						obj_names.push_back(s);
-
-						ESP_LOGI("econet", "  ValName : %s", s.c_str());
-						
-						start = tpos+1;
 					}
 				}
 			}
