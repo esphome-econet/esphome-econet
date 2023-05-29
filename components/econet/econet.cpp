@@ -98,6 +98,45 @@ void Econet::dump_config() {
   // ESP_LOGCONFIG(TAG, "  Update interval: %u", this->get_update_interval());
   this->check_uart_settings();
 }
+void Econet::handle_float(uint32_t src_adr, std::string obj_string, float value)
+{
+	if(src_adr == 0x1040)
+	{
+		if(obj_string == "FLOWRATE")
+		{
+			flow_rate = value/3.785;
+		}
+	}
+	else if(src_adr == 0x380)
+	{
+		if(obj_string == "SPT_STAT")
+		{
+			cc_spt_stat = value;
+		}
+		else if(obj_string == "COOLSETP")
+		{
+			cc_cool_setpoint = value;
+		}
+	}
+}
+void Econet::handle_enumerated_text(uint32_t src_adr, std::string obj_string, uint8_t value, std::string text)
+{
+	if(src_adr == 0x1040)
+	{
+
+	}
+	else if(src_adr == 0x380)
+	{
+		if(obj_string == "HVACMODE")
+		{
+			cc_hvacmode = value;
+		}
+		else if(obj_string == "AUTOMODE")
+		{
+			cc_automode = value;
+		}
+	}
+}
 void Econet::make_request()
 {
 	/*
@@ -520,7 +559,7 @@ void Econet::parse_message(bool is_tx)
 
 							obj_names.push_back(s);
 
-							ESP_LOGI("econet", "  ValName : %s", s.c_str());
+							ESP_LOGI("econet", "  %s", s.c_str());
 						}
 						start = tpos+1;
 					}
@@ -565,6 +604,7 @@ void Econet::parse_message(bool is_tx)
 					
 					if(item_num < read_req.obj_names.size())
 					{
+						handle_float(src_adr, read_req.obj_names[item_num], item_value);
 						ESP_LOGI("econet", "  %s : %f", read_req.obj_names[item_num].c_str(), item_value);
 					}
 				}
@@ -590,6 +630,7 @@ void Econet::parse_message(bool is_tx)
 						std::string s(char_arr, sizeof(char_arr));
 						if(item_num < read_req.obj_names.size())
 						{
+							handle_enumerated_text(src_adr, read_req.obj_names[item_num], item_value, s);
 							ESP_LOGI("econet", "  %s : %d (%s)", read_req.obj_names[item_num].c_str(), item_value, s.c_str());
 						}
 					}
@@ -661,7 +702,7 @@ void Econet::parse_message(bool is_tx)
 					{
 						if(item_num == 1)
 						{
-							flow_rate = item_value/3.785;
+							// flow_rate = item_value/3.785;
 						}
 						else if(item_num == 2)
 						{

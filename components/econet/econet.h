@@ -83,6 +83,11 @@ class Econet : public Component {
 		else return this->setpoint;
 	}
 	
+	float get_cc_hvacmode() { return this->cc_hvacmode; }
+	float get_cc_spt_stat() { return this->cc_spt_stat; }
+	float get_cc_cool_setpoint() { return this->cc_cool_setpoint; }
+	float get_cc_automode() { return this->cc_automode; }
+	
 	void register_listener(uint8_t datapoint_id, const std::function<void(float)> &func);
 	
  protected:
@@ -93,6 +98,9 @@ class Econet : public Component {
 	void dump_state();
 	void check_uart_settings();
 	void send_datapoint(uint8_t datapoint_id, float value);
+
+	void handle_float(uint32_t src_adr, std::string obj_string, float value);
+	void handle_enumerated_text(uint32_t src_adr, std::string obj_string, uint8_t value, std::string text);
 
 	uart::UARTComponent *econet_uart{nullptr};
 	bool ready = true;
@@ -124,6 +132,11 @@ class Econet : public Component {
 	float current_temp = 0;
 	
 	float mode = 0;
+	
+	float cc_hvacmode = 0;
+	float cc_spt_stat = 0;
+	float cc_cool_setpoint = 0;
+	float cc_automode = 0;
 	
 	uint8_t req_id = 0;
 	uint32_t last_request_{0};

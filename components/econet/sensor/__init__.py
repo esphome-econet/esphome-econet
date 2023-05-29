@@ -43,6 +43,11 @@ CONF_EVAPTEMP = "evap_temp"
 CONF_SUCTIONT = "suction_temp"
 CONF_DISCTEMP = "discharge_temp"
 
+CONF_CC_HVACMODE = "cc_hvacmode"
+CONF_CC_SPT_STAT = "cc_spt_stat"
+CONF_CC_COOLSETP = "cc_coolsetp"
+CONF_CC_AUTOMODE = "cc_automode"
+
 CONFIG_SCHEMA = (
     cv.COMPONENT_SCHEMA.extend(
         {
@@ -187,6 +192,40 @@ CONFIG_SCHEMA = (
                 state_class=STATE_CLASS_MEASUREMENT,
             )
         },
+        {
+            cv.GenerateID(): cv.declare_id(EconetSensor),
+            cv.Optional(CONF_CC_SPT_STAT): sensor.sensor_schema(
+                unit_of_measurement="°F",
+                icon=ICON_THERMOMETER,
+                accuracy_decimals=1,
+                device_class=DEVICE_CLASS_TEMPERATURE,
+                state_class=STATE_CLASS_MEASUREMENT,
+            )
+        },
+        {
+            cv.GenerateID(): cv.declare_id(EconetSensor),
+            cv.Optional(CONF_CC_COOLSETP): sensor.sensor_schema(
+                unit_of_measurement="°F",
+                icon=ICON_THERMOMETER,
+                accuracy_decimals=1,
+                device_class=DEVICE_CLASS_TEMPERATURE,
+                state_class=STATE_CLASS_MEASUREMENT,
+            )
+        },
+		{
+            cv.GenerateID(): cv.declare_id(EconetSensor),
+            cv.Optional(CONF_CC_HVACMODE): sensor.sensor_schema(
+                unit_of_measurement="",
+                accuracy_decimals=0,
+            )
+        },
+		{
+            cv.GenerateID(): cv.declare_id(EconetSensor),
+            cv.Optional(CONF_CC_AUTOMODE): sensor.sensor_schema(
+                unit_of_measurement="",
+                accuracy_decimals=0,
+            )
+        }
     )
     .extend(ECONET_CLIENT_SCHEMA)
     .extend(cv.polling_component_schema("5s"))
@@ -251,3 +290,15 @@ async def to_code(config):
     if CONF_DISCTEMP in config:
         sens = await sensor.new_sensor(config[CONF_DISCTEMP])
         cg.add(var.set_discharge_temp_sensor(sens))
+    if CONF_CC_HVACMODE in config:
+        sens = await sensor.new_sensor(config[CONF_CC_HVACMODE])
+        cg.add(var.set_cc_hvacmode_sensor(sens))
+    if CONF_CC_SPT_STAT in config:
+        sens = await sensor.new_sensor(config[CONF_CC_SPT_STAT])
+        cg.add(var.set_cc_spt_stat_sensor(sens))
+    if CONF_CC_COOLSETP in config:
+        sens = await sensor.new_sensor(config[CONF_CC_COOLSETP])
+        cg.add(var.set_cc_coolsetp_sensor(sens))
+    if CONF_CC_AUTOMODE in config:
+        sens = await sensor.new_sensor(config[CONF_CC_AUTOMODE])
+        cg.add(var.set_cc_automode_sensor(sens))
