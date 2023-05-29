@@ -123,7 +123,9 @@ class Econet : public Component {
 	uint8_t req_id = 0;
 	uint32_t last_request_{0};
 	uint32_t last_read_{0};
+	uint32_t last_read_data_{0};
 	uint32_t act_loop_time_{0};
+	int quiet_counter = 0;
 	uint8_t data_len = 0;
 	uint16_t msg_len = 0;
 	int pos = 0;

@@ -348,6 +348,10 @@ void Econet::make_request()
 
 			this->parse_tx_message();
 		}
+		else
+		{
+			
+		}
 
 		// ESP_LOGI("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, wdata_len+14+2).c_str());
 	}
@@ -888,7 +892,7 @@ void Econet::loop() {
 	bool flag = false;
 	
 	// Read Every 50ms After 10s afer boot
-	if (now - this->last_read_ > 50) {
+	if (now - this->last_read_ > 10) {
 		this->act_loop_time_ = now - this->last_read_;
 		this->last_read_ = now;
 		// Read Everything that is in the buffer
@@ -896,20 +900,30 @@ void Econet::loop() {
 
 		if(bytes_available > 0)
 		{
+			this->last_read_data_ = now;
+			ESP_LOGI("econet", "Read %d. ms=%d, lt=%d", bytes_available, now, act_loop_time_);
 			flag = true;
 			this->read_buffer(bytes_available);
 		}
-		if(flag == false)
+		else
+		{
+			// ESP_LOGI("econet", "--- millis()=%d", now);
+		}
+		if (now - this->last_read_data_ > 100)
 		{
 			// Bus is Assumbed Available For Sending
 			// This currently attempts a request every 1000ms
 			if (now - this->last_request_ > 1000) {
-				this->last_request_ = now;
-				this->make_request();
-				req_id++;
-				if(req_id > 0)
+				if(type_id_ != 2)
 				{
-					req_id = 0;	
+					ESP_LOGI("econet", "request ms=%d", now);
+					this->last_request_ = now;
+					this->make_request();
+					req_id++;
+					if(req_id > 0)
+					{
+						req_id = 0;	
+					}
 				}
 			}
 		}
