@@ -36,7 +36,7 @@ Cut the connector off one one end of the RJ11/12 cable, then strip and connect t
             2  ---       +--+      
 Red     B   3  ---          |     
 Green   A   4  ---          |        
-Yellow  GND 6  ---       +--+
+Yellow  GND 5  ---       +--+
             6  ---       |
                +---------+
 ```
