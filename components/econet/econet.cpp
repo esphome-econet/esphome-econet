@@ -432,6 +432,175 @@ void Econet::parse_message(bool is_tx)
 		}
 	}
 	
+	if(is_tx == false)
+	{
+		ESP_LOGI("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, pmsg_len).c_str());
+	}
+	else
+	{
+		ESP_LOGI("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, pmsg_len).c_str());
+	}
+	ESP_LOGI("econet", "  Dst Adr : 0x%x", dst_adr);
+	ESP_LOGI("econet", "  Src Adr : 0x%x", src_adr);
+	ESP_LOGI("econet", "  Length  : %d", data_len);
+	ESP_LOGI("econet", "  Command : %d", command);
+	ESP_LOGI("econet", "  Data    : %s", format_hex_pretty((const uint8_t *) pdata, data_len).c_str());
+	
+	// Track Read Requests
+	if(command == READ_COMMAND)
+	{
+		uint8_t type = pdata[0];
+		uint8_t prop_type = pdata[1];
+		
+		ESP_LOGI("econet", "  Type    : %d", type);
+		ESP_LOGI("econet", "  PropType: %d", prop_type);
+		
+		std::vector<std::string> obj_names;
+		
+		if(type == 1)
+		{
+			if(prop_type == 1)
+			{
+				// pdata[2] = 0
+				// pdata[3] = 0
+				char char_arr[data_len - 4];
+
+				for (int a = 0; a < data_len - 4; a++) {
+					char_arr[a] = pdata[a+4];
+				}
+
+				std::string s(char_arr, sizeof(char_arr));
+
+				obj_names.push_back(s);
+
+				ESP_LOGI("econet", "  ValName : %s", s.c_str());
+			}
+			else
+			{
+				ESP_LOGI("econet", "  Don't Currently Support This Property Type", prop_type);
+			}
+		}
+		else if(type == 2)
+		{
+			if(prop_type == 1)
+			{
+				int start = 4;
+				int end = -1;
+				int str_len = -1;
+				for(int tpos = 5; tpos < data_len; tpos++)
+				{
+					bool mflag = false;
+					if(pdata[tpos-1] == 0 && pdata[tpos] == 0)
+					{
+						// This detects a 00 00 
+						str_len = tpos - start - 1;
+						mflag = true;
+					}
+					if(tpos + 1 >= data_len)
+					{
+						str_len = tpos - start;
+						mflag = true;
+					}
+					
+					if(mflag == true)
+					{
+						char char_arr[str_len];
+
+						for (int a = 0; a < str_len; a++) {
+							if(start + a > 0 && start + a < data_len)
+							{
+								char_arr[a] = pdata[start+a];
+							}
+						}
+
+						std::string s(char_arr, sizeof(char_arr));
+
+						obj_names.push_back(s);
+
+						ESP_LOGI("econet", "  ValName : %s", s.c_str());
+						
+						start = tpos+1;
+					}
+				}
+			}
+			else
+			{
+				ESP_LOGI("econet", "  Don't Currently Support This Property Type", prop_type);
+			}
+			
+			read_req.dst_adr = dst_adr;
+			read_req.src_adr = src_adr;
+			read_req.obj_names = obj_names;
+			read_req.awaiting_res = true;
+		}
+		else
+		{
+			ESP_LOGI("econet", "  Don't Currently Support This Class Type", type);
+		}
+		// tuple<uint32_t, uint32_t> req_tup(dst_adr,src_adr);
+		
+		// read_reqs
+		// This is a read request so let's track it so that when an ACK/response comes to this we know what data it is!
+		// for(
+		// read_reqs_
+	}
+	else if(command == ACK)
+	{
+		if(read_req.dst_adr == src_adr && read_req.src_adr == dst_adr && read_req.awaiting_res == true)
+		{
+			int tpos = 0;
+			uint8_t item_num = 0;
+
+			while(tpos < data_len)
+			{
+				uint8_t item_len = pdata[tpos];
+				uint8_t item_type = pdata[tpos+1] & 0x7F;
+
+				if(item_type == 0)
+				{
+					float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
+					
+					if(item_num < read_req.obj_names.size())
+					{
+						ESP_LOGI("econet", "  %s : %f", read_req.obj_names[item_num].c_str(), item_value);
+					}
+				}
+				else if(item_type == 2)
+				{
+					// Enumerated Text
+
+					uint8_t item_value = pdata[tpos+4];
+
+					uint8_t item_text_len = pdata[tpos+5];
+
+					char char_arr[item_text_len];
+
+					for (int a = 0; a < item_text_len; a++) {
+						char_arr[a] = pdata[tpos+a+6];
+					}
+
+					std::string s(char_arr, sizeof(char_arr));
+					if(item_num < read_req.obj_names.size())
+					{
+						ESP_LOGI("econet", "  %s : %d (%s)", read_req.obj_names[item_num].c_str(), item_value, s.c_str());
+					}
+				}
+				tpos += item_len+1;
+				item_num++;
+			}
+			
+			// This is likely the response to our request and now we "know" what was requested!
+			// ESP_LOGI("econet", "  RESPONSE RECEIVED!!!");
+			// for(int a = 0; a < read_req.obj_names.size(); a++)
+			// {
+				// ESP_LOGI("econet", "  ValName : %s", read_req.obj_names[a].c_str());
+			// }
+			read_req.awaiting_res = false;			
+		}
+	}
+	
+	
+	
 	/*
 	
 	uint32_t UNKNOWN_HANDLER =  			241	;	// 80 00 00 F1
@@ -655,19 +824,7 @@ void Econet::parse_message(bool is_tx)
 
 	if(recognized == false)
 	{
-		if(is_tx == false)
-		{
-			ESP_LOGI("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, pmsg_len).c_str());
-		}
-		else
-		{
-			ESP_LOGI("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, pmsg_len).c_str());
-		}
-		ESP_LOGI("econet", "  Dst Adr : 0x%x", dst_adr);
-		ESP_LOGI("econet", "  Src Adr : 0x%x", src_adr);
-		ESP_LOGI("econet", "  Length  : %d", data_len);
-		ESP_LOGI("econet", "  Command : %d", command);
-		ESP_LOGI("econet", "  Data    : %s", format_hex_pretty((const uint8_t *) pdata, data_len).c_str());
+
 		
 		if(false)
 		{

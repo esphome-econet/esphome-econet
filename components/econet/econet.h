@@ -3,21 +3,24 @@
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
 #include "esphome/core/helpers.h"
+#include <map>
 
 namespace esphome {
 namespace econet {
 
 class ReadRequest {
-	uint32_t dst_adr;
-	uint8_t dst_bus;
-	
-	uint32_t src_adr;
-	uint8_t src_bus;
-	
-	uint8_t read_class;
-	uint8_t read_prop;
-	
-	std::vector<std::string> obj_names;
+	public:
+		uint32_t dst_adr;
+		uint8_t dst_bus;
+		
+		uint32_t src_adr;
+		uint8_t src_bus;
+		
+		bool awaiting_res = false;
+		// uint8_t read_class;
+		// uint8_t read_prop;
+		
+		std::vector<std::string> obj_names;
 };
 	
 enum class EconetClimateMode : uint8_t {
@@ -85,6 +88,8 @@ class Econet : public Component {
  protected:
 	uint8_t type_id_{0};
 	std::vector<DatapointListener> listeners_;
+	ReadRequest read_req; // dst_adr
+	// std::vector<ReadRequest> read_reqs_;
 	void dump_state();
 	void check_uart_settings();
 	void send_datapoint(uint8_t datapoint_id, float value);
