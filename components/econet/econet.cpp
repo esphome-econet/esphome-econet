@@ -440,6 +440,7 @@ void Econet::parse_message(bool is_tx)
 	{
 		ESP_LOGI("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, pmsg_len).c_str());
 	}
+	
 	ESP_LOGI("econet", "  Dst Adr : 0x%x", dst_adr);
 	ESP_LOGI("econet", "  Src Adr : 0x%x", src_adr);
 	ESP_LOGI("econet", "  Length  : %d", data_len);
@@ -520,9 +521,8 @@ void Econet::parse_message(bool is_tx)
 							obj_names.push_back(s);
 
 							ESP_LOGI("econet", "  ValName : %s", s.c_str());
-							
-							start = tpos+1;
 						}
+						start = tpos+1;
 					}
 				}
 			}
