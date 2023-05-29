@@ -473,7 +473,7 @@ void Econet::parse_message(bool is_tx)
 
 				obj_names.push_back(s);
 
-				ESP_LOGI("econet", "  ValName : %s", s.c_str());
+				ESP_LOGI("econet", "  %s", s.c_str());
 			}
 			else
 			{
@@ -556,7 +556,7 @@ void Econet::parse_message(bool is_tx)
 				uint8_t item_len = pdata[tpos];
 				uint8_t item_type = pdata[tpos+1] & 0x7F;
 
-				if(item_type == 0)
+				if(item_type == 0 && tpos+7 < data_len)
 				{
 					float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
 					
@@ -565,7 +565,7 @@ void Econet::parse_message(bool is_tx)
 						ESP_LOGI("econet", "  %s : %f", read_req.obj_names[item_num].c_str(), item_value);
 					}
 				}
-				else if(item_type == 2)
+				else if(item_type == 2 && tpos+5 < data_len)
 				{
 					// Enumerated Text
 
@@ -573,16 +573,22 @@ void Econet::parse_message(bool is_tx)
 
 					uint8_t item_text_len = pdata[tpos+5];
 
-					char char_arr[item_text_len];
-
-					for (int a = 0; a < item_text_len; a++) {
-						char_arr[a] = pdata[tpos+a+6];
-					}
-
-					std::string s(char_arr, sizeof(char_arr));
-					if(item_num < read_req.obj_names.size())
+					if(item_text_len > 0)
 					{
-						ESP_LOGI("econet", "  %s : %d (%s)", read_req.obj_names[item_num].c_str(), item_value, s.c_str());
+						char char_arr[item_text_len];
+
+						for (int a = 0; a < item_text_len; a++) {
+							if(tpos+a+6 < data_len)
+							{
+								char_arr[a] = pdata[tpos+a+6];
+							}
+						}
+
+						std::string s(char_arr, sizeof(char_arr));
+						if(item_num < read_req.obj_names.size())
+						{
+							ESP_LOGI("econet", "  %s : %d (%s)", read_req.obj_names[item_num].c_str(), item_value, s.c_str());
+						}
 					}
 				}
 				tpos += item_len+1;
