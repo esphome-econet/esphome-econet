@@ -179,9 +179,9 @@ void Econet::make_request()
 	// num_of_strs = 1;
 	
 	uint8_t command = READ_COMMAND;
-	uint16_t wdata_len = 4+10*num_of_strs;
+	uint16_t wdata_len = 4+10*num_of_strs - 2;
 
-	if(type_id_ == 2 && num_of_strs == 1) wdata_len = wdata_len-2;
+	// if(type_id_ == 2 && num_of_strs == 1) wdata_len = wdata_len-2;
 	
 	std::vector<uint8_t> data(wdata_len);
 	
@@ -499,7 +499,7 @@ void Econet::parse_message(bool is_tx)
 					}
 					if(tpos + 1 >= data_len)
 					{
-						str_len = tpos - start;
+						str_len = tpos - start + 1;
 						mflag = true;
 					}
 					
