@@ -98,6 +98,59 @@ void Econet::dump_config() {
   // ESP_LOGCONFIG(TAG, "  Update interval: %u", this->get_update_interval());
   this->check_uart_settings();
 }
+<<<<<<< Updated upstream
+=======
+void Econet::handle_float(uint32_t src_adr, std::string obj_string, float value)
+{
+	if(src_adr == 0x1040)
+	{
+		if(obj_string == "FLOWRATE")
+		{
+			flow_rate = value/3.785;
+		}
+	}
+	else if(src_adr == 0x380)
+	{
+		if(obj_string == "SPT_STAT")
+		{
+			cc_spt_stat = value;
+		}
+		else if(obj_string == "COOLSETP")
+		{
+			cc_cool_setpoint = value;
+		}
+	}
+}
+void Econet::handle_enumerated_text(uint32_t src_adr, std::string obj_string, uint8_t value, std::string text)
+{
+	if(src_adr == 0x1040)
+	{
+
+	}
+	else if(src_adr == 0x380)
+	{
+		if(obj_string == "HVACMODE")
+		{
+			cc_hvacmode = value;
+		}
+		else if(obj_string == "AUTOMODE")
+		{
+			cc_automode = value;
+		}
+	}
+}
+void Econet::handle_text(uint32_t src_adr, std::string obj_string, std::string text)
+{
+	if(src_adr == 0x1040)
+	{
+
+	}
+	else if(src_adr == 0x380)
+	{
+
+	}
+}
+>>>>>>> Stashed changes
 void Econet::make_request()
 {
 	/*
@@ -425,6 +478,214 @@ void Econet::parse_message(bool is_tx)
 		}
 	}
 	
+<<<<<<< Updated upstream
+=======
+	if(is_tx == false)
+	{
+		ESP_LOGI("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, pmsg_len).c_str());
+	}
+	else
+	{
+		ESP_LOGI("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, pmsg_len).c_str());
+	}
+	
+	ESP_LOGI("econet", "  Dst Adr : 0x%x", dst_adr);
+	ESP_LOGI("econet", "  Src Adr : 0x%x", src_adr);
+	ESP_LOGI("econet", "  Length  : %d", data_len);
+	ESP_LOGI("econet", "  Command : %d", command);
+	ESP_LOGI("econet", "  Data    : %s", format_hex_pretty((const uint8_t *) pdata, data_len).c_str());
+	
+	// Track Read Requests
+	if(command == READ_COMMAND)
+	{
+		uint8_t type = pdata[0];
+		uint8_t prop_type = pdata[1];
+		
+		ESP_LOGI("econet", "  Type    : %d", type);
+		ESP_LOGI("econet", "  PropType: %d", prop_type);
+		
+		std::vector<std::string> obj_names;
+		
+		if(type == 1)
+		{
+			if(prop_type == 1)
+			{
+				// pdata[2] = 0
+				// pdata[3] = 0
+				char char_arr[data_len - 4];
+
+				for (int a = 0; a < data_len - 4; a++) {
+					char_arr[a] = pdata[a+4];
+				}
+
+				std::string s(char_arr, sizeof(char_arr));
+
+				obj_names.push_back(s);
+
+				ESP_LOGI("econet", "  %s", s.c_str());
+			}
+			else
+			{
+				ESP_LOGI("econet", "  Don't Currently Support This Property Type", prop_type);
+			}
+		}
+		else if(type == 2)
+		{
+			if(prop_type == 1)
+			{
+				int start = 4;
+				int end = -1;
+				int str_len = -1;
+				for(int tpos = 5; tpos < data_len; tpos++)
+				{
+					bool mflag = false;
+					if(pdata[tpos-1] == 0 && pdata[tpos] == 0)
+					{
+						// This detects a 00 00 
+						str_len = tpos - start - 1;
+						mflag = true;
+					}
+					if(tpos + 1 >= data_len)
+					{
+						str_len = tpos - start + 1;
+						mflag = true;
+					}
+					
+					if(mflag == true)
+					{
+						if(str_len > 0)
+						{
+							char char_arr[str_len];
+
+							for (int a = 0; a < str_len; a++) {
+								if(start + a > 0 && start + a < data_len)
+								{
+									char_arr[a] = pdata[start+a];
+								}
+							}
+
+							std::string s(char_arr, sizeof(char_arr));
+
+							obj_names.push_back(s);
+
+							ESP_LOGI("econet", "  %s", s.c_str());
+						}
+						start = tpos+1;
+					}
+				}
+			}
+			else
+			{
+				ESP_LOGI("econet", "  Don't Currently Support This Property Type", prop_type);
+			}
+			
+			read_req.dst_adr = dst_adr;
+			read_req.src_adr = src_adr;
+			read_req.obj_names = obj_names;
+			read_req.awaiting_res = true;
+		}
+		else
+		{
+			ESP_LOGI("econet", "  Don't Currently Support This Class Type", type);
+		}
+		// tuple<uint32_t, uint32_t> req_tup(dst_adr,src_adr);
+		
+		// read_reqs
+		// This is a read request so let's track it so that when an ACK/response comes to this we know what data it is!
+		// for(
+		// read_reqs_
+	}
+	else if(command == ACK)
+	{
+		if(read_req.dst_adr == src_adr && read_req.src_adr == dst_adr && read_req.awaiting_res == true)
+		{
+			int tpos = 0;
+			uint8_t item_num = 0;
+
+			while(tpos < data_len)
+			{
+				uint8_t item_len = pdata[tpos];
+				uint8_t item_type = pdata[tpos+1] & 0x7F;
+
+				if(item_type == 0 && tpos+7 < data_len)
+				{
+					float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
+					
+					if(item_num < read_req.obj_names.size())
+					{
+						handle_float(src_adr, read_req.obj_names[item_num], item_value);
+						ESP_LOGI("econet", "  %s : %f", read_req.obj_names[item_num].c_str(), item_value);
+					}
+				}
+				else if(item_type == 1)
+				{
+					// Decode text only
+					uint8_t item_text_len = item_len - 4;
+					
+					if(item_text_len > 0)
+					{
+						char char_arr[item_text_len];
+						
+						for (int a = 0; a < item_text_len; a++) {
+							if(tpos+a+4 < data_len)
+							{
+								char_arr[a] = pdata[tpos+a+4];
+							}
+						}
+						
+						std::string s(char_arr, sizeof(char_arr));
+						
+						if(item_num < read_req.obj_names.size())
+						{
+							handle_text(src_adr, read_req.obj_names[item_num], s);
+							ESP_LOGI("econet", "  %s : (%s)", read_req.obj_names[item_num].c_str(), s.c_str());
+						}
+					}
+				}
+				else if(item_type == 2 && tpos+5 < data_len)
+				{
+					// Enumerated Text
+
+					uint8_t item_value = pdata[tpos+4];
+
+					uint8_t item_text_len = pdata[tpos+5];
+
+					if(item_text_len > 0)
+					{
+						char char_arr[item_text_len];
+
+						for (int a = 0; a < item_text_len; a++) {
+							if(tpos+a+6 < data_len)
+							{
+								char_arr[a] = pdata[tpos+a+6];
+							}
+						}
+
+						std::string s(char_arr, sizeof(char_arr));
+						if(item_num < read_req.obj_names.size())
+						{
+							handle_enumerated_text(src_adr, read_req.obj_names[item_num], item_value, s);
+							ESP_LOGI("econet", "  %s : %d (%s)", read_req.obj_names[item_num].c_str(), item_value, s.c_str());
+						}
+					}
+				}
+				tpos += item_len+1;
+				item_num++;
+			}
+			
+			// This is likely the response to our request and now we "know" what was requested!
+			// ESP_LOGI("econet", "  RESPONSE RECEIVED!!!");
+			// for(int a = 0; a < read_req.obj_names.size(); a++)
+			// {
+				// ESP_LOGI("econet", "  ValName : %s", read_req.obj_names[a].c_str());
+			// }
+			read_req.awaiting_res = false;			
+		}
+	}
+	
+	
+	
+>>>>>>> Stashed changes
 	/*
 	
 	uint32_t UNKNOWN_HANDLER =  			241	;	// 80 00 00 F1
@@ -900,7 +1161,13 @@ void Econet::loop() {
 		{
 			// Bus is Assumbed Available For Sending
 			// This currently attempts a request every 1000ms
+<<<<<<< Updated upstream
 			if (now - this->last_request_ > 1000) {
+=======
+			if (now - this->last_request_ > 1000 && type_id_ != 2)
+			{
+				ESP_LOGI("econet", "request ms=%d", now);
+>>>>>>> Stashed changes
 				this->last_request_ = now;
 				this->make_request();
 				req_id++;
@@ -908,6 +1175,67 @@ void Econet::loop() {
 				{
 					req_id = 0;	
 				}
+			}
+			if(now - this->last_request_ > 10000 && type_id_ == 2 && do_once == false)
+			{
+				do_once = true;
+				// wbuffer
+				
+				std::vector<uint8_t> data;
+				
+				std::vector<uint8_t> announce1 = {0x80,0x00,0x00,0xF1,0x00,0x80,0x00,0x03,0x80,0x00,0x0A,0x00,0x00,0x1F,0x08,0x06,0x0A,0x19,0x10,0x17,0x29,0x29,0x77,0xA9,0xAF,0xED};
+				std::vector<uint8_t> announce2 = {0x80,0x00,0x03,0x80,0x00,0x80,0x00,0x00,0xF1,0x00,0x01,0x00,0x00,0x06,0x00,0x5E,0x9A};
+				// Send this twice
+				std::vector<uint8_t> announce3 = {0x80,0x00,0x00,0xF1,0x00,0x80,0x00,0x03,0x80,0x00,0x06,0x00,0x01,0x1F,0x09,0x01,0x00,0x00,0x03,0x80,0x7E,0xBB};
+				
+				data = announce1;
+				
+				for(int i=0; i < data.size(); i++)
+				{
+					wbuffer[i] = data[i];
+				}
+				
+				parse_tx_message();
+				
+				econet_uart->write_array(wbuffer,data.size());
+				
+				data = announce2;
+				
+				for(int i=0; i < data.size(); i++)
+				{
+					wbuffer[i] = data[i];
+				}
+				
+				parse_tx_message();
+				
+				econet_uart->write_array(wbuffer,data.size());
+				
+				data = announce3;
+				
+				for(int i=0; i < data.size(); i++)
+				{
+					wbuffer[i] = data[i];
+				}
+				
+				parse_tx_message();
+				
+				econet_uart->write_array(wbuffer,data.size());
+				
+				data = announce3;
+				
+				for(int i=0; i < data.size(); i++)
+				{
+					wbuffer[i] = data[i];
+				}
+				
+				parse_tx_message();
+				
+				econet_uart->write_array(wbuffer,data.size());
+				
+				// 80.00.00.F1.00.80.00.03.80.00.0A.00.00.1F.08.06.0A.19.10.17.29.29.77.A9.AF.ED
+				// 80.00.03.80.00.80.00.00.F1.00.01.00.00.06.00.5E.9A
+				// 80.00.00.F1.00.80.00.03.80.00.06.00.01.1F.09.01.00.00.03.80.7E.BB
+				// 80.00.00.F1.00.80.00.03.80.00.06.00.01.1F.09.01.00.00.03.80.7E.BB
 			}
 		}
 	}

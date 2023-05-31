@@ -89,6 +89,13 @@ class Econet : public Component {
 	void check_uart_settings();
 	void send_datapoint(uint8_t datapoint_id, float value);
 
+<<<<<<< Updated upstream
+=======
+	void handle_float(uint32_t src_adr, std::string obj_string, float value);
+	void handle_enumerated_text(uint32_t src_adr, std::string obj_string, uint8_t value, std::string text);
+	void handle_text(uint32_t src_adr, std::string obj_string, std::string text);
+	
+>>>>>>> Stashed changes
 	uart::UARTComponent *econet_uart{nullptr};
 	bool ready = true;
 	
@@ -107,6 +114,7 @@ class Econet : public Component {
 	bool heatctrl = false;
 	bool fan_ctrl = false;
 	bool comp_rly = false;
+	bool do_once = false;
 	
 	float ambient_temp = 0;
 	float lower_water_heater_temp = 0;
