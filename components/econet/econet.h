@@ -3,21 +3,24 @@
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
 #include "esphome/core/helpers.h"
+#include <map>
 
 namespace esphome {
 namespace econet {
 
 class ReadRequest {
-	uint32_t dst_adr;
-	uint8_t dst_bus;
-	
-	uint32_t src_adr;
-	uint8_t src_bus;
-	
-	uint8_t read_class;
-	uint8_t read_prop;
-	
-	std::vector<std::string> obj_names;
+	public:
+		uint32_t dst_adr;
+		uint8_t dst_bus;
+		
+		uint32_t src_adr;
+		uint8_t src_bus;
+		
+		bool awaiting_res = false;
+		// uint8_t read_class;
+		// uint8_t read_prop;
+		
+		std::vector<std::string> obj_names;
 };
 	
 enum class EconetClimateMode : uint8_t {
@@ -80,22 +83,26 @@ class Econet : public Component {
 		else return this->setpoint;
 	}
 	
+	float get_cc_hvacmode() { return this->cc_hvacmode; }
+	float get_cc_spt_stat() { return this->cc_spt_stat; }
+	float get_cc_cool_setpoint() { return this->cc_cool_setpoint; }
+	float get_cc_automode() { return this->cc_automode; }
+	
 	void register_listener(uint8_t datapoint_id, const std::function<void(float)> &func);
 	
  protected:
 	uint8_t type_id_{0};
 	std::vector<DatapointListener> listeners_;
+	ReadRequest read_req; // dst_adr
+	// std::vector<ReadRequest> read_reqs_;
 	void dump_state();
 	void check_uart_settings();
 	void send_datapoint(uint8_t datapoint_id, float value);
 
-<<<<<<< Updated upstream
-=======
 	void handle_float(uint32_t src_adr, std::string obj_string, float value);
 	void handle_enumerated_text(uint32_t src_adr, std::string obj_string, uint8_t value, std::string text);
 	void handle_text(uint32_t src_adr, std::string obj_string, std::string text);
 	
->>>>>>> Stashed changes
 	uart::UARTComponent *econet_uart{nullptr};
 	bool ready = true;
 	
@@ -128,10 +135,17 @@ class Econet : public Component {
 	
 	float mode = 0;
 	
+	float cc_hvacmode = 0;
+	float cc_spt_stat = 0;
+	float cc_cool_setpoint = 0;
+	float cc_automode = 0;
+	
 	uint8_t req_id = 0;
 	uint32_t last_request_{0};
 	uint32_t last_read_{0};
+	uint32_t last_read_data_{0};
 	uint32_t act_loop_time_{0};
+	int quiet_counter = 0;
 	uint8_t data_len = 0;
 	uint16_t msg_len = 0;
 	int pos = 0;

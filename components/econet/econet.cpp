@@ -98,8 +98,6 @@ void Econet::dump_config() {
   // ESP_LOGCONFIG(TAG, "  Update interval: %u", this->get_update_interval());
   this->check_uart_settings();
 }
-<<<<<<< Updated upstream
-=======
 void Econet::handle_float(uint32_t src_adr, std::string obj_string, float value)
 {
 	if(src_adr == 0x1040)
@@ -150,7 +148,6 @@ void Econet::handle_text(uint32_t src_adr, std::string obj_string, std::string t
 
 	}
 }
->>>>>>> Stashed changes
 void Econet::make_request()
 {
 	/*
@@ -232,9 +229,9 @@ void Econet::make_request()
 	// num_of_strs = 1;
 	
 	uint8_t command = READ_COMMAND;
-	uint16_t wdata_len = 4+10*num_of_strs;
+	uint16_t wdata_len = 4+10*num_of_strs - 2;
 
-	if(type_id_ == 2 && num_of_strs == 1) wdata_len = wdata_len-2;
+	// if(type_id_ == 2 && num_of_strs == 1) wdata_len = wdata_len-2;
 	
 	std::vector<uint8_t> data(wdata_len);
 	
@@ -391,13 +388,20 @@ void Econet::make_request()
 
 		// delay(100);
 
-		econet_uart->write_array(wbuffer,wdata_len+14+2);
-		// econet_uart->flush();
-		// delay(100);
+		if(type_id_ != 2)
+		{
+			econet_uart->write_array(wbuffer,wdata_len+14+2);
+			// econet_uart->flush();
+			// delay(100);
 
-		// digitalWrite(0, LOW);
+			// digitalWrite(0, LOW);
 
-		this->parse_tx_message();
+			this->parse_tx_message();
+		}
+		else
+		{
+			
+		}
 
 		// ESP_LOGI("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, wdata_len+14+2).c_str());
 	}
@@ -478,8 +482,6 @@ void Econet::parse_message(bool is_tx)
 		}
 	}
 	
-<<<<<<< Updated upstream
-=======
 	if(is_tx == false)
 	{
 		ESP_LOGI("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, pmsg_len).c_str());
@@ -685,7 +687,6 @@ void Econet::parse_message(bool is_tx)
 	
 	
 	
->>>>>>> Stashed changes
 	/*
 	
 	uint32_t UNKNOWN_HANDLER =  			241	;	// 80 00 00 F1
@@ -737,7 +738,7 @@ void Econet::parse_message(bool is_tx)
 					{
 						if(item_num == 1)
 						{
-							flow_rate = item_value/3.785;
+							// flow_rate = item_value/3.785;
 						}
 						else if(item_num == 2)
 						{
@@ -909,19 +910,7 @@ void Econet::parse_message(bool is_tx)
 
 	if(recognized == false)
 	{
-		if(is_tx == false)
-		{
-			ESP_LOGI("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, pmsg_len).c_str());
-		}
-		else
-		{
-			ESP_LOGI("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, pmsg_len).c_str());
-		}
-		ESP_LOGI("econet", "  Dst Adr : 0x%x", dst_adr);
-		ESP_LOGI("econet", "  Src Adr : 0x%x", src_adr);
-		ESP_LOGI("econet", "  Length  : %d", data_len);
-		ESP_LOGI("econet", "  Command : %d", command);
-		ESP_LOGI("econet", "  Data    : %s", format_hex_pretty((const uint8_t *) pdata, data_len).c_str());
+
 		
 		if(false)
 		{
@@ -1146,7 +1135,7 @@ void Econet::loop() {
 	bool flag = false;
 	
 	// Read Every 50ms After 10s afer boot
-	if (now - this->last_read_ > 50) {
+	if (now - this->last_read_ > 10) {
 		this->act_loop_time_ = now - this->last_read_;
 		this->last_read_ = now;
 		// Read Everything that is in the buffer
@@ -1154,20 +1143,22 @@ void Econet::loop() {
 
 		if(bytes_available > 0)
 		{
+			this->last_read_data_ = now;
+			ESP_LOGI("econet", "Read %d. ms=%d, lt=%d", bytes_available, now, act_loop_time_);
 			flag = true;
 			this->read_buffer(bytes_available);
 		}
-		if(flag == false)
+		else
+		{
+			// ESP_LOGI("econet", "--- millis()=%d", now);
+		}
+		if (now - this->last_read_data_ > 100)
 		{
 			// Bus is Assumbed Available For Sending
 			// This currently attempts a request every 1000ms
-<<<<<<< Updated upstream
-			if (now - this->last_request_ > 1000) {
-=======
 			if (now - this->last_request_ > 1000 && type_id_ != 2)
 			{
 				ESP_LOGI("econet", "request ms=%d", now);
->>>>>>> Stashed changes
 				this->last_request_ = now;
 				this->make_request();
 				req_id++;
