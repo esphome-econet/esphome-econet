@@ -95,25 +95,53 @@ void Econet::check_uart_settings() {
 
 void Econet::dump_config() {
   this->check_uart_settings();
-}
+}	
 void Econet::handle_float(uint32_t src_adr, std::string obj_string, float value)
 {
-	if(src_adr == 0x1040)
+	if(src_adr == SMARTEC_TRANSLATOR)
 	{
 		if(obj_string == "FLOWRATE")
 		{
 			flow_rate = value/3.785;
 		}
+		else if(obj_string == "TEMP_OUT")
+		{
+			temp_out = value;	
+		}
+		else if(obj_string == "TEMP__IN")
+		{
+			temp_in = value;	
+		}
+		else if(obj_string == "WHTRSETP")
+		{
+			setpoint = value;	
+		}
+		else if(obj_string == "WTR_USED")
+		{
+			water_used = value;	
+		}
+		else if(obj_string == "WTR_BTUS")
+		{
+			btus_used = value;	
+		}
+		else if(obj_string == "IGNCYCLS")
+		{
+			ignition_cycles = value;	
+		}
+		else if(obj_string == "BURNTIME")
+		{
+			// Not Supported Yet
+		}
 	}
-	else if(src_adr == 0x380)
+	else if(src_adr == HEAT_PUMP_WATER_HEATER)
+	{
+		
+	}
+	else if(src_adr == CONTROL_CENTER)
 	{
 		if(obj_string == "SPT_STAT")
 		{
 			cc_spt_stat = value;
-			if(type_id_ == 2)
-			{
-					
-			}
 		}
 		else if(obj_string == "COOLSETP")
 		{
@@ -126,13 +154,46 @@ void Econet::handle_float(uint32_t src_adr, std::string obj_string, float value)
 		}
 	}
 }
+	/*
+	
+							if(item_num == 4)
+						{
+							if(item_value == 0)
+							{
+								enable_state = false;
+								// send_datapoint(0,0);
+							}
+							else if(item_value == 1)
+							{
+								enable_state = true;
+								// send_datapoint(0,1);
+							}
+						}
+						else if(item_num == 5)
+						{
+							ESP_LOGD("econet", "WHTRMODE (val): %d", item_value);
+							ESP_LOGD("econet", "WHTRMODE (str): %s", s.c_str());
+						}
+						
+	*/
 void Econet::handle_enumerated_text(uint32_t src_adr, std::string obj_string, uint8_t value, std::string text)
 {
-	if(src_adr == 0x1040)
+	if(src_adr == SMARTEC_TRANSLATOR)
 	{
-
+		if(obj_string == "WHTRENAB")
+		{
+			enable_state = value == 1;
+		}
+		else if(obj_string == "WHTRMODE")
+		{
+			// Not Supported
+		}
 	}
-	else if(src_adr == 0x380)
+	else if(src_adr == HEAT_PUMP_WATER_HEATER)
+	{
+		
+	}
+	else if(src_adr == CONTROL_CENTER)
 	{
 		if(obj_string == "HVACMODE")
 		{
@@ -662,38 +723,7 @@ void Econet::parse_message(bool is_tx)
 				{
 					float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
 					
-					if(type_id_ == 0)
-					{
-						if(item_num == 1)
-						{
-							// flow_rate = item_value/3.785;
-						}
-						else if(item_num == 2)
-						{
-							temp_out = item_value;
-						}
-						else if(item_num == 3)
-						{
-							this->temp_in = item_value;
-						}
-						else if(item_num == 6)
-						{
-							setpoint = item_value;
-						}
-						else if(item_num == 7)
-						{
-							water_used = item_value;
-						}
-						else if(item_num == 8)
-						{
-							btus_used = item_value;
-						}
-						else if(item_num == 9)
-						{
-							ignition_cycles = item_value;
-						}
-					}
-					else if(type_id_ == 1)
+					if(type_id_ == 1)
 					{
 						if(item_num == 3)
 						{
@@ -749,28 +779,7 @@ void Econet::parse_message(bool is_tx)
 
 					std::string s(char_arr, sizeof(char_arr));
 
-					if(type_id_ == 0)
-					{
-						if(item_num == 4)
-						{
-							if(item_value == 0)
-							{
-								enable_state = false;
-								// send_datapoint(0,0);
-							}
-							else if(item_value == 1)
-							{
-								enable_state = true;
-								// send_datapoint(0,1);
-							}
-						}
-						else if(item_num == 5)
-						{
-							ESP_LOGD("econet", "WHTRMODE (val): %d", item_value);
-							ESP_LOGD("econet", "WHTRMODE (str): %s", s.c_str());
-						}
-					}
-					else if(type_id_ == 1)
+					if(type_id_ == 1)
 					{
 						if(item_num == 1)
 						{
@@ -808,16 +817,7 @@ void Econet::parse_message(bool is_tx)
 				item_num++;
 			}
 
-			// 1 btu/deg_f*(8.334)*flow_rate (1/min) 
-
 			instant_btus = std::max((float)((temp_out-temp_in)*flow_rate*8.334*60/0.92/1000),(float)0.0);
-
-			// instant_btus_sensor->publish_state(approx_instant_btus/1000);
-
-		}
-		else if(pmsg_len == 31)
-		{
-			// recognized = true;
 		}
 		// publish_state(format_hex_pretty((const uint8_t *) buffer, msg_len));
 	}

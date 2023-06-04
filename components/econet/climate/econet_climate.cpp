@@ -27,7 +27,14 @@ climate::ClimateTraits EconetClimate::traits() {
 
 	traits.set_supports_action(false);
 
-	traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_AUTO});
+	if(this->econet->get_type_id() == 2)
+	{
+		traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_COOL, climate::CLIMATE_MODE_HEAT, climate::CLIMATE_MODE_AUTO});
+	}
+	else
+	{
+		traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_AUTO});
+	}
 	
 	if(this->econet->get_type_id() == 1  && false)
 	{
@@ -39,8 +46,16 @@ climate::ClimateTraits EconetClimate::traits() {
 		// traits.add_supported_custom_preset("vacation");
 	}
 	traits.set_supports_current_temperature(true);
-	traits.set_visual_min_temperature(SETPOINT_MIN);
-	traits.set_visual_max_temperature(SETPOINT_MAX);
+	if(this->econet->get_type_id() == 2)
+	{
+		traits.set_visual_min_temperature(10);
+		traits.set_visual_max_temperature(32);
+	}
+	else
+	{
+		traits.set_visual_min_temperature(SETPOINT_MIN);
+		traits.set_visual_max_temperature(SETPOINT_MAX);
+	}
 	traits.set_visual_temperature_step(SETPOINT_STEP);
 	traits.set_supports_two_point_target_temperature(false);
 
@@ -49,17 +64,51 @@ climate::ClimateTraits EconetClimate::traits() {
 
 void EconetClimate::update() {
 	if (this->econet->is_ready()) {
-		this->target_temperature = (this->econet->get_setpoint() - 32)*5/9;
-		this->current_temperature = (this->econet->get_current_temp() - 32)*5/9;
-		if(this->econet->get_enable_state() == true)
+		if(this->econet->get_type_id() == 2)
 		{
-			// Auto	 CLIMATE_MODE_AUTO
-			this->mode = climate::CLIMATE_MODE_AUTO;
+			this->target_temperature = (this->econet->get_cc_cool_setpoint() - 32)*5/9;
+			this->current_temperature = (this->econet->get_cc_spt_stat() - 32)*5/9;
 		}
 		else
 		{
-			// Off	
-			this->mode = climate::CLIMATE_MODE_OFF;
+			this->target_temperature = (this->econet->get_setpoint() - 32)*5/9;
+			this->current_temperature = (this->econet->get_current_temp() - 32)*5/9;
+		}
+		if(this->econet->get_type_id() == 2)
+		{
+			if(this->econet->get_cc_automode() == 0)
+			{
+				this->mode = climate::CLIMATE_MODE_HEAT;
+			}
+			else if(this->econet->get_cc_automode() == 1)
+			{
+				this->mode = climate::CLIMATE_MODE_COOL;
+			}
+			else if(this->econet->get_cc_automode() == 2)
+			{
+				this->mode = climate::CLIMATE_MODE_AUTO;
+			}
+			else if(this->econet->get_cc_automode() == 3)
+			{
+				this->mode = climate::CLIMATE_MODE_FAN_ONLY ;
+			}
+			else if(this->econet->get_cc_automode() == 4)
+			{
+				this->mode = climate::CLIMATE_MODE_OFF;
+			}
+		}
+		else
+		{
+			if(this->econet->get_enable_state() == true)
+			{
+				// Auto	 CLIMATE_MODE_AUTO
+				this->mode = climate::CLIMATE_MODE_AUTO;
+			}
+			else
+			{
+				// Off	
+				this->mode = climate::CLIMATE_MODE_OFF;
+			}
 		}
 		if(this->econet->get_type_id() == 1 && false)
 		{
