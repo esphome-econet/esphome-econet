@@ -1329,7 +1329,7 @@ void Econet::transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t comman
 	wbuffer[wdata_len+14+1] = (uint8_t) (crc >> 8);
 
 	econet_uart->write_array(wbuffer,wdata_len+14+2);
-	econet_uart->flush();
+	// econet_uart->flush();
 	
 	parse_tx_message();
 }
@@ -1341,7 +1341,7 @@ void Econet::transmit_message(std::vector<uint8_t> data)
 	}
 
 	econet_uart->write_array(wbuffer,data.size());
-	econet_uart->flush();
+	// econet_uart->flush();
 	
 	parse_tx_message();
 }
