@@ -281,22 +281,7 @@ void Econet::make_request()
 	
 	if(send_enable_disable == true)
 	{
-		// command = WRITE_COMMAND;
-		std::vector<uint8_t> enable_cmd{0x01, 0x01, 0x02, 0x01, 0x00, 0x00, 0x57, 0x48, 0x54, 0x52, 0x45, 0x4E, 0x41, 0x42, 0x3F, 0x80, 0x00, 0x00};
-		std::vector<uint8_t> disable_cmd{0x01, 0x01, 0x02, 0x01, 0x00, 0x00, 0x57, 0x48, 0x54, 0x52, 0x45, 0x4E, 0x41, 0x42, 0x00, 0x00, 0x00, 0x00};
-
-		// wdata_len = 18;
-
-		if(enable_disable_cmd == true)
-		{
-			data = enable_cmd;
-		}
-		else
-		{
-			data = disable_cmd;
-		}
-		
-		transmit_message(dst_adr, src_adr, WRITE_COMMAND, data);
+		this->write_value(dst_adr, src_adr, "WHTRENAB", static_cast<float>(enable_disable_cmd));
 		
 		send_enable_disable = false;
 	}
@@ -309,41 +294,20 @@ void Econet::make_request()
 		// 3 - High Demand
 		// 4 - Electric / Gas
 		
-		// command = WRITE_COMMAND;
-		
-		std::vector<uint8_t> base_mode_cmd{0x01, 0x01, 0x00, 0x07, 0x00, 0x00, 0x57, 0x48, 0x54, 0x52, 0x43, 0x4E, 0x46, 0x47, 0x00, 0x00, 0x00, 0x00};
-		
-		uint32_t f_to_32 = floatToUint32(new_mode);
-		
-		base_mode_cmd[14] = (uint8_t)(f_to_32 >> 24);
-		base_mode_cmd[15] = (uint8_t)(f_to_32 >> 16);
-		base_mode_cmd[16] = (uint8_t)(f_to_32 >> 8);
-		base_mode_cmd[17] = (uint8_t)(f_to_32);
-		
-		data = base_mode_cmd;
-		
-		transmit_message(dst_adr, src_adr, WRITE_COMMAND, data);
-		
-		// wdata_len = 18;
+		this->write_value(dst_adr, src_adr, "WHTRCNFG", new_mode);
 		
 		send_new_mode = false;
 	}
 	else if(send_new_setpoint == true)
 	{
-		// command = WRITE_COMMAND;
-		
-		std::vector<uint8_t> base_setpoint_cmd{0x01, 0x01, 0x00, 0x07, 0x00, 0x00, 0x57, 0x48, 0x54, 0x52, 0x53, 0x45, 0x54, 0x50, 0x3F, 0x80, 0x00, 0x00};
-		
-		uint32_t f_to_32 = floatToUint32(new_setpoint);
-		
-		base_setpoint_cmd[14] = (uint8_t)(f_to_32 >> 24);
-		base_setpoint_cmd[15] = (uint8_t)(f_to_32 >> 16);
-		base_setpoint_cmd[16] = (uint8_t)(f_to_32 >> 8);
-		base_setpoint_cmd[17] = (uint8_t)(f_to_32);
-		
-		data = base_setpoint_cmd;
-		
-		transmit_message(dst_adr, src_adr, WRITE_COMMAND, data);
+		if(this->type_id_ == 2)
+		{
+			this->write_value(dst_adr, src_adr, "COOLSETP", new_setpoint);
+		}
+		else
+		{
+			this->write_value(dst_adr, src_adr, "WHTRSETP", new_setpoint);
+		}
 		
 		send_new_setpoint = false;
 	}
@@ -1205,6 +1169,40 @@ void Econet::loop() {
 			}
 		}
 	}
+}
+void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, std::string object, float value)
+{	
+	std::vector<uint8_t> data;
+	
+	data.push_back(1);
+	data.push_back(1);
+	data.push_back(2);
+	data.push_back(1);
+	data.push_back(0);
+	data.push_back(0);
+	
+	std::vector<uint8_t> sdata(object.begin(), object.end());
+	
+	for(int j=0; j<8;j++)
+	{
+		if(j < object.length())
+		{
+			data.push_back(sdata[j]);
+		}
+		else
+		{
+			data.push_back(0);
+		}
+	}
+	
+	uint32_t f_to_32 = floatToUint32(value);
+	
+	data.push_back((uint8_t)(f_to_32 >> 24));
+	data.push_back((uint8_t)(f_to_32 >> 16));
+	data.push_back((uint8_t)(f_to_32 >> 8));
+	data.push_back((uint8_t)(f_to_32));
+	
+	transmit_message(dst_adr, src_adr, WRITE_COMMAND, data);
 }
 void Econet::request_strings(uint32_t dst_adr, uint32_t src_adr, std::vector<std::string> objects)
 {	
