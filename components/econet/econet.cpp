@@ -1050,7 +1050,7 @@ void Econet::loop() {
 			
 			// Bus is Assumbed Available For Sending
 			// This currently attempts a request every 1000ms
-			if (now - this->last_request_ > 1000 && type_id_ != 2)
+			if (now - this->last_request_ > 1000)
 			{
 				ESP_LOGI("econet", "request ms=%d", now);
 				this->last_request_ = now;
