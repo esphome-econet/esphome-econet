@@ -29,14 +29,14 @@ climate::ClimateTraits EconetClimate::traits() {
 
 	if(this->econet->get_type_id() == 2)
 	{
-		traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_COOL, climate::CLIMATE_MODE_HEAT, climate::CLIMATE_MODE_AUTO});
+		traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_COOL, climate::CLIMATE_MODE_HEAT, climate::CLIMATE_MODE_HEAT_COOL});
 	}
 	else
 	{
 		traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_AUTO});
 	}
 	
-	if(this->econet->get_type_id() == 1  && false)
+	if(this->econet->get_type_id() == 1)
 	{
 		traits.add_supported_custom_preset("off");
 		traits.add_supported_custom_preset("eco");
@@ -86,7 +86,7 @@ void EconetClimate::update() {
 			}
 			else if(this->econet->get_cc_statmode() == 2)
 			{
-				this->mode = climate::CLIMATE_MODE_AUTO;
+				this->mode = climate::CLIMATE_MODE_HEAT_COOL;
 			}
 			else if(this->econet->get_cc_statmode() == 3)
 			{
@@ -110,7 +110,7 @@ void EconetClimate::update() {
 				this->mode = climate::CLIMATE_MODE_OFF;
 			}
 		}
-		if(this->econet->get_type_id() == 1 && false)
+		if(this->econet->get_type_id() == 1)
 		{
 			switch((int)this->econet->get_mode())
 			{
