@@ -46,4 +46,9 @@ econet:
   uart: uart_0
   model: "HVAC"
 
+
+climate:
+  - platform: econet
+    name: "HVAC"
+
 # Optional additional sensors.

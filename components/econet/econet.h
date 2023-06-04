@@ -103,6 +103,11 @@ class Econet : public Component {
 	void handle_enumerated_text(uint32_t src_adr, std::string obj_string, uint8_t value, std::string text);
 	void handle_text(uint32_t src_adr, std::string obj_string, std::string text);
 	
+	void transmit_message(std::vector<uint8_t> data);
+	void transmit_sync();
+	void transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t command, std::vector<uint8_t> data);
+	void request_strings(uint32_t dst_adr, uint32_t src_adr, std::vector<std::string> objects);
+	
 	uart::UARTComponent *econet_uart{nullptr};
 	bool ready = true;
 	
@@ -165,13 +170,14 @@ class Econet : public Component {
 	uint16_t wmsg_len = 0;
 	
 	uint32_t COMPUTER =      				192	;	// 80 00 00 C0
+	uint32_t FURNACE = 						0x1c0;	// 80 00 01 C0
 	uint32_t UNKNOWN_HANDLER =  			241	;	// 80 00 00 F1
 	uint32_t WIFI_MODULE =    				832	;	// 80 00 03 40
 	uint32_t SMARTEC_TRANSLATOR = 			4160;	// 80 00 10 40
 	uint32_t INTERNAL = 					4736; 	// 80 00 10 40
-	uint32_t HEAT_PUMP_WATER_HEATER =       0x1280;
-	uint32_t AIR_HANDLER = 					0x3c0;
-	uint32_t CONTROL_CENTER = 				0x380;
+	uint32_t HEAT_PUMP_WATER_HEATER =       0x1280; // 80 00 12 80
+	uint32_t AIR_HANDLER = 					0x3c0;	// 80 00 03 C0
+	uint32_t CONTROL_CENTER = 				0x380;	// 80 00 03 80
 
 	uint8_t DST_ADR_POS = 0;
 	uint8_t SRC_ADR_POS = 5;
