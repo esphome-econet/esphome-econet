@@ -152,10 +152,6 @@ void Econet::handle_float(uint32_t src_adr, std::string obj_string, float value)
 		{
 			cc_cool_setpoint = value;
 		}
-		else if(obj_string == "STATMODE")
-		{
-			cc_statmode = value;
-		}
 	}
 }
 	/*
@@ -206,6 +202,10 @@ void Econet::handle_enumerated_text(uint32_t src_adr, std::string obj_string, ui
 		else if(obj_string == "AUTOMODE")
 		{
 			cc_automode = value;
+		}
+		else if(obj_string == "STATMODE")
+		{
+			cc_statmode = value;
 		}
 	}
 }
@@ -606,20 +606,36 @@ void Econet::parse_message(bool is_tx)
 		uint8_t type = pdata[0];
 		uint8_t prop_type = pdata[1];
 		
-		ESP_LOGI("econet", "  Type    : %d", type);
+		ESP_LOGI("econet", "  ClssType: %d", type);
 		ESP_LOGI("econet", "  PropType: %d", prop_type);
 		
-		if(type == 0)
+		if(type == 1)
 		{
-			// FLOAT	
+			// WRITE DATA
+			uint8_t datatype = pdata[2];
+			
+			if(datatype == 0)
+			{
+				// FLOAT
+				ESP_LOGI("econet", "  DataType: %d (Float)", datatype);
+			}
+			else if(datatype == 2)
+			{
+				// ENUM TEXT
+				ESP_LOGI("econet", "  DataType: %d (Enum Text)", datatype);
+			}
+			else if(datatype == 4)
+			{
+				ESP_LOGI("econet", "  DataType: %d (Bytes)", datatype);
+			}
+			else
+			{
+				ESP_LOGI("econet", "  DataType: %d", datatype);
+			}
 		}
-		else if(type == 1)
+		else if(type == 7)
 		{
-			// Text	
-		}
-		else if(type == 2)
-		{
-			// Enumerated Text	
+			// TIME AND DATA	
 		}
 		else if(type == 3)
 		{
