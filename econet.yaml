@@ -29,8 +29,8 @@ logger:
   level: INFO
 
 external_components:
-  - source: github://stockmopar/esphome-econet
-#  - source: components
+#  - source: github://stockmopar/esphome-econet
+  - source: components
 
 uart:
   id: uart_0
