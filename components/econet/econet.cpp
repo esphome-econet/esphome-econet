@@ -285,7 +285,7 @@ void Econet::make_request()
 	
 	if(send_enable_disable == true)
 	{
-		this->write_value(dst_adr, src_adr, "WHTRENAB", static_cast<float>(enable_disable_cmd));
+		this->write_value(dst_adr, src_adr, "WHTRENAB", ENUM_TEXT, static_cast<float>(enable_disable_cmd));
 		
 		send_enable_disable = false;
 	}
@@ -298,7 +298,7 @@ void Econet::make_request()
 		// 3 - High Demand
 		// 4 - Electric / Gas
 		
-		this->write_value(dst_adr, src_adr, "WHTRCNFG", new_mode);
+		this->write_value(dst_adr, src_adr, "WHTRCNFG", ENUM_TEXT, new_mode);
 		
 		send_new_mode = false;
 	}
@@ -306,11 +306,11 @@ void Econet::make_request()
 	{
 		if(this->type_id_ == 2)
 		{
-			this->write_value(dst_adr, src_adr, "COOLSETP", new_setpoint);
+			this->write_value(dst_adr, src_adr, "COOLSETP", FLOAT, new_setpoint);
 		}
 		else
 		{
-			this->write_value(dst_adr, src_adr, "WHTRSETP", new_setpoint);
+			this->write_value(dst_adr, src_adr, "WHTRSETP", FLOAT, new_setpoint);
 		}
 		
 		send_new_setpoint = false;
@@ -1174,13 +1174,14 @@ void Econet::loop() {
 		}
 	}
 }
-void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, std::string object, float value)
+void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, std::string object, uint8_t type, float value)
 {	
 	std::vector<uint8_t> data;
 	
 	data.push_back(1);
 	data.push_back(1);
-	data.push_back(2);
+	// Sometimes this is 2 and sometimes this is 0
+	data.push_back(type);
 	data.push_back(1);
 	data.push_back(0);
 	data.push_back(0);

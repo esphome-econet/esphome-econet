@@ -108,7 +108,7 @@ class Econet : public Component {
 	void transmit_sync();
 	void transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t command, std::vector<uint8_t> data);
 	void request_strings(uint32_t dst_adr, uint32_t src_adr, std::vector<std::string> objects);
-	void write_value(uint32_t dst_adr, uint32_t src_adr, std::string object, float value);
+	void write_value(uint32_t dst_adr, uint32_t src_adr, std::string object, uint8_t type, float value);
 	
 	uart::UARTComponent *econet_uart{nullptr};
 	bool ready = true;
@@ -196,6 +196,9 @@ class Econet : public Component {
 	uint8_t ACK = 6;
 	uint8_t READ_COMMAND = 30;
 	uint8_t WRITE_COMMAND = 31;
+	
+	uint8_t FLOAT = 0;
+	uint8_t ENUM_TEXT = 2;
 };
 
 class EconetClient {
