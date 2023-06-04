@@ -618,6 +618,32 @@ void Econet::parse_message(bool is_tx)
 			{
 				// FLOAT
 				ESP_LOGI("econet", "  DataType: %d (Float)", datatype);
+				
+				if(data_len == 18)
+				{
+					/*
+					char char_arr[str_len];
+					
+					
+					
+					for (int a = 0; a < str_len; a++) {
+						if(start + a > 0 && start + a < data_len)
+						{
+							char_arr[a] = pdata[start+a];
+						}
+					}
+
+					std::string s(char_arr, sizeof(char_arr));
+					*/
+				}
+				else
+				{
+					ESP_LOGI("econet", "  Unexpected Write Data (Float) Data Length", datatype);	
+				}
+				
+				// 01.01.00.07.00.00.4F.43.4F.4D.4D.41.4E.44.42.48.00.00
+				// Object - OCOMMAND
+				// 
 			}
 			else if(datatype == 2)
 			{
@@ -626,7 +652,10 @@ void Econet::parse_message(bool is_tx)
 			}
 			else if(datatype == 4)
 			{
+				// BYTES
 				ESP_LOGI("econet", "  DataType: %d (Bytes)", datatype);
+				
+
 			}
 			else
 			{
@@ -637,24 +666,18 @@ void Econet::parse_message(bool is_tx)
 		{
 			// TIME AND DATA	
 		}
-		else if(type == 3)
+		
+		else if(type == 9)
 		{
-			// Enumerated Number	
+			// SYSTEM HANDLER - LISTING OF ADDRESSES ON BUS	
+			// 09.01.00.00.03.80.00.00.03.40.00.00.05.00
+			// 00 00 03 80
+			// 00 00 03 40
+			// 00 00 05 00
 		}
-		else if(type == 4)
+		else
 		{
-			// Bytestream
-			if(read_req.obj_names.size() == 1)
-			{
-				if(read_req.obj_names[0] == "AIRHSTAT")
-				{
-					
-				}
-				if(read_req.obj_names[0] == "HWSTATUS")
-				{
-					
-				}
-			}
+			
 		}
 	}
 	
@@ -1224,6 +1247,8 @@ void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, std::string object,
 	data.push_back((uint8_t)(f_to_32));
 	
 	transmit_message(dst_adr, src_adr, WRITE_COMMAND, data);
+	
+	
 }
 void Econet::request_strings(uint32_t dst_adr, uint32_t src_adr, std::vector<std::string> objects)
 {	
@@ -1304,7 +1329,8 @@ void Econet::transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t comman
 	wbuffer[wdata_len+14+1] = (uint8_t) (crc >> 8);
 
 	econet_uart->write_array(wbuffer,wdata_len+14+2);
-
+	econet_uart->flush();
+	
 	parse_tx_message();
 }
 void Econet::transmit_message(std::vector<uint8_t> data)
@@ -1313,8 +1339,11 @@ void Econet::transmit_message(std::vector<uint8_t> data)
 	{
 		wbuffer[i] = data[i];
 	}
-	parse_tx_message();
+
 	econet_uart->write_array(wbuffer,data.size());
+	econet_uart->flush();
+	
+	parse_tx_message();
 }
 void Econet::transmit_sync()
 {
