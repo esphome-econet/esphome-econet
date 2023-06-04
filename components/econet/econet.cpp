@@ -152,6 +152,10 @@ void Econet::handle_float(uint32_t src_adr, std::string obj_string, float value)
 		{
 			cc_cool_setpoint = value;
 		}
+		else if(obj_string == "STATMODE")
+		{
+			cc_statmode = value;
+		}
 	}
 }
 	/*

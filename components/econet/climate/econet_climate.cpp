@@ -76,23 +76,23 @@ void EconetClimate::update() {
 		}
 		if(this->econet->get_type_id() == 2)
 		{
-			if(this->econet->get_cc_automode() == 0)
+			if(this->econet->get_cc_statmode() == 0)
 			{
 				this->mode = climate::CLIMATE_MODE_HEAT;
 			}
-			else if(this->econet->get_cc_automode() == 1)
+			else if(this->econet->get_cc_statmode() == 1)
 			{
 				this->mode = climate::CLIMATE_MODE_COOL;
 			}
-			else if(this->econet->get_cc_automode() == 2)
+			else if(this->econet->get_cc_statmode() == 2)
 			{
 				this->mode = climate::CLIMATE_MODE_AUTO;
 			}
-			else if(this->econet->get_cc_automode() == 3)
+			else if(this->econet->get_cc_statmode() == 3)
 			{
 				this->mode = climate::CLIMATE_MODE_FAN_ONLY ;
 			}
-			else if(this->econet->get_cc_automode() == 4)
+			else if(this->econet->get_cc_statmode() == 4)
 			{
 				this->mode = climate::CLIMATE_MODE_OFF;
 			}
