@@ -38,12 +38,12 @@ climate::ClimateTraits EconetClimate::traits() {
 	
 	if(this->econet->get_type_id() == 1)
 	{
-		traits.add_supported_custom_preset("off");
-		traits.add_supported_custom_preset("eco");
-		traits.add_supported_custom_preset("heat_pump");
-		traits.add_supported_custom_preset("high_demand");
-		traits.add_supported_custom_preset("electric");
-		// traits.add_supported_custom_preset("vacation");
+		traits.add_supported_custom_preset("Off");
+		traits.add_supported_custom_preset("Eco");
+		traits.add_supported_custom_preset("Heat Pump");
+		traits.add_supported_custom_preset("High Demand");
+		traits.add_supported_custom_preset("Electric");
+		traits.add_supported_custom_preset("Vacation");
 	}
 	traits.set_supports_current_temperature(true);
 	if(this->econet->get_type_id() == 2)
@@ -115,28 +115,25 @@ void EconetClimate::update() {
 			switch((int)this->econet->get_mode())
 			{
 				case 0:
-					this->set_custom_preset_("off");
-					// this->custom_preset = "off";
+					this->set_custom_preset_("Off");
 					break;
 				case 1:
-					this->set_custom_preset_("eco");
-					// this->custom_preset = "eco";
+					this->set_custom_preset_("Eco");
 					break;
 				case 2:
-					this->set_custom_preset_("heat_pump");
-					//this->custom_preset = "heat_pump";
+					this->set_custom_preset_("Heat Pump");
 					break;
 				case 3:
-					this->set_custom_preset_("high_demand");
-					//this->custom_preset = "high_demand";
+					this->set_custom_preset_("High Demand");
 					break;
 				case 4:
-					this->set_custom_preset_("electric");
-					//this->custom_preset = "electric";
+					this->set_custom_preset_("Electric");
+					break;
+				case 5:
+					this->set_custom_preset_("Vacation");
 					break;
 				default:
-					this->set_custom_preset_("off");
-					//this->custom_preset = "off";
+					this->set_custom_preset_("Off");
 			}
 			
 		}

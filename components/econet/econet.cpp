@@ -655,7 +655,7 @@ void Econet::parse_message(bool is_tx)
 				// BYTES
 				ESP_LOGI("econet", "  DataType: %d (Bytes)", datatype);
 				
-
+				if(
 			}
 			else
 			{
