@@ -1,6 +1,6 @@
 substitutions:
   name_base:    Water Heater Garage # Base name for all entities created in HA from this configuration
-  name_esphome: water-heater-garage # Must not contain Uppercase, spaces, or underscores, at least
+  name_esphome: water-heater-garage # Must not contain Uppercase, spaces, or underscores
   ip_addr:      192.168.2.206       # Identify the IP Address after first installing the board via esphone. (See wifi: section below)
   ip_gateway:   192.168.2.1
   ip_subnet:    255.255.255.0
@@ -9,7 +9,7 @@ substitutions:
   rx_pin: GPIO22
 
 esphome:
-  name:    ${name_esphome}
+  name: ${name_esphome}
   comment: ${device_description}
   project:
     name: "stockmopar.econet"
