@@ -1,6 +1,7 @@
 substitutions:
-  name_base:    Water Heater Garage # Base name for all entities created in HA from this configuration
-  name_esphome: water-heater-garage # Must not contain Uppercase, spaces, or underscores
+  name_base:    Water Heater Garage # Base name for all entities created in HA from this configuration. This becomes "Friendly Name." 
+                                    # Uppercase are converted to lowercase, spaces to underscore for entity ids. (Normal HA entity naming rules apply).
+  name_esphome: water-heater-garage # Valid characters for esphome are: abcdefghijklmnopqrstuvwxyz0123456789-_ (lowercase, no spaces)
   ip_addr:      192.168.2.206       # Identify the IP Address after first installing the board via esphone. (See wifi: section below)
   ip_gateway:   192.168.2.1
   ip_subnet:    255.255.255.0
