@@ -1,27 +1,46 @@
 substitutions:
-  name: econet
+  name_base:    Water Heater Garage # Base name for all entities created in HA from this configuration
+  name_esphome: water-heater-garage # Must not contain Uppercase, spaces, or underscores, at least
+  ip_addr:      192.168.2.206       # Identify the IP Address after first installing the board via esphone. (See wifi: section below)
+  ip_gateway:   192.168.2.1
+  ip_subnet:    255.255.255.0
   device_description: "Communicate with Econet Netork"
   tx_pin: GPIO19
   rx_pin: GPIO22
 
 esphome:
-  name: ${name}
+  name:    ${name_esphome}
   comment: ${device_description}
   project:
     name: "stockmopar.econet"
-    version: 0.0.1
+    version: 0.0.2
 
 esp32:
   board: esp32dev
-  framework: 
+  framework:
     type: arduino
 
 wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
+  ssid:     !secret WIFI_SSID # wifi ssid
+  password: !secret WIFI_PWD  # wifi password
+  power_save_mode: none
 
+# ~~~~~~~~~~~~~~~
+# Consider enabling manual ip data here after the intial installation of the board onto the network.
+
+# After initial installation, determine the assigned IP address for the board from the router, create a DHCP reservation for that address.
+
+# Uncomment the manual_ip: section here and enter the data into the substitutions: section above, save and upload the configuration to ESPHome
+#  manual_ip:
+#    static_ip: ${ip_addr}
+#    gateway:   ${ip_gateway}
+#    subnet:    ${ip_subnet}
+# ~~~~~~~~~~~~~~~
+
+# Enable the Home assistant API
 api:
 
+# Enable OTA updating for changes to this configuration file
 ota:
 
 logger:
@@ -30,15 +49,14 @@ logger:
   tx_buffer_size: 2000
 
 external_components:
-#  - source: github://stockmopar/esphome-econet
-  - source: components
+  - source: github://stockmopar/esphome-econet
+#  - source: components
 
 
 uart:
   id: uart_0
   baud_rate: 38400
-  rx_buffer_size: 1500
-  tx_pin: 
+  tx_pin:
     number: ${tx_pin}
   rx_pin:
     number: ${rx_pin}
@@ -50,41 +68,40 @@ econet:
 
 climate:
   - platform: econet
-    name: "Water Heater"
+    name: ${name_base}
 
 # Optional additional sensors.
 sensor:
   - platform: econet
     hot_water:
-      name: "Hot Water"
+      name: ${name_base} Hot Water
     ambient_temp:
-      name: "Ambient Temperature"
+      name: ${name_base} Ambient Temperature
     lower_water_heater_temp:
-      name: "Lower Tank Temperature"
+      name: ${name_base} Lower Tank Temperature
     upper_water_heater_temp:
-      name: "Upper Tank Temperature"
+      name: ${name_base} Upper Tank Temperature
     power_watt:
-      name: "Power"
+      name: ${name_base} Power
     evap_temp:
-      name: "Evaporator Temperature"
+      name: ${name_base} Evaporator Temperature
     suction_temp:
-      name: "Suction Temperature"
+      name: ${name_base} Suction Temperature
     discharge_temp:
-      name: "Discharge Temperature"
+      name: ${name_base} Discharge Temperature
 
 binary_sensor:
   - platform: econet
     enable_state:
-      name: "Water Heater Enabled (Sensor)"
+      name: ${name_base} Water Heater Enabled (Sensor)
     heatctrl:
-      name: "Heater Control"
+      name: ${name_base} Heater Control
     fan_ctrl:
-      name: "Fan Control"
+      name: ${name_base} Fan Control
     comp_rly:
-      name: "Compressor Relay"
+      name: ${name_base} Compressor Relay
 
 switch:
   - platform: econet
-    name: "Water Heater Enabled"
-    switch_datapoint: 0
-    id: wh_enabled_switch
+    name: ${name_base} Water Heater Enabled (Switch)
+    switch_datapoint: 0    
