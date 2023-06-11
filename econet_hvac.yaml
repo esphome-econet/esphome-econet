@@ -52,3 +52,13 @@ climate:
     name: "HVAC"
 
 # Optional additional sensors.
+sensor:
+  - platform: econet
+    cc_hvacmode:
+      name: "HVAC Mode"
+    cc_spt_stat:
+      name: "HVAC Thermostat Temperature"
+    cc_coolsetp:
+      name: "HVAC Cooling Setpoint"
+    cc_automode:
+      name: "HVAC Auto Mode"

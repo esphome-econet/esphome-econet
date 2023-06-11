@@ -60,6 +60,19 @@ void EconetSensor::update() {
 	if (this->discharge_temp_sensor_ != nullptr) {
 		this->discharge_temp_sensor_->publish_state(this->econet->get_discharge_temp());
 	}
+	
+	if (this->cc_hvacmode_sensor_ != nullptr) {
+		this->cc_hvacmode_sensor_->publish_state(this->econet->get_cc_hvacmode());
+	}
+	if (this->cc_spt_stat_sensor_ != nullptr) {
+		this->cc_spt_stat_sensor_->publish_state(this->econet->get_cc_spt_stat());
+	}
+	if (this->cc_coolsetp_sensor_ != nullptr) {
+		this->cc_coolsetp_sensor_->publish_state(this->econet->get_cc_cool_setpoint());
+	}
+	if (this->cc_automode_sensor_ != nullptr) {
+		this->cc_automode_sensor_->publish_state(this->econet->get_cc_automode());
+	}
 }
 
 void EconetSensor::dump_config() {
