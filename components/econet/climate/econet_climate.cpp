@@ -51,7 +51,7 @@ climate::ClimateTraits EconetClimate::traits() {
 		traits.set_visual_min_temperature(10);
 		traits.set_visual_max_temperature(32);
 		
-		traits.set_supported_custom_fan_modes({"Auto", "Speed 1 (Low)", "Speed 2 (Medium Low)", "Speed 3 (Medium)", "Speed 4 (Medium High)", "Speed 5 (High)"});
+		traits.set_supported_custom_fan_modes({"Automatic", "Speed 1 (Low)", "Speed 2 (Medium Low)", "Speed 3 (Medium)", "Speed 4 (Medium High)", "Speed 5 (High)"});
 	}
 	else
 	{
@@ -101,7 +101,7 @@ void EconetClimate::update() {
 						
 			if(this->econet->get_cc_fan_mode() == 0)
 			{
-				this->set_custom_fan_mode_("Auto");
+				this->set_custom_fan_mode_("Automatic");
 			}
 			else if(this->econet->get_cc_fan_mode() == 1)
 			{
@@ -215,7 +215,7 @@ void EconetClimate::control(const climate::ClimateCall &call) {
 		fan_mode = call.get_custom_fan_mode().value();
 		int new_fan_mode = 0;
 		// {"Auto", "Speed 1 (Low)", "Speed 2 (Medium Low)", "Speed 3 (Medium)", "Speed 4 (Medium High)", "Speed 5 (High)"}
-		if(fan_mode == "Auto")
+		if(fan_mode == "Automatic")
 		{
 			new_fan_mode = 0;
 		}
