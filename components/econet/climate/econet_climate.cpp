@@ -29,7 +29,7 @@ climate::ClimateTraits EconetClimate::traits() {
 
 	if(this->econet->get_type_id() == 2)
 	{
-		traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_COOL, climate::CLIMATE_MODE_HEAT, climate::CLIMATE_MODE_HEAT_COOL});
+		traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_COOL, climate::CLIMATE_MODE_HEAT, climate::CLIMATE_MODE_HEAT_COOL, climate::CLIMATE_MODE_FAN_ONLY});
 	}
 	else
 	{
