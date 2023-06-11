@@ -279,7 +279,7 @@ void Econet::make_request()
 	{
 		if(this->type_id_ == 2)
 		{
-			this->write_value(dst_adr, src_adr, "STATNFAN", FLOAT, new_fan_mode);
+			this->write_value(dst_adr, src_adr, "STATNFAN", ENUM_TEXT, new_fan_mode);
 		}
 		
 		send_new_fan_mode = false;
