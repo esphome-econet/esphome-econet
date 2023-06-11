@@ -1401,11 +1401,13 @@ void Econet::set_new_mode(float mode)
 	send_new_mode = true;
 	new_mode = mode;
 }
+/*
 void Econet::set_new_fan_mode(float fan_mode)
 {
 	send_fan_new_mode = true;
 	new_fan_mode = fan_mode;
 }
+*/
 void Econet::dump_state() {
   
 }
