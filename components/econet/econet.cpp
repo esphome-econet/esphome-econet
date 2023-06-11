@@ -207,6 +207,10 @@ void Econet::handle_enumerated_text(uint32_t src_adr, std::string obj_string, ui
 		{
 			cc_statmode = value;
 		}
+		else if(obj_string == "STATNFAN")
+		{
+			cc_fan_mode = value;
+		}
 	}
 }
 void Econet::handle_text(uint32_t src_adr, std::string obj_string, std::string text)

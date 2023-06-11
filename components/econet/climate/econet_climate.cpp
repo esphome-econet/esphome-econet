@@ -98,6 +98,31 @@ void EconetClimate::update() {
 			{
 				this->mode = climate::CLIMATE_MODE_OFF;
 			}
+						
+			if(this->econet->get_cc_fan_mode() == 0)
+			{
+				this->set_custom_fan_mode_("Auto");
+			}
+			else if(this->econet->get_cc_fan_mode() == 1)
+			{
+				this->set_custom_fan_mode_("Speed 1 (Low)");
+			}
+			else if(this->econet->get_cc_fan_mode() == 2)
+			{
+				this->set_custom_fan_mode_("Speed 2 (Medium Low)");
+			}
+			else if(this->econet->get_cc_fan_mode() == 3)
+			{
+				this->set_custom_fan_mode_("Speed 3 (Medium)");
+			}
+			else if(this->econet->get_cc_fan_mode() == 4)
+			{
+				this->set_custom_fan_mode_("Speed 4 (Medium High)");
+			}
+			else if(this->econet->get_cc_fan_mode() == 5)
+			{
+				this->set_custom_fan_mode_("Speed 5 (High)");
+			}
 		}
 		else
 		{

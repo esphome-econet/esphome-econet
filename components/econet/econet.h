@@ -89,6 +89,7 @@ class Econet : public Component {
 	float get_cc_cool_setpoint() { return this->cc_cool_setpoint; }
 	float get_cc_automode() { return this->cc_automode; }
 	float get_cc_statmode() { return this->cc_statmode; }
+	float get_cc_fan_mode() { return this->cc_fan_mode; }
 	
 	void register_listener(uint8_t datapoint_id, const std::function<void(float)> &func);
 	
@@ -148,6 +149,7 @@ class Econet : public Component {
 	float cc_cool_setpoint = 0;
 	float cc_automode = 0;
 	float cc_statmode = 0;
+	float cc_fan_mode = 0;
 	
 	uint8_t req_id = 0;
 	uint32_t last_request_{0};
