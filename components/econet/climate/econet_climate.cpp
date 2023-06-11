@@ -21,7 +21,7 @@ void EconetClimate::dump_config() {
   ESP_LOGCONFIG(TAG, "  Update interval: %u", this->get_update_interval());
   this->dump_traits_(TAG);
 }
-
+	
 climate::ClimateTraits EconetClimate::traits() {
 	auto traits = climate::ClimateTraits();
 
@@ -50,6 +50,8 @@ climate::ClimateTraits EconetClimate::traits() {
 	{
 		traits.set_visual_min_temperature(10);
 		traits.set_visual_max_temperature(32);
+		
+		traits.set_supported_custom_fan_modes({"Auto", "Speed 1 (Low)", "Speed 2 (Medium Low)", "Speed 3 (Medium)", "Speed 4 (Medium High)", "Speed 5 (High)"});
 	}
 	else
 	{
@@ -143,17 +145,51 @@ void EconetClimate::update() {
 
 void EconetClimate::control(const climate::ClimateCall &call) {
 	float setpoint = this->target_temperature;
-
-	bool set_basic = false;
+	climate::ClimateMode climate_mode = this->mode;
+	
 	if (call.get_target_temperature().has_value()) {
 		setpoint = call.get_target_temperature().value()*9/5 + 32;
 
 		this->econet->set_new_setpoint(setpoint);
 		// ESP_LOGD("econet", "Lets change the temp to %f", setpoint);
-		set_basic = true;
 	}
+	
+	if(call.get_mode().has_value())
+	{
+		climate_mode = call.get_mode().value();
+		uint8_t new_mode = 0;
+		
+		switch (climate_mode) {
+			case climate::CLIMATE_MODE_HEAT_COOL:
+				new_mode = 2;
+				break;
+			case climate::CLIMATE_MODE_HEAT:
+			  	new_mode = 0;
+				break;
+			case climate::CLIMATE_MODE_COOL:
+			  	new_mode = 1;
+				break;
+			case climate::CLIMATE_MODE_FAN_ONLY:
+			  	new_mode = 3;
+				break;
+			case climate::CLIMATE_MODE_OFF:
+			  	new_mode = 4;
+				break;
+			default:
+			  new_mode = 4;
+		}
+		ESP_LOGI("econet", "Raw Mode is %d", climate_mode);
+		ESP_LOGI("econet", "Lets change the mode to %d", new_mode);
+		// call.get_preset().value()
+		// Call to this->econet->setMode
+		this->econet->set_new_mode(new_mode);
+	}
+	
+	
+	
 	if(call.get_preset().has_value())
 	{
+		ESP_LOGI("econet", "Lets change the temp to %f", setpoint);
 		// call.get_preset().value()
 		// Call to this->econet->setMode
 		// this->econet->set_new_mode(mode);

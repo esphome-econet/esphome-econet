@@ -232,55 +232,6 @@ void Econet::make_request()
 
 	uint8_t src_bus = 0x00;
 
-	std::vector<std::string> str_ids{};
-
-	if(req_id == 0)
-	{
-		if(type_id_ == 0)
-		{
-			// str_ids.push_back("TEMP_OUT");
-			str_ids.push_back("FLOWRATE");
-			// str_ids.push_back("HTRS__ON");
-			str_ids.push_back("TEMP_OUT");
-			str_ids.push_back("TEMP__IN");
-			str_ids.push_back("WHTRENAB");
-			str_ids.push_back("WHTRMODE");
-			str_ids.push_back("WHTRSETP");
-			str_ids.push_back("WTR_USED");
-			str_ids.push_back("WTR_BTUS");
-			str_ids.push_back("IGNCYCLS");
-			str_ids.push_back("BURNTIME");
-		}
-		else if(type_id_ == 1)
-		{
-			str_ids.push_back("WHTRENAB");
-			str_ids.push_back("WHTRCNFG");
-			str_ids.push_back("WHTRSETP");
-			str_ids.push_back("HOTWATER");
-			str_ids.push_back("HEATCTRL");
-			str_ids.push_back("FAN_CTRL");
-			str_ids.push_back("COMP_RLY");
-			//
-			str_ids.push_back("AMBIENTT");
-			str_ids.push_back("LOHTRTMP");
-			str_ids.push_back("UPHTRTMP");
-			str_ids.push_back("POWRWATT");
-			str_ids.push_back("EVAPTEMP");
-			str_ids.push_back("SUCTIONT");
-			str_ids.push_back("DISCTEMP");
-		}
-		else if(type_id_ == 2)
-		{
-			// str_ids.push_back("AIRHSTAT");
-			/*
-			str_ids.push_back("AAUX1CFM");
-			str_ids.push_back("AAUX2CFM");
-			str_ids.push_back("AAUX3CFM");
-			str_ids.push_back("AAUX4CFM");
-			*/
-		}
-	}
-	
 	std::vector<uint8_t> data;
 	
 	if(send_enable_disable == true)
@@ -297,9 +248,14 @@ void Econet::make_request()
 		// 2 - Heat Pump
 		// 3 - High Demand
 		// 4 - Electric / Gas
-		
-		this->write_value(dst_adr, src_adr, "WHTRCNFG", ENUM_TEXT, new_mode);
-		
+		if(this->type_id_ == 2)
+		{
+			this->write_value(dst_adr, src_adr, "STATMODE", ENUM_TEXT, new_mode);
+		}
+		else
+		{
+			this->write_value(dst_adr, src_adr, "WHTRCNFG", ENUM_TEXT, new_mode);
+		}
 		send_new_mode = false;
 	}
 	else if(send_new_setpoint == true)
@@ -317,10 +273,65 @@ void Econet::make_request()
 	}
 	else
 	{
-		if(type_id_ != 2)
+		std::vector<std::string> str_ids{};
+
+		if(req_id == 0)
 		{
-			request_strings(dst_adr, src_adr, str_ids);
+			if(type_id_ == 0)
+			{
+				str_ids.push_back("FLOWRATE");
+				str_ids.push_back("TEMP_OUT");
+				str_ids.push_back("TEMP__IN");
+				str_ids.push_back("WHTRENAB");
+				str_ids.push_back("WHTRMODE");
+				str_ids.push_back("WHTRSETP");
+				str_ids.push_back("WTR_USED");
+				str_ids.push_back("WTR_BTUS");
+				str_ids.push_back("IGNCYCLS");
+				str_ids.push_back("BURNTIME");
+			}
+			else if(type_id_ == 1)
+			{
+				str_ids.push_back("WHTRENAB");
+				str_ids.push_back("WHTRCNFG");
+				str_ids.push_back("WHTRSETP");
+				str_ids.push_back("HOTWATER");
+				str_ids.push_back("HEATCTRL");
+				str_ids.push_back("FAN_CTRL");
+				str_ids.push_back("COMP_RLY");
+				str_ids.push_back("AMBIENTT");
+				str_ids.push_back("LOHTRTMP");
+				str_ids.push_back("UPHTRTMP");
+				str_ids.push_back("POWRWATT");
+				str_ids.push_back("EVAPTEMP");
+				str_ids.push_back("SUCTIONT");
+				str_ids.push_back("DISCTEMP");
+			}
+			else if(type_id_ == 2)
+			{
+				// str_ids.push_back("AIRHSTAT");
+				/*
+				str_ids.push_back("AAUX1CFM");
+				str_ids.push_back("AAUX2CFM");
+				str_ids.push_back("AAUX3CFM");
+				str_ids.push_back("AAUX4CFM");
+				*/
+			}
+			if(type_id_ != 2)
+			{
+				request_strings(dst_adr, src_adr, str_ids);
+			}
 		}
+		else if(req_id == 1)
+		{
+			if(type_id_ == 0)
+			{
+				str_ids.push_back("HWSTATUS");
+				request_strings(0x1c0, 0x380, str_ids);
+			}
+		}
+		
+		
 	}
 }
 void Econet::parse_tx_message()
@@ -614,19 +625,25 @@ void Econet::parse_message(bool is_tx)
 			// WRITE DATA
 			uint8_t datatype = pdata[2];
 			
-			if(datatype == 0)
+			if(datatype == 0 || datatype == 2)
 			{
 				// FLOAT
-				ESP_LOGI("econet", "  DataType: %d (Float)", datatype);
+				if(datatype == 0)
+				{
+					ESP_LOGI("econet", "  DataType: %d (Float)", datatype);
+				}
+				else
+				{
+					ESP_LOGI("econet", "  DataType: %d (Enum Text)", datatype);
+				}
 				
 				if(data_len == 18)
 				{
-					/*
-					char char_arr[str_len];
+					int strlen = 8;
+					char char_arr[strlen];
+					int start = 6;
 					
-					
-					
-					for (int a = 0; a < str_len; a++) {
+					for (int a = 0; a < strlen; a++) {
 						if(start + a > 0 && start + a < data_len)
 						{
 							char_arr[a] = pdata[start+a];
@@ -634,11 +651,16 @@ void Econet::parse_message(bool is_tx)
 					}
 
 					std::string s(char_arr, sizeof(char_arr));
-					*/
+										
+					int tpos = start + strlen;
+					
+					float item_value = bytesToFloat(pdata[tpos+0],pdata[tpos+1],pdata[tpos+2],pdata[tpos+3]);
+					
+					ESP_LOGI("econet", "  %s: %f", s.c_str(), item_value);
 				}
 				else
 				{
-					ESP_LOGI("econet", "  Unexpected Write Data (Float) Data Length", datatype);	
+					ESP_LOGI("econet", "  Unexpected Write Data Length", datatype);	
 				}
 				
 				// 01.01.00.07.00.00.4F.43.4F.4D.4D.41.4E.44.42.48.00.00
@@ -648,14 +670,14 @@ void Econet::parse_message(bool is_tx)
 			else if(datatype == 2)
 			{
 				// ENUM TEXT
-				ESP_LOGI("econet", "  DataType: %d (Enum Text)", datatype);
+				
 			}
 			else if(datatype == 4)
 			{
 				// BYTES
 				ESP_LOGI("econet", "  DataType: %d (Bytes)", datatype);
 				
-				if(
+				//if(
 			}
 			else
 			{
@@ -1093,13 +1115,13 @@ void Econet::loop() {
 			
 			// Bus is Assumbed Available For Sending
 			// This currently attempts a request every 1000ms
-			if (now - this->last_request_ > 1000)
+			if (now - this->last_request_ > 500)
 			{
 				ESP_LOGI("econet", "request ms=%d", now);
 				this->last_request_ = now;
 				this->make_request();
 				req_id++;
-				if(req_id > 0)
+				if(req_id > 1)
 				{
 					req_id = 0;	
 				}
@@ -1378,6 +1400,11 @@ void Econet::set_new_mode(float mode)
 {
 	send_new_mode = true;
 	new_mode = mode;
+}
+void Econet::set_new_fan_mode(float fan_mode)
+{
+	send_fan_new_mode = true;
+	new_fan_mode = fan_mode;
 }
 void Econet::dump_state() {
   
