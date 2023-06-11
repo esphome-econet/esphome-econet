@@ -146,6 +146,7 @@ void EconetClimate::update() {
 void EconetClimate::control(const climate::ClimateCall &call) {
 	float setpoint = this->target_temperature;
 	climate::ClimateMode climate_mode = this->mode;
+	std::string fan_mode = this->custom_fan_mode.value_or("Auto");
 	
 	if (call.get_target_temperature().has_value()) {
 		setpoint = call.get_target_temperature().value()*9/5 + 32;
@@ -185,7 +186,36 @@ void EconetClimate::control(const climate::ClimateCall &call) {
 		this->econet->set_new_mode(new_mode);
 	}
 	
-	
+	if (call.get_custom_fan_mode().has_value()) {
+		fan_mode = call.get_custom_fan_mode().value();
+		int new_fan_mode = 0;
+		// {"Auto", "Speed 1 (Low)", "Speed 2 (Medium Low)", "Speed 3 (Medium)", "Speed 4 (Medium High)", "Speed 5 (High)"}
+		if(fan_mode == "Auto")
+		{
+			new_fan_mode = 0;
+		}
+		else if(fan_mode == "Speed 1 (Low)")
+		{
+			new_fan_mode = 1;
+		}
+		else if(fan_mode == "Speed 2 (Medium Low)")
+		{
+			new_fan_mode = 2;
+		}
+		else if(fan_mode == "Speed 3 (Medium)")
+		{
+			new_fan_mode = 3;
+		}
+		else if(fan_mode == "Speed 4 (Medium High)")
+		{
+			new_fan_mode = 4;
+		}
+		else if(fan_mode == "Speed 5 (High)")
+		{
+			new_fan_mode = 5;
+		}
+		this->econet->set_new_fan_mode(new_fan_mode);
+	}
 	
 	if(call.get_preset().has_value())
 	{

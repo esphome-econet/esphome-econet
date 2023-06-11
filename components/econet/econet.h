@@ -52,6 +52,7 @@ class Econet : public Component {
 	void set_enable_state(bool state);
 	void set_new_setpoint(float setpoint);
 	void set_new_mode(float mode);
+	void set_new_fan_mode(float fan_mode);
 	
 	uint8_t get_type_id() { return this->type_id_; }
 	float get_temp_in() { return this->temp_in; }
@@ -168,6 +169,9 @@ class Econet : public Component {
 	
 	bool send_new_mode = false;
 	float new_mode = 0;
+	
+	bool send_new_fan_mode = false;
+	float new_fan_mode = 0;
 	
 	uint8_t wbuffer[max_message_size];
 	uint16_t wmsg_len = 0;

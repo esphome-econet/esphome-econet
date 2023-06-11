@@ -271,6 +271,15 @@ void Econet::make_request()
 		
 		send_new_setpoint = false;
 	}
+	else if(send_new_fan_mode == true)
+	{
+		if(this->type_id_ == 2)
+		{
+			this->write_value(dst_adr, src_adr, "STATNFAN", FLOAT, new_fan_mode);
+		}
+		
+		send_new_fan_mode = false;
+	}
 	else
 	{
 		std::vector<std::string> str_ids{};
@@ -1401,13 +1410,11 @@ void Econet::set_new_mode(float mode)
 	send_new_mode = true;
 	new_mode = mode;
 }
-/*
 void Econet::set_new_fan_mode(float fan_mode)
 {
-	send_fan_new_mode = true;
+	send_new_fan_mode = true;
 	new_fan_mode = fan_mode;
 }
-*/
 void Econet::dump_state() {
   
 }
