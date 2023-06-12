@@ -27,6 +27,7 @@ ota:
 logger:
   baud_rate: 0  # Disable UART logger if using UART0 (pins 1,3)
   level: INFO
+  tx_buffer_size: 2000
 
 external_components:
 #  - source: github://stockmopar/esphome-econet

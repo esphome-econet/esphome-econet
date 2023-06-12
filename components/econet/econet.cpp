@@ -247,6 +247,45 @@ void Econet::handle_binary(uint32_t src_adr, std::string obj_string, std::vector
 		}
 	}
 }
+void Econet::handle_float(uint32_t src_adr, std::string obj_string, float value)
+{
+	if(src_adr == 0x1040)
+	{
+		if(obj_string == "FLOWRATE")
+		{
+			flow_rate = value/3.785;
+		}
+	}
+	else if(src_adr == 0x380)
+	{
+		if(obj_string == "SPT_STAT")
+		{
+			cc_spt_stat = value;
+		}
+		else if(obj_string == "COOLSETP")
+		{
+			cc_cool_setpoint = value;
+		}
+	}
+}
+void Econet::handle_enumerated_text(uint32_t src_adr, std::string obj_string, uint8_t value, std::string text)
+{
+	if(src_adr == 0x1040)
+	{
+
+	}
+	else if(src_adr == 0x380)
+	{
+		if(obj_string == "HVACMODE")
+		{
+			cc_hvacmode = value;
+		}
+		else if(obj_string == "AUTOMODE")
+		{
+			cc_automode = value;
+		}
+	}
+}
 void Econet::make_request()
 {	
 	uint32_t dst_adr = SMARTEC_TRANSLATOR;
@@ -385,8 +424,6 @@ void Econet::make_request()
 				request_strings(0x1c0, 0x380, str_ids);
 			}
 		}
-		
-		
 	}
 }
 void Econet::parse_tx_message()
@@ -513,7 +550,6 @@ void Econet::parse_message(bool is_tx)
 			{
 				ESP_LOGI("econet", "  Don't Currently Support This Property Type", prop_type);
 			}
-			
 			read_req.dst_adr = dst_adr;
 			read_req.src_adr = src_adr;
 			read_req.obj_names = obj_names;
@@ -827,7 +863,7 @@ void Econet::parse_message(bool is_tx)
 				if(item_type == 0)
 				{
 					float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
-					
+
 					if(type_id_ == 1)
 					{
 						if(item_num == 3)
@@ -1199,7 +1235,14 @@ void Econet::loop() {
 				req_id++;
 				if(req_id > 1)
 				{
-					req_id = 0;	
+					ESP_LOGI("econet", "request ms=%d", now);
+					this->last_request_ = now;
+					this->make_request();
+					req_id++;
+					if(req_id > 0)
+					{
+						req_id = 0;	
+					}
 				}
 			}
 			if(now - this->last_request_ > 10000 && type_id_ == 2)

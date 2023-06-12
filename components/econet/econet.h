@@ -109,6 +109,7 @@ class Econet : public Component {
 
 	void handle_float(uint32_t src_adr, std::string obj_string, float value);
 	void handle_enumerated_text(uint32_t src_adr, std::string obj_string, uint8_t value, std::string text);
+	
 	void handle_text(uint32_t src_adr, std::string obj_string, std::string text);
 	void handle_binary(uint32_t src_adr, std::string obj_string, std::vector<uint8_t> data);
 	
@@ -153,6 +154,7 @@ class Econet : public Component {
 	float cc_hvacmode = 0;
 	float cc_spt_stat = 0;
 	float cc_cool_setpoint = 0;
+	
 	float cc_heat_setpoint = 0;
 	float cc_automode = 0;
 	float cc_statmode = 0;
