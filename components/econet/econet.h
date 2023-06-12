@@ -152,8 +152,8 @@ class Econet : public Component {
 	
 	float cc_hvacmode = 0;
 	float cc_spt_stat = 0;
-	float cc_cool_setpoint = 74;
-	float cc_heat_setpoint = 65;
+	float cc_cool_setpoint = 0;
+	float cc_heat_setpoint = 0;
 	float cc_automode = 0;
 	float cc_statmode = 0;
 	float cc_fan_mode = 0;
