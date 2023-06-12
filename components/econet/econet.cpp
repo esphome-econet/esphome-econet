@@ -224,6 +224,25 @@ void Econet::handle_text(uint32_t src_adr, std::string obj_string, std::string t
 
 	}
 }
+void Econet::handle_binary(uint32_t src_adr, std::string obj_string, std::vector<uint8_t> data)
+{
+	if(src_adr == 0x1c0)
+	{
+		if(obj_string == "HWSTATUS")
+		{
+			// data[0] = 4
+			// data[1 - 10] = 0
+			uint8_t heatcmd = data[11]; // 0 to 100 [0, 70, 100]
+			uint8_t coolcmd = data[12]; // [0, 2] Maybe 1 for 1st Stage?
+			uint16_t fan_cfm = (((uint16_t)data[13]) * 256) + data[14];
+			
+			ESP_LOGI("econet", "  HeatCmd : %d %", heatcmd);
+			ESP_LOGI("econet", "  CoolCmd : %d %", coolcmd);
+			
+			ESP_LOGI("econet", "  FanCFM? : %d cfm", fan_cfm);
+		}
+	}
+}
 void Econet::make_request()
 {	
 	uint32_t dst_adr = SMARTEC_TRANSLATOR;
@@ -261,6 +280,24 @@ void Econet::make_request()
 			this->write_value(dst_adr, src_adr, "WHTRCNFG", ENUM_TEXT, new_mode);
 		}
 		send_new_mode = false;
+	}
+	else if(send_new_setpoint_high == true)
+	{
+		if(this->type_id_ == 2)
+		{
+			this->write_value(dst_adr, src_adr, "COOLSETP", FLOAT, new_setpoint_high);
+		}
+		
+		send_new_setpoint_high = false;
+	}
+	else if(send_new_setpoint_low == true)
+	{
+		if(this->type_id_ == 2)
+		{
+			this->write_value(dst_adr, src_adr, "HEATSETP", FLOAT, new_setpoint_low);
+		}
+		
+		send_new_setpoint_low = false;
 	}
 	else if(send_new_setpoint == true)
 	{
@@ -472,6 +509,11 @@ void Econet::parse_message(bool is_tx)
 			{
 				ESP_LOGI("econet", "  Don't Currently Support This Property Type", prop_type);
 			}
+			
+			read_req.dst_adr = dst_adr;
+			read_req.src_adr = src_adr;
+			read_req.obj_names = obj_names;
+			read_req.awaiting_res = true;
 		}
 		else if(type == 2)
 		{
@@ -543,80 +585,96 @@ void Econet::parse_message(bool is_tx)
 	{
 		if(read_req.dst_adr == src_adr && read_req.src_adr == dst_adr && read_req.awaiting_res == true)
 		{
-			int tpos = 0;
-			uint8_t item_num = 0;
-
-			while(tpos < data_len)
+			if(read_req.obj_names.size() == 1)
 			{
-				uint8_t item_len = pdata[tpos];
-				uint8_t item_type = pdata[tpos+1] & 0x7F;
-
-				if(item_type == 0 && tpos+7 < data_len)
+				uint8_t item_type = pdata[0] & 0x7F;
+				if(item_type == 4)
 				{
-					float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
-					
-					if(item_num < read_req.obj_names.size())
-					{
-						handle_float(src_adr, read_req.obj_names[item_num], item_value);
-						ESP_LOGI("econet", "  %s : %f", read_req.obj_names[item_num].c_str(), item_value);
-					}
-				}
-				else if(item_type == 1)
-				{
-					// Decode text only
-					uint8_t item_text_len = item_len - 4;
-					
-					if(item_text_len > 0)
-					{
-						char char_arr[item_text_len];
+					std::vector<uint8_t> dest;
 						
-						for (int a = 0; a < item_text_len; a++) {
-							if(tpos+a+4 < data_len)
-							{
-								char_arr[a] = pdata[tpos+a+4];
-							}
-						}
-						
-						std::string s(char_arr, sizeof(char_arr));
-						
-						if(item_num < read_req.obj_names.size())
-						{
-							handle_text(src_adr, read_req.obj_names[item_num], s);
-							ESP_LOGI("econet", "  %s : (%s)", read_req.obj_names[item_num].c_str(), s.c_str());
-						}
-					}
-				}
-				else if(item_type == 2 && tpos+5 < data_len)
-				{
-					// Enumerated Text
-
-					uint8_t item_value = pdata[tpos+4];
-
-					uint8_t item_text_len = pdata[tpos+5];
-
-					if(item_text_len > 0)
+					for(int i=0; i < data_len; i++)
 					{
-						char char_arr[item_text_len];
-
-						for (int a = 0; a < item_text_len; a++) {
-							if(tpos+a+6 < data_len)
-							{
-								char_arr[a] = pdata[tpos+a+6];
-							}
-						}
-
-						std::string s(char_arr, sizeof(char_arr));
-						if(item_num < read_req.obj_names.size())
-						{
-							handle_enumerated_text(src_adr, read_req.obj_names[item_num], item_value, s);
-							ESP_LOGI("econet", "  %s : %d (%s)", read_req.obj_names[item_num].c_str(), item_value, s.c_str());
-						}
+						dest.push_back(pdata[i]);
 					}
+					handle_binary(src_adr, read_req.obj_names[0], dest);
 				}
-				tpos += item_len+1;
-				item_num++;
 			}
-			
+			else
+			{
+				int tpos = 0;
+				uint8_t item_num = 0;
+
+				while(tpos < data_len)
+				{
+					uint8_t item_len = pdata[tpos];
+					uint8_t item_type = pdata[tpos+1] & 0x7F;
+
+					if(item_type == 0 && tpos+7 < data_len)
+					{
+						float item_value = bytesToFloat(pdata[tpos+4],pdata[tpos+5],pdata[tpos+6],pdata[tpos+7]);
+						
+						if(item_num < read_req.obj_names.size())
+						{
+							handle_float(src_adr, read_req.obj_names[item_num], item_value);
+							ESP_LOGI("econet", "  %s : %f", read_req.obj_names[item_num].c_str(), item_value);
+						}
+					}
+					else if(item_type == 1)
+					{
+						// Decode text only
+						uint8_t item_text_len = item_len - 4;
+						
+						if(item_text_len > 0)
+						{
+							char char_arr[item_text_len];
+							
+							for (int a = 0; a < item_text_len; a++) {
+								if(tpos+a+4 < data_len)
+								{
+									char_arr[a] = pdata[tpos+a+4];
+								}
+							}
+							
+							std::string s(char_arr, sizeof(char_arr));
+							
+							if(item_num < read_req.obj_names.size())
+							{
+								handle_text(src_adr, read_req.obj_names[item_num], s);
+								ESP_LOGI("econet", "  %s : (%s)", read_req.obj_names[item_num].c_str(), s.c_str());
+							}
+						}
+					}
+					else if(item_type == 2 && tpos+5 < data_len)
+					{
+						// Enumerated Text
+
+						uint8_t item_value = pdata[tpos+4];
+
+						uint8_t item_text_len = pdata[tpos+5];
+
+						if(item_text_len > 0)
+						{
+							char char_arr[item_text_len];
+
+							for (int a = 0; a < item_text_len; a++) {
+								if(tpos+a+6 < data_len)
+								{
+									char_arr[a] = pdata[tpos+a+6];
+								}
+							}
+
+							std::string s(char_arr, sizeof(char_arr));
+							if(item_num < read_req.obj_names.size())
+							{
+								handle_enumerated_text(src_adr, read_req.obj_names[item_num], item_value, s);
+								ESP_LOGI("econet", "  %s : %d (%s)", read_req.obj_names[item_num].c_str(), item_value, s.c_str());
+							}
+						}
+					}
+					tpos += item_len+1;
+					item_num++;
+				}
+			}
 			// This is likely the response to our request and now we "know" what was requested!
 			// ESP_LOGI("econet", "  RESPONSE RECEIVED!!!");
 			// for(int a = 0; a < read_req.obj_names.size(); a++)
@@ -1409,6 +1467,16 @@ void Econet::set_new_setpoint(float setpoint)
 {
 	send_new_setpoint = true;
 	new_setpoint = setpoint;
+}
+void Econet::set_new_setpoint_low(float setpoint)
+{
+	send_new_setpoint_low = true;
+	new_setpoint_low = setpoint;
+}
+void Econet::set_new_setpoint_high(float setpoint)
+{
+	send_new_setpoint_high = true;
+	new_setpoint_high = setpoint;
 }
 void Econet::set_new_mode(float mode)
 {
