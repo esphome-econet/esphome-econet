@@ -247,45 +247,6 @@ void Econet::handle_binary(uint32_t src_adr, std::string obj_string, std::vector
 		}
 	}
 }
-void Econet::handle_float(uint32_t src_adr, std::string obj_string, float value)
-{
-	if(src_adr == 0x1040)
-	{
-		if(obj_string == "FLOWRATE")
-		{
-			flow_rate = value/3.785;
-		}
-	}
-	else if(src_adr == 0x380)
-	{
-		if(obj_string == "SPT_STAT")
-		{
-			cc_spt_stat = value;
-		}
-		else if(obj_string == "COOLSETP")
-		{
-			cc_cool_setpoint = value;
-		}
-	}
-}
-void Econet::handle_enumerated_text(uint32_t src_adr, std::string obj_string, uint8_t value, std::string text)
-{
-	if(src_adr == 0x1040)
-	{
-
-	}
-	else if(src_adr == 0x380)
-	{
-		if(obj_string == "HVACMODE")
-		{
-			cc_hvacmode = value;
-		}
-		else if(obj_string == "AUTOMODE")
-		{
-			cc_automode = value;
-		}
-	}
-}
 void Econet::make_request()
 {	
 	uint32_t dst_adr = SMARTEC_TRANSLATOR;
