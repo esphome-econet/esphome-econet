@@ -9,7 +9,7 @@ esphome:
   comment: ${device_description}
   project:
     name: "stockmopar.econet"
-    version: 0.0.1
+    version: 0.1.0
 
 esp32:
   board: esp32dev
