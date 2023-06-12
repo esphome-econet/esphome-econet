@@ -30,8 +30,8 @@ logger:
   tx_buffer_size: 2000
 
 external_components:
-#  - source: github://stockmopar/esphome-econet
-  - source: components
+  - source: github://stockmopar/esphome-econet
+#  - source: components
 
 
 uart:
