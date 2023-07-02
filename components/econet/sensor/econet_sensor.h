@@ -72,7 +72,7 @@ class EconetSensor : public PollingComponent, public EconetClient {
 	void set_cc_automode_sensor(sensor::Sensor *sensor) {
 		this->cc_automode_sensor_ = sensor;
 	}
-  void set_cc_rel_hum_sensor(sensor::Sensor *sensor) {
+        void set_cc_rel_hum_sensor(sensor::Sensor *sensor) {
 		this->cc_rel_hum_sensor_ = sensor;
 	}
 	
