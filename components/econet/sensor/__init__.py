@@ -232,7 +232,7 @@ CONFIG_SCHEMA = (
             cv.GenerateID(): cv.declare_id(EconetSensor),
             cv.Optional(CONF_CC_REL_HUM): sensor.sensor_schema(
                 unit_of_measurement="%",
-                icon=ICON_WATER,
+                icon=ICON_THERMOMETER,
                 accuracy_decimals=1,
                 device_class=DEVICE_CLASS_HUMIDITY,
                 state_class=STATE_CLASS_MEASUREMENT,
