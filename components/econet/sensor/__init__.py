@@ -227,7 +227,7 @@ CONFIG_SCHEMA = (
                 accuracy_decimals=0,
             )
         },
-  {
+       {
             cv.GenerateID(): cv.declare_id(EconetSensor),
             cv.Optional(CONF_CC_REL_HUM): sensor.sensor_schema(
                 unit_of_measurement="%",
@@ -313,7 +313,6 @@ async def to_code(config):
     if CONF_CC_AUTOMODE in config:
         sens = await sensor.new_sensor(config[CONF_CC_AUTOMODE])
         cg.add(var.set_cc_automode_sensor(sens))
-
-cg.add(var.set_cc_rel_hum_sensor(sens))
     if CONF_CC_REL_HUM in config:
         sens = await sensor.new_sensor(config[CONF_CC_REL_HUM])
+        cg.add(var.set_cc_rel_hum_sensor(sens))
