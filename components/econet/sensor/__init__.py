@@ -227,7 +227,7 @@ CONFIG_SCHEMA = (
                 accuracy_decimals=0,
             )
         },
-       {
+    {
             cv.GenerateID(): cv.declare_id(EconetSensor),
             cv.Optional(CONF_CC_REL_HUM): sensor.sensor_schema(
                 unit_of_measurement="%",
