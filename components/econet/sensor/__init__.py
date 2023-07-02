@@ -47,6 +47,7 @@ CONF_CC_HVACMODE = "cc_hvacmode"
 CONF_CC_SPT_STAT = "cc_spt_stat"
 CONF_CC_COOLSETP = "cc_coolsetp"
 CONF_CC_AUTOMODE = "cc_automode"
+CONF_CC_REL_HUM = "cc_rel_hum"
 
 CONFIG_SCHEMA = (
     cv.COMPONENT_SCHEMA.extend(
@@ -225,6 +226,16 @@ CONFIG_SCHEMA = (
                 unit_of_measurement="",
                 accuracy_decimals=0,
             )
+        },
+       {
+            cv.GenerateID(): cv.declare_id(EconetSensor),
+            cv.Optional(CONF_CC_REL_HUM): sensor.sensor_schema(
+                unit_of_measurement="%",
+                icon=ICON_WATER,
+                accuracy_decimals=1,
+                device_class=DEVICE_CLASS_HUMIDITY,
+                state_class=STATE_CLASS_MEASUREMENT,
+            )
         }
     )
     .extend(ECONET_CLIENT_SCHEMA)
@@ -302,3 +313,7 @@ async def to_code(config):
     if CONF_CC_AUTOMODE in config:
         sens = await sensor.new_sensor(config[CONF_CC_AUTOMODE])
         cg.add(var.set_cc_automode_sensor(sens))
+
+cg.add(var.set_cc_rel_hum_sensor(sens))
+    if CONF_CC_REL_HUM in config:
+        sens = await sensor.new_sensor(config[CONF_CC_REL_HUM])
