@@ -73,6 +73,9 @@ void EconetSensor::update() {
 	if (this->cc_automode_sensor_ != nullptr) {
 		this->cc_automode_sensor_->publish_state(this->econet->get_cc_automode());
 	}
+ if (this->cc_rel_hum_sensor_ != nullptr) {
+		this->cc_rel_hum_sensor_->publish_state(this->econet->get_cc_rel_hum_sensor());
+	}
 }
 
 void EconetSensor::dump_config() {
