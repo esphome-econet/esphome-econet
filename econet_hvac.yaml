@@ -62,3 +62,5 @@ sensor:
       name: "HVAC Cooling Setpoint"
     cc_automode:
       name: "HVAC Auto Mode"
+    cc_rel_hum:
+      name: "Thermostat Current Humidity"
