@@ -6,12 +6,8 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import climate
 from esphome.const import CONF_ID
-from .. import (
-    econet_ns,
-    CONF_ECONET_ID,
-    ECONET_CLIENT_SCHEMA,
-    EconetClient,
-)
+
+from .. import CONF_ECONET_ID, ECONET_CLIENT_SCHEMA, EconetClient, econet_ns
 
 EconetClimate = econet_ns.class_(
     "EconetClimate", climate.Climate, cg.PollingComponent, EconetClient

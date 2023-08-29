@@ -13,5 +13,5 @@ class EmptySwitch : public switch_::Switch, public Component {
   void dump_config() override;
 };
 
-} //namespace empty_switch
-} //namespace esphome
+}  // namespace empty_switch
+}  // namespace esphome

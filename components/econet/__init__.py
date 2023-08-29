@@ -22,7 +22,7 @@ CONFIG_SCHEMA = cv.Schema(
     {
         cv.GenerateID(): cv.declare_id(Econet),
         cv.Required(CONF_UART): cv.use_id(UARTComponent),
-		cv.Required("model"): cv.string
+        cv.Required("model"): cv.string,
     }
 )
 
@@ -32,6 +32,7 @@ ECONET_CLIENT_SCHEMA = cv.Schema(
     }
 )
 
+
 async def to_code(config):
     """Generate code"""
     var = cg.new_Pvariable(config[CONF_ID])
@@ -39,8 +40,8 @@ async def to_code(config):
     uart = await cg.get_variable(config[CONF_UART])
     cg.add(var.set_uart(uart))
     if config[CONF_MODEL] == "Tankless":
-    	cg.add(var.set_type_id(0))
+        cg.add(var.set_type_id(0))
     if config[CONF_MODEL] == "Heatpump":
-    	cg.add(var.set_type_id(1))
+        cg.add(var.set_type_id(1))
     if config[CONF_MODEL] == "HVAC":
-    	cg.add(var.set_type_id(2))
+        cg.add(var.set_type_id(2))
