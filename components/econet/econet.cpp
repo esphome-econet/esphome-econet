@@ -664,41 +664,47 @@ void Econet::read_buffer(int bytes_available) {
 void Econet::loop() {
   const uint32_t now = millis();
 
-  // Read Every 50ms After 10s afer boot
-  if (now - this->last_read_ > 10) {
-    this->act_loop_time_ = now - this->last_read_;
-    this->last_read_ = now;
-    // Read Everything that is in the buffer
-    int bytes_available = this->available();
+  // Wait at least 10ms since last attempt to read
+  if (now - this->last_read_ <= 10) {
+    return;
+  }
 
-    if (bytes_available > 0) {
-      this->last_read_data_ = now;
-      ESP_LOGI("econet", "Read %d. ms=%d, lt=%d", bytes_available, now, act_loop_time_);
-      this->read_buffer(bytes_available);
-    } else {
-      // ESP_LOGI("econet", "--- millis()=%d", now);
-    }
-    if (now - this->last_read_data_ > 100) {
-      // ESP_LOGI("econet", "request ms=%d", now);
+  this->act_loop_time_ = now - this->last_read_;
+  this->last_read_ = now;
 
-      // Bus is Assumbed Available For Sending
-      // This currently attempts a request every 1000ms
-      if (now - this->last_request_ > 500) {
-        ESP_LOGI("econet", "request ms=%d", now);
-        this->last_request_ = now;
-        this->make_request();
-        req_id++;
-        if (req_id > 1) {
-          ESP_LOGI("econet", "request ms=%d", now);
-          this->last_request_ = now;
-          this->make_request();
-          req_id++;
-          if (req_id > 0) {
-            req_id = 0;
-          }
-        }
-      }
-    }
+  // Read Everything that is in the buffer
+  int bytes_available = this->available();
+  if (bytes_available > 0) {
+    this->last_read_data_ = now;
+    ESP_LOGI("econet", "Read %d. ms=%d, lt=%d", bytes_available, now, act_loop_time_);
+    this->read_buffer(bytes_available);
+    return;
+  }
+
+  // Wait at least 100ms since last time we read data
+  if (now - this->last_read_data_ <= 100) {
+    return;
+  }
+
+  // Wait at least 500ms since last request
+  if (now - this->last_request_ <= 500) {
+    return;
+  }
+
+  // If there are any needed write requests they will be made every 500ms.
+  // Read requests are made every 1s unless there are pending write requests in
+  // which case they will be at the next available 500ms slot.
+
+  // Bus is assumed Available For Sending
+  ESP_LOGI("econet", "request ms=%d", now);
+  this->last_request_ = now;
+  this->make_request();
+  req_id++;
+  if (req_id > 1) {
+    ESP_LOGI("econet", "request ms=%d", now);
+    this->last_request_ = now;
+    this->make_request();
+    req_id = 0;
   }
 }
 
