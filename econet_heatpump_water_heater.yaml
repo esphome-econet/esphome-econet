@@ -123,3 +123,11 @@ binary_sensor:
     name: "Compressor Relay"
     sensor_datapoint: COMP_RLY
     device_class: "running"
+
+text_sensor:
+  - platform: econet
+    name: "Water Heater Fan Speed"
+    sensor_datapoint: FAN_CTRL
+  - platform: econet
+    name: "Water Heater Heating Element State"
+    sensor_datapoint: HEATCTRL

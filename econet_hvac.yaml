@@ -43,6 +43,15 @@ uart:
 econet:
   uart_id: uart_0
   model: "HVAC"
+  hvac_wifi_module_connected: false
+  on_datapoint_update:
+    - sensor_datapoint: AIRHSTAT
+      datapoint_type: raw
+      then:
+        - lambda: |-
+            ESP_LOGD("main", "on_datapoint_update %s", format_hex_pretty(x).c_str());
+            id(blower_cfm).publish_state((x[16] << 8) + x[17]);
+            id(blower_rpm).publish_state((x[20] << 8) + x[21]);
 
 climate:
   - platform: econet
@@ -73,3 +82,104 @@ sensor:
     sensor_datapoint: AUTOMODE
     unit_of_measurement: ""
     accuracy_decimals: 0
+  - platform: econet
+    name: "Thermostat Current Humidity"
+    sensor_datapoint: RELH7005
+    unit_of_measurement: "%"
+    accuracy_decimals: 1
+    device_class: "humidity"
+    state_class: "measurement"
+  - platform: econet
+    name: "HVAC ODU Outside Air Temperature "
+    sensor_datapoint: TEMP_OAT
+    unit_of_measurement: "°F"
+    accuracy_decimals: 1
+    device_class: "temperature"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Evaporator Temperature "
+    sensor_datapoint: TEMP_EVP
+    unit_of_measurement: "°F"
+    accuracy_decimals: 1
+    device_class: "temperature"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Inverter Crank Speed"
+    sensor_datapoint: ISCSPEED
+    unit_of_measurement: ""
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Crankcase Heater Temperature"
+    sensor_datapoint: TEMP_CPT
+    unit_of_measurement: "°F"
+    accuracy_decimals: 1
+    device_class: "temperature"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Expansion Valve Current Position"
+    sensor_datapoint: EXACTUAL
+    unit_of_measurement: ""
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Expansion Valve Super Heat"
+    sensor_datapoint: EXVSUPER
+    unit_of_measurement: "°F"
+    accuracy_decimals: 1
+    device_class: "temperature"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Suction Line Temp"
+    sensor_datapoint: TEMP_OST
+    unit_of_measurement: "°F"
+    accuracy_decimals: 1
+    device_class: "temperature"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Pressure Suction"
+    sensor_datapoint: PRES_SUC
+    unit_of_measurement: "PSI"
+    accuracy_decimals: 1
+    device_class: "pressure"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: template
+    name: "HVAC Air Handler CFM"
+    id: blower_cfm
+    unit_of_measurement: ""
+    accuracy_decimals: 0
+    entity_category: "diagnostic"
+  - platform: template
+    name: "HVAC Air Handler RPM"
+    id: blower_rpm
+    unit_of_measurement: ""
+    accuracy_decimals: 0
+    entity_category: "diagnostic"
+
+text_sensor:
+  - platform: econet
+    name: "HVAC Operating Mode Text"
+    sensor_datapoint: HVACMODE
+  - platform: econet
+    name: "HVAC Auto Mode Text"
+    sensor_datapoint: AUTOMODE
+
+number:
+  - platform: econet
+    name: "HVAC Dehumidification Setting Control"
+    number_datapoint: DHUMSETP
+    min_value: 10
+    max_value: 80
+    step: 1
+    mode: 'slider'
+
+switch:
+  - platform: econet
+    name: "HVAC Dehumidification Enable State"
+    switch_datapoint: DHUMENAB
