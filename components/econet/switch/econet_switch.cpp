@@ -7,15 +7,17 @@ namespace econet {
 static const char *const TAG = "econet.switch";
 
 void EconetSwitch::update() {
-  this->publish_state(this->econet->get_enable_state());
+  this->publish_state(this->parent_->get_enable_state());
 }
 
 void EconetSwitch::write_state(bool state) {
   ESP_LOGD("econet", "write_state");
-  this->econet->set_enable_state(state);
+  this->parent_->set_enable_state(state);
 }
 
-void EconetSwitch::dump_config() {}
+void EconetSwitch::dump_config() {
+  LOG_SWITCH("", "Econet Switch", this);
+}
 
 }  // namespace econet
 }  // namespace esphome

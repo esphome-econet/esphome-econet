@@ -42,8 +42,8 @@ async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
 
-    econet_var = await cg.get_variable(config[CONF_ECONET_ID])
-    cg.add(var.set_econet(econet_var))
+    paren = await cg.get_variable(config[CONF_ECONET_ID])
+    cg.add(var.set_econet_parent(paren))
 
     if CONF_ENABLE_STATE in config:
         sens = await binary_sensor.new_binary_sensor(config[CONF_ENABLE_STATE])

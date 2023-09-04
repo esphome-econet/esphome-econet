@@ -8,16 +8,16 @@ static const char *const TAG = "econet.bsensor";
 
 void EconetBinarySensor::update() {
   if (this->enable_state_sensor_ != nullptr) {
-    this->enable_state_sensor_->publish_state(this->econet->get_enable_state());
+    this->enable_state_sensor_->publish_state(this->parent_->get_enable_state());
   }
   if (this->heatctrl_sensor_ != nullptr) {
-    this->heatctrl_sensor_->publish_state(this->econet->get_heatctrl());
+    this->heatctrl_sensor_->publish_state(this->parent_->get_heatctrl());
   }
   if (this->fan_ctrl_sensor_ != nullptr) {
-    this->fan_ctrl_sensor_->publish_state(this->econet->get_fan_ctrl());
+    this->fan_ctrl_sensor_->publish_state(this->parent_->get_fan_ctrl());
   }
   if (this->comp_rly_sensor_ != nullptr) {
-    this->comp_rly_sensor_->publish_state(this->econet->get_comp_rly());
+    this->comp_rly_sensor_->publish_state(this->parent_->get_comp_rly());
   }
 }
 

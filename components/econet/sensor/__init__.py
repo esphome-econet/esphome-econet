@@ -221,8 +221,9 @@ CONFIG_SCHEMA = (
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
-    econet_var = await cg.get_variable(config[CONF_ECONET_ID])
-    cg.add(var.set_econet(econet_var))
+
+    paren = await cg.get_variable(config[CONF_ECONET_ID])
+    cg.add(var.set_econet_parent(paren))
 
     if CONF_TEMP_IN in config:
         sens = await sensor.new_sensor(config[CONF_TEMP_IN])

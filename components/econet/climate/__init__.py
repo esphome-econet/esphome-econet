@@ -25,5 +25,5 @@ async def to_code(config):
     await cg.register_component(var, config)
     await climate.register_climate(var, config)
 
-    econet_var = await cg.get_variable(config[CONF_ECONET_ID])
-    cg.add(var.set_econet(econet_var))
+    paren = await cg.get_variable(config[CONF_ECONET_ID])
+    cg.add(var.set_econet_parent(paren))

@@ -228,10 +228,10 @@ class Econet : public Component {
 
 class EconetClient {
  public:
-  void set_econet(Econet *econet) { this->econet = econet; }
+  void set_econet_parent(Econet *parent) { this->parent_ = parent; }
 
  protected:
-  Econet *econet;
+  Econet *parent_;
 };
 
 }  // namespace econet
