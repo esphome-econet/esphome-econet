@@ -270,72 +270,29 @@ void Econet::parse_tx_message() { this->parse_message(true); }
 void Econet::parse_rx_message() { this->parse_message(false); }
 
 void Econet::parse_message(bool is_tx) {
-  bool logvals = true;
+  const uint8_t *b = is_tx ? wbuffer : buffer;
+  uint32_t dst_adr = ((b[0] & 0x7f) << 24) + (b[1] << 16) + (b[2] << 8) + b[3];
+  uint8_t dst_bus = b[4];
+
+  uint32_t src_adr = ((b[5] & 0x7f) << 24) + (b[6] << 16) + (b[7] << 8) + b[8];
+  uint8_t src_bus = b[9];
+
+  uint8_t data_len = b[10];
+
+  uint16_t pmsg_len = data_len + MSG_HEADER_SIZE + MSG_CRC_SIZE;
+
+  uint8_t command = b[13];
+
+  uint16_t crc = (b[data_len + MSG_HEADER_SIZE]) + (b[data_len + MSG_HEADER_SIZE + 1] << 8);
+
+  uint16_t crc_check = gen_crc16(b, data_len + 14);
 
   uint8_t pdata[255];
-
-  // Receive?
-  uint32_t dst_adr = 0;
-  uint8_t dst_bus = 0;
-  uint32_t src_adr = 0;
-  uint8_t src_bus = 0;
-  uint8_t data_len = 0;
-  uint8_t command = 0;
-  uint16_t crc = 0;
-  uint16_t crc_check = 0;
-
-  uint16_t pmsg_len = 0;
-
-  if (is_tx == false) {
-    dst_adr = ((buffer[0] & 0x7f) << 24) + (buffer[1] << 16) + (buffer[2] << 8) + buffer[3];
-    dst_bus = buffer[4];
-
-    src_adr = ((buffer[5] & 0x7f) << 24) + (buffer[6] << 16) + (buffer[7] << 8) + buffer[8];
-    src_bus = buffer[9];
-
-    data_len = buffer[10];
-
-    pmsg_len = data_len + MSG_HEADER_SIZE + MSG_CRC_SIZE;
-
-    command = buffer[13];
-
-    crc = (buffer[data_len + MSG_HEADER_SIZE]) + (buffer[data_len + MSG_HEADER_SIZE + 1] << 8);
-
-    crc_check = gen_crc16(buffer, data_len + 14);
-
-    for (int i = 0; i < data_len; i++) {
-      pdata[i] = buffer[MSG_HEADER_SIZE + i];
-    }
-
-    // data_len + MSG_HEADER_SIZE + MSG_CRC_SIZE
-
-  } else {
-    dst_adr = ((wbuffer[0] & 0x7f) << 24) + (wbuffer[1] << 16) + (wbuffer[2] << 8) + wbuffer[3];
-    dst_bus = wbuffer[4];
-
-    src_adr = ((wbuffer[5] & 0x7f) << 24) + (wbuffer[6] << 16) + (wbuffer[7] << 8) + wbuffer[8];
-    src_bus = wbuffer[9];
-
-    data_len = wbuffer[10];
-
-    pmsg_len = data_len + MSG_HEADER_SIZE + MSG_CRC_SIZE;
-
-    command = wbuffer[13];
-
-    crc = (wbuffer[data_len + MSG_HEADER_SIZE]) + (wbuffer[data_len + MSG_HEADER_SIZE + 1] << 8);
-
-    crc_check = gen_crc16(wbuffer, data_len + 14);
-
-    for (int i = 0; i < data_len; i++) {
-      pdata[i] = wbuffer[MSG_HEADER_SIZE + i];
-    }
+  for (int i = 0; i < data_len; i++) {
+    pdata[i] = b[MSG_HEADER_SIZE + i];
   }
 
-  if (is_tx == false) {
-    ESP_LOGI("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, pmsg_len).c_str());
-  } else {
-    ESP_LOGI("econet", ">>> %s", format_hex_pretty((const uint8_t *) wbuffer, pmsg_len).c_str());
-  }
+  ESP_LOGI("econet", "%s %s", is_tx ? ">>>" : "<<<", format_hex_pretty(b, pmsg_len).c_str());
 
   ESP_LOGI("econet", "  Dst Adr : 0x%x", dst_adr);
   ESP_LOGI("econet", "  Src Adr : 0x%x", src_adr);
