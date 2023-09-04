@@ -96,6 +96,25 @@ void Econet::handle_float(uint32_t src_adr, std::string obj_string, float value)
       // Not Supported Yet
     }
   } else if (src_adr == HEAT_PUMP_WATER_HEATER) {
+    if (obj_string == "WHTRSETP") {
+      setpoint = value;
+    } else if (obj_string == "HOTWATER") {
+      hot_water = value;
+    } else if (obj_string == "AMBIENTT") {
+      ambient_temp = value;
+    } else if (obj_string == "LOHTRTMP") {
+      lower_water_heater_temp = value;
+    } else if (obj_string == "UPHTRTMP") {
+      upper_water_heater_temp = value;
+    } else if (obj_string == "POWRWATT") {
+      power_watt = value;
+    } else if (obj_string == "EVAPTEMP") {
+      evap_temp = value;
+    } else if (obj_string == "SUCTIONT") {
+      suction_temp = value;
+    } else if (obj_string == "DISCTEMP") {
+      discharge_temp = value;
+    }
   } else if (src_adr == CONTROL_CENTER) {
     if (obj_string == "SPT_STAT") {
       cc_spt_stat = value;
@@ -118,6 +137,17 @@ void Econet::handle_enumerated_text(uint32_t src_adr, std::string obj_string, ui
       // Not Supported
     }
   } else if (src_adr == HEAT_PUMP_WATER_HEATER) {
+    if (obj_string == "WHTRENAB") {
+      enable_state = value == 1;
+    } else if (obj_string == "WHTRCNFG") {
+      mode = static_cast<int>(value);
+    } else if (obj_string == "HEATCTRL") {
+      heatctrl = value == 1;
+    } else if (obj_string == "FAN_CTRL") {
+      fan_ctrl = value == 1;
+    } else if (obj_string == "COMP_RLY") {
+      comp_rly = value == 1;
+    }
   } else if (src_adr == CONTROL_CENTER) {
     if (obj_string == "HVACMODE") {
       cc_hvacmode = value;
@@ -458,6 +488,7 @@ void Econet::parse_message(bool is_tx) {
       // ESP_LOGI("econet", "  ValName : %s", read_req.obj_names[a].c_str());
       // }
       read_req.awaiting_res = false;
+      instant_btus = std::max((float) ((temp_out - temp_in) * flow_rate * 8.334 * 60 / 0.92 / 1000), (float) 0.0);
     }
   } else if (command == WRITE_COMMAND) {
     uint8_t type = pdata[0];
@@ -515,103 +546,6 @@ void Econet::parse_message(bool is_tx) {
       // 00 00 03 40
       // 00 00 05 00
     } else {
-    }
-  }
-
-  uint32_t exp_dst_adr = WIFI_MODULE;
-  uint32_t exp_src_adr = SMARTEC_TRANSLATOR;
-  int exp_msg_len = 115;
-
-  if (model_type_ == MODEL_TYPE_HEATPUMP) {
-    exp_dst_adr = WIFI_MODULE;
-    exp_src_adr = HEAT_PUMP_WATER_HEATER;
-    exp_msg_len = 166;
-    // Original was 66
-    // New is 110
-    // New new is 150 + 14 + 2 = 166
-  }
-
-  if (dst_adr == exp_dst_adr && src_adr == exp_src_adr) {
-    if (command == ACK && pmsg_len == exp_msg_len) {
-      int tpos = 0;
-      uint8_t item_num = 1;
-
-      while (tpos < data_len) {
-        uint8_t item_len = pdata[tpos];
-        EconetDatapointType item_type = EconetDatapointType(pdata[tpos + 1] & 0x7F);
-
-        if (item_type == EconetDatapointType::FLOAT) {
-          float item_value = bytes_to_float(pdata[tpos + 4], pdata[tpos + 5], pdata[tpos + 6], pdata[tpos + 7]);
-
-          if (model_type_ == MODEL_TYPE_HEATPUMP) {
-            if (item_num == 3) {
-              setpoint = item_value;
-            } else if (item_num == 4) {
-              hot_water = item_value;
-            } else if (item_num == 8) {
-              ambient_temp = item_value;
-            } else if (item_num == 9) {
-              lower_water_heater_temp = item_value;
-            } else if (item_num == 10) {
-              upper_water_heater_temp = item_value;
-            } else if (item_num == 11) {
-              power_watt = item_value;
-            } else if (item_num == 12) {
-              evap_temp = item_value;
-            } else if (item_num == 13) {
-              suction_temp = item_value;
-            } else if (item_num == 14) {
-              discharge_temp = item_value;
-            }
-          }
-        } else if (item_type == EconetDatapointType::ENUM_TEXT) {
-          uint8_t item_value = pdata[tpos + 4];
-
-          uint8_t item_text_len = pdata[tpos + 5];
-
-          char char_arr[item_text_len];
-
-          for (int a = 0; a < item_text_len; a++) {
-            char_arr[a] = pdata[tpos + a + 6];
-          }
-
-          std::string s(char_arr, sizeof(char_arr));
-
-          if (model_type_ == MODEL_TYPE_HEATPUMP) {
-            if (item_num == 1) {
-              if (item_value == 0) {
-                enable_state = false;
-              } else if (item_value == 1) {
-                enable_state = true;
-              }
-            } else if (item_num == 2) {
-              mode = static_cast<int>(item_value);
-            } else if (item_num == 5) {
-              if (item_value == 0) {
-                heatctrl = false;
-              } else {
-                heatctrl = true;
-              }
-            } else if (item_num == 6) {
-              if (item_value == 0) {
-                fan_ctrl = false;
-              } else {
-                fan_ctrl = true;
-              }
-            } else if (item_num == 7) {
-              if (item_value == 0) {
-                comp_rly = false;
-              } else {
-                comp_rly = true;
-              }
-            }
-          }
-        }
-        tpos += item_len + 1;
-        item_num++;
-      }
-
-      instant_btus = std::max((float) ((temp_out - temp_in) * flow_rate * 8.334 * 60 / 0.92 / 1000), (float) 0.0);
     }
   }
 }
