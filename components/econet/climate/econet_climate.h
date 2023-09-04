@@ -7,9 +7,9 @@
 namespace esphome {
 namespace econet {
 
-class EconetClimate : public climate::Climate, public PollingComponent, public EconetClient {
+class EconetClimate : public climate::Climate, public Component, public EconetClient {
  public:
-  void update() override;
+  void setup() override;
   void dump_config() override;
 
  protected:

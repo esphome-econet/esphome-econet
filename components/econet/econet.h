@@ -31,9 +31,35 @@ enum class EconetDatapointType : uint8_t {
   RAW = 4,
 };
 
-struct DatapointListener {
-  uint8_t datapoint_id;
-  std::function<void(float)> on_datapoint;
+struct EconetDatapoint {
+  EconetDatapointType type;
+  union {
+    float value_float;
+    uint8_t value_enum;
+  };
+  std::string value_string;
+  std::vector<uint8_t> value_raw;
+};
+inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
+  if (lhs.type != rhs.type) {
+    return false;
+  }
+  switch (lhs.type) {
+    case EconetDatapointType::FLOAT:
+      return lhs.value_float == rhs.value_float;
+    case EconetDatapointType::TEXT:
+      return lhs.value_string == rhs.value_string;
+    case EconetDatapointType::ENUM_TEXT:
+      return lhs.value_enum == rhs.value_enum;
+    case EconetDatapointType::RAW:
+      return lhs.value_raw == rhs.value_raw;
+  }
+  return false;
+}
+
+struct EconetDatapointListener {
+  std::string datapoint_id;
+  std::function<void(EconetDatapoint)> on_datapoint;
 };
 
 class Econet : public Component, public uart::UARTDevice {
@@ -44,63 +70,18 @@ class Econet : public Component, public uart::UARTDevice {
   void set_model_type(ModelType model_type) { model_type_ = model_type; }
   ModelType get_model_type() { return model_type_; }
 
-  void set_enable_state(bool state);
 
-  void set_new_setpoint(float setpoint);
-  void set_new_setpoint_low(float setpoint);
-  void set_new_setpoint_high(float setpoint);
+  void set_float_datapoint_value(const std::string &datapoint_id, float value);
+  void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value);
 
-  void set_new_mode(float mode);
-  void set_new_fan_mode(float fan_mode);
-
-  float get_temp_in() { return this->temp_in; }
-  float get_temp_out() { return this->temp_out; }
-  float get_flow_rate() { return this->flow_rate; }
-  float get_setpoint() { return this->setpoint; }
-  float get_water_used() { return this->water_used; }
-  float get_btus_used() { return this->btus_used; }
-  float get_ignition_cycles() { return this->ignition_cycles; }
-  float get_instant_btus() { return this->instant_btus; }
-  float get_hot_water() { return this->hot_water; }
-  float get_mode() { return this->mode; }
-  bool get_enable_state() { return this->enable_state; }
-  bool get_heatctrl() { return this->heatctrl; }
-  bool get_fan_ctrl() { return this->fan_ctrl; }
-  bool get_comp_rly() { return this->comp_rly; }
-
-  float get_ambient_temp() { return this->ambient_temp; }
-  float get_lower_water_heater_temp() { return this->lower_water_heater_temp; }
-  float get_power_watt() { return this->power_watt; }
-  float get_upper_water_heater_temp() { return this->upper_water_heater_temp; }
-  float get_evap_temp() { return this->evap_temp; }
-  float get_suction_temp() { return this->suction_temp; }
-  float get_discharge_temp() { return this->discharge_temp; }
-
-  float get_current_temp() {
-    if (this->model_type_ == MODEL_TYPE_TANKLESS) {
-      return this->temp_out;
-    } else if (this->model_type_ == MODEL_TYPE_HEATPUMP) {
-      return this->upper_water_heater_temp;
-    } else {
-      return this->setpoint;
-    }
-  }
-
-  float get_cc_hvacmode() { return this->cc_hvacmode; }
-  float get_cc_spt_stat() { return this->cc_spt_stat; }
-  float get_cc_cool_setpoint() { return this->cc_cool_setpoint; }
-  float get_cc_heat_setpoint() { return this->cc_heat_setpoint; }
-  float get_cc_automode() { return this->cc_automode; }
-  float get_cc_statmode() { return this->cc_statmode; }
-  float get_cc_fan_mode() { return this->cc_fan_mode; }
-
-  void register_listener(uint8_t datapoint_id, const std::function<void(float)> &func);
+  void register_listener(const std::string &datapoint_id, const std::function<void(EconetDatapoint)> &func);
 
  protected:
   ModelType model_type_;
-  std::vector<DatapointListener> listeners_;
+  std::vector<EconetDatapointListener> listeners_;
   ReadRequest read_req;
-  void send_datapoint(uint8_t datapoint_id, float value);
+  void set_datapoint(const std::string &datapoint_id, EconetDatapoint value);
+  void send_datapoint(const std::string &datapoint_id, EconetDatapoint value);
 
   void make_request();
   void read_buffer(int bytes_available);
@@ -108,51 +89,13 @@ class Econet : public Component, public uart::UARTDevice {
   void parse_rx_message();
   void parse_tx_message();
 
-  void handle_float(uint32_t src_adr, std::string obj_string, float value);
-  void handle_enumerated_text(uint32_t src_adr, std::string obj_string, uint8_t value, std::string text);
-
-  void handle_text(uint32_t src_adr, std::string obj_string, std::string text);
-  void handle_binary(uint32_t src_adr, std::string obj_string, std::vector<uint8_t> data);
-
   void transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t command, const std::vector<uint8_t> &data);
   void request_strings(uint32_t dst_adr, uint32_t src_adr, const std::vector<std::string> &objects);
   void write_value(uint32_t dst_adr, uint32_t src_adr, const std::string &object, EconetDatapointType type,
                    float value);
 
-  float temp_in = 0;
-  float temp_out = 0;
-  float flow_rate = 0;
-  float setpoint = 0;
-  float water_used = 0;
-  float btus_used = 0;
-  float ignition_cycles = 0;
-  float instant_btus = 0;
-  float hot_water = 0;
-  bool enable_state = false;
-  bool heatctrl = false;
-  bool fan_ctrl = false;
-  bool comp_rly = false;
-
-  float ambient_temp = 0;
-  float lower_water_heater_temp = 0;
-  float upper_water_heater_temp = 0;
-  float power_watt = 0;
-  float evap_temp = 0;
-  float suction_temp = 0;
-  float discharge_temp = 0;
-
-  float current_temp = 0;
-
-  float mode = 0;
-
-  float cc_hvacmode = 0;
-  float cc_spt_stat = 0;
-  float cc_cool_setpoint = 0;
-
-  float cc_heat_setpoint = 0;
-  float cc_automode = 0;
-  float cc_statmode = 0;
-  float cc_fan_mode = 0;
+  std::map<std::string, EconetDatapoint> datapoints_{};
+  std::map<std::string, EconetDatapoint> pending_writes_{};
 
   uint8_t req_id = 0;
   uint32_t last_request_{0};
@@ -164,24 +107,6 @@ class Econet : public Component, public uart::UARTDevice {
   int pos = 0;
   static const int max_message_size = 271;
   uint8_t buffer[max_message_size];
-
-  bool send_enable_disable = false;
-  bool enable_disable_cmd = false;
-
-  bool send_new_setpoint_low = false;
-  float new_setpoint_low = 100;
-
-  bool send_new_setpoint_high = false;
-  float new_setpoint_high = 100;
-
-  bool send_new_setpoint = false;
-  float new_setpoint = 100;
-
-  bool send_new_mode = false;
-  float new_mode = 0;
-
-  bool send_new_fan_mode = false;
-  float new_fan_mode = 0;
 
   uint8_t wbuffer[max_message_size];
   uint16_t wmsg_len = 0;

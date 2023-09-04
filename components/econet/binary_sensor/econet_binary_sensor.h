@@ -7,21 +7,14 @@
 namespace esphome {
 namespace econet {
 
-class EconetBinarySensor : public PollingComponent, public EconetClient {
+class EconetBinarySensor : public binary_sensor::BinarySensor, public Component, public EconetClient {
  public:
-  void update() override;
+  void setup() override;
   void dump_config() override;
-
-  void set_enable_state_sensor(binary_sensor::BinarySensor *sensor) { this->enable_state_sensor_ = sensor; }
-  void set_heatctrl_sensor(binary_sensor::BinarySensor *sensor) { this->heatctrl_sensor_ = sensor; }
-  void set_fan_ctrl_sensor(binary_sensor::BinarySensor *sensor) { this->fan_ctrl_sensor_ = sensor; }
-  void set_comp_rly_sensor(binary_sensor::BinarySensor *sensor) { this->comp_rly_sensor_ = sensor; }
+  void set_sensor_id(const std::string &sensor_id) { this->sensor_id_ = sensor_id; }
 
  protected:
-  binary_sensor::BinarySensor *enable_state_sensor_{nullptr};
-  binary_sensor::BinarySensor *heatctrl_sensor_{nullptr};
-  binary_sensor::BinarySensor *fan_ctrl_sensor_{nullptr};
-  binary_sensor::BinarySensor *comp_rly_sensor_{nullptr};
+  std::string sensor_id_{""};
 };
 
 }  // namespace econet

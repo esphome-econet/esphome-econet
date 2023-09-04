@@ -8,19 +8,18 @@ from .. import CONF_ECONET_ID, ECONET_CLIENT_SCHEMA, EconetClient, econet_ns
 DEPENDENCIES = ["econet"]
 
 EconetSwitch = econet_ns.class_(
-    "EconetSwitch", switch.Switch, cg.PollingComponent, EconetClient
+    "EconetSwitch", switch.Switch, cg.Component, EconetClient
 )
 
 CONFIG_SCHEMA = (
     switch.switch_schema(EconetSwitch)
     .extend(
         {
-            cv.Required(CONF_SWITCH_DATAPOINT): cv.uint8_t,
+            cv.Required(CONF_SWITCH_DATAPOINT): cv.string,
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
     .extend(ECONET_CLIENT_SCHEMA)
-    .extend(cv.polling_component_schema("1s"))
 )
 
 

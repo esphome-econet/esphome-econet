@@ -7,16 +7,16 @@
 namespace esphome {
 namespace econet {
 
-class EconetSwitch : public switch_::Switch, public PollingComponent, public EconetClient {
+class EconetSwitch : public switch_::Switch, public Component, public EconetClient {
  public:
-  void update() override;
+  void setup() override;
   void dump_config() override;
-  void set_switch_id(uint8_t switch_id) { this->switch_id_ = switch_id; }
+  void set_switch_id(const std::string &switch_id) { this->switch_id_ = switch_id; }
 
  protected:
   void write_state(bool state) override;
 
-  uint8_t switch_id_{0};
+  std::string switch_id_{""};
 };
 
 }  // namespace econet

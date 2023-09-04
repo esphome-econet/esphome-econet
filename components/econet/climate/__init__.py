@@ -8,7 +8,7 @@ from .. import CONF_ECONET_ID, ECONET_CLIENT_SCHEMA, EconetClient, econet_ns
 DEPENDENCIES = ["econet"]
 
 EconetClimate = econet_ns.class_(
-    "EconetClimate", climate.Climate, cg.PollingComponent, EconetClient
+    "EconetClimate", climate.Climate, cg.Component, EconetClient
 )
 
 CONFIG_SCHEMA = cv.All(
@@ -17,7 +17,7 @@ CONFIG_SCHEMA = cv.All(
             cv.GenerateID(): cv.declare_id(EconetClimate),
         }
     )
-    .extend(cv.polling_component_schema("5s"))
+    .extend(cv.COMPONENT_SCHEMA)
     .extend(ECONET_CLIENT_SCHEMA)
 )
 
