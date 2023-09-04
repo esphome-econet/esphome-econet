@@ -1,3 +1,4 @@
+#include "esphome/core/log.h"
 #include "econet_sensor.h"
 
 namespace esphome {
@@ -6,12 +7,6 @@ namespace econet {
 static const char *const TAG = "econet.sensor";
 
 void EconetSensor::update() {
-  if (!this->econet->is_ready()) {
-    return;
-  }
-
-  // ESP_LOGD("econet", "econet->get_type_id() = %d", this->econet->get_type_id());
-
   if (this->temp_in_sensor_ != nullptr) {
     this->temp_in_sensor_->publish_state(this->econet->get_temp_in());
   }
@@ -78,8 +73,6 @@ void EconetSensor::update() {
 
 void EconetSensor::dump_config() {
   ESP_LOGCONFIG(TAG, "Econet Sensors:");
-  // LOG_SENSOR("  ", "temp_in", this->temp_in_sensor_);
-  // LOG_SENSOR("  ", "temp_out", this->temp_out_sensor_);
 }
 
 }  // namespace econet

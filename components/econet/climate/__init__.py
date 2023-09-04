@@ -1,7 +1,3 @@
-"""
-Econet ESPHome component config validation & code generation.
-"""
-
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import climate
@@ -25,9 +21,9 @@ CONFIG_SCHEMA = cv.All(
 
 
 async def to_code(config):
-    """Generate code"""
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await climate.register_climate(var, config)
+
     econet_var = await cg.get_variable(config[CONF_ECONET_ID])
     cg.add(var.set_econet(econet_var))

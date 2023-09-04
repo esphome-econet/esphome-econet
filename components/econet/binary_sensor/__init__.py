@@ -1,7 +1,3 @@
-"""
-Binary Sensor component for Econet
-"""
-
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import binary_sensor
@@ -43,9 +39,9 @@ CONFIG_SCHEMA = (
 
 
 async def to_code(config):
-    """Generate main.cpp code"""
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
+
     econet_var = await cg.get_variable(config[CONF_ECONET_ID])
     cg.add(var.set_econet(econet_var))
 

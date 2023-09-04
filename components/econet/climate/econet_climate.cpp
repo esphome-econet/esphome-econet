@@ -63,89 +63,82 @@ climate::ClimateTraits EconetClimate::traits() {
 }
 
 void EconetClimate::update() {
-  if (this->econet->is_ready()) {
-    if (this->econet->get_type_id() == 2) {
-      // this->set_target_temperature_low_(nullptr);
-      // this->target_temperature_low = NAN;
-      this->target_temperature_low = (this->econet->get_cc_heat_setpoint() - 32) * 5 / 9;
-      // this->target_temperature_low = nullptr;
-      this->target_temperature_high = (this->econet->get_cc_cool_setpoint() - 32) * 5 / 9;
-      // this->target_temperature = (this->econet->get_cc_cool_setpoint() - 32)*5/9;
-      this->current_temperature = (this->econet->get_cc_spt_stat() - 32) * 5 / 9;
-    } else {
-      this->target_temperature = (this->econet->get_setpoint() - 32) * 5 / 9;
-      this->current_temperature = (this->econet->get_current_temp() - 32) * 5 / 9;
-    }
-    if (this->econet->get_type_id() == 2) {
-      if (this->econet->get_cc_statmode() == 0) {
-        this->mode = climate::CLIMATE_MODE_HEAT;
-      } else if (this->econet->get_cc_statmode() == 1) {
-        this->mode = climate::CLIMATE_MODE_COOL;
-      } else if (this->econet->get_cc_statmode() == 2) {
-        this->mode = climate::CLIMATE_MODE_HEAT_COOL;
-      } else if (this->econet->get_cc_statmode() == 3) {
-        this->mode = climate::CLIMATE_MODE_FAN_ONLY;
-      } else if (this->econet->get_cc_statmode() == 4) {
-        this->mode = climate::CLIMATE_MODE_OFF;
-      }
-
-      if (this->mode == climate::CLIMATE_MODE_HEAT_COOL) {
-      }
-
-      if (this->econet->get_cc_fan_mode() == 0) {
-        this->set_custom_fan_mode_("Automatic");
-      } else if (this->econet->get_cc_fan_mode() == 1) {
-        this->set_custom_fan_mode_("Speed 1 (Low)");
-      } else if (this->econet->get_cc_fan_mode() == 2) {
-        this->set_custom_fan_mode_("Speed 2 (Medium Low)");
-      } else if (this->econet->get_cc_fan_mode() == 3) {
-        this->set_custom_fan_mode_("Speed 3 (Medium)");
-      } else if (this->econet->get_cc_fan_mode() == 4) {
-        this->set_custom_fan_mode_("Speed 4 (Medium High)");
-      } else if (this->econet->get_cc_fan_mode() == 5) {
-        this->set_custom_fan_mode_("Speed 5 (High)");
-      }
-    } else {
-      if (this->econet->get_enable_state() == true) {
-        // Auto	 CLIMATE_MODE_AUTO
-        this->mode = climate::CLIMATE_MODE_AUTO;
-      } else {
-        // Off
-        this->mode = climate::CLIMATE_MODE_OFF;
-      }
-    }
-    if (this->econet->get_type_id() == 1) {
-      switch ((int) this->econet->get_mode()) {
-        case 0:
-          this->set_custom_preset_("Off");
-          break;
-        case 1:
-          this->set_custom_preset_("Eco Mode");
-          break;
-        case 2:
-          this->set_custom_preset_("Heat Pump");
-          break;
-        case 3:
-          this->set_custom_preset_("High Demand");
-          break;
-        case 4:
-          this->set_custom_preset_("Electric");
-          break;
-        case 5:
-          this->set_custom_preset_("Vacation");
-          break;
-        default:
-          this->set_custom_preset_("Off");
-      }
-    }
-    this->publish_state();
+  if (this->econet->get_type_id() == 2) {
+    // this->set_target_temperature_low_(nullptr);
+    // this->target_temperature_low = NAN;
+    this->target_temperature_low = (this->econet->get_cc_heat_setpoint() - 32) * 5 / 9;
+    // this->target_temperature_low = nullptr;
+    this->target_temperature_high = (this->econet->get_cc_cool_setpoint() - 32) * 5 / 9;
+    // this->target_temperature = (this->econet->get_cc_cool_setpoint() - 32)*5/9;
+    this->current_temperature = (this->econet->get_cc_spt_stat() - 32) * 5 / 9;
+  } else {
+    this->target_temperature = (this->econet->get_setpoint() - 32) * 5 / 9;
+    this->current_temperature = (this->econet->get_current_temp() - 32) * 5 / 9;
   }
+  if (this->econet->get_type_id() == 2) {
+    if (this->econet->get_cc_statmode() == 0) {
+      this->mode = climate::CLIMATE_MODE_HEAT;
+    } else if (this->econet->get_cc_statmode() == 1) {
+      this->mode = climate::CLIMATE_MODE_COOL;
+    } else if (this->econet->get_cc_statmode() == 2) {
+      this->mode = climate::CLIMATE_MODE_HEAT_COOL;
+    } else if (this->econet->get_cc_statmode() == 3) {
+      this->mode = climate::CLIMATE_MODE_FAN_ONLY;
+    } else if (this->econet->get_cc_statmode() == 4) {
+      this->mode = climate::CLIMATE_MODE_OFF;
+    }
+
+    if (this->mode == climate::CLIMATE_MODE_HEAT_COOL) {
+    }
+
+    if (this->econet->get_cc_fan_mode() == 0) {
+      this->set_custom_fan_mode_("Automatic");
+    } else if (this->econet->get_cc_fan_mode() == 1) {
+      this->set_custom_fan_mode_("Speed 1 (Low)");
+    } else if (this->econet->get_cc_fan_mode() == 2) {
+      this->set_custom_fan_mode_("Speed 2 (Medium Low)");
+    } else if (this->econet->get_cc_fan_mode() == 3) {
+      this->set_custom_fan_mode_("Speed 3 (Medium)");
+    } else if (this->econet->get_cc_fan_mode() == 4) {
+      this->set_custom_fan_mode_("Speed 4 (Medium High)");
+    } else if (this->econet->get_cc_fan_mode() == 5) {
+      this->set_custom_fan_mode_("Speed 5 (High)");
+    }
+  } else {
+    if (this->econet->get_enable_state() == true) {
+      this->mode = climate::CLIMATE_MODE_AUTO;
+    } else {
+      this->mode = climate::CLIMATE_MODE_OFF;
+    }
+  }
+  if (this->econet->get_type_id() == 1) {
+    switch ((int) this->econet->get_mode()) {
+      case 0:
+        this->set_custom_preset_("Off");
+        break;
+      case 1:
+        this->set_custom_preset_("Eco Mode");
+        break;
+      case 2:
+        this->set_custom_preset_("Heat Pump");
+        break;
+      case 3:
+        this->set_custom_preset_("High Demand");
+        break;
+      case 4:
+        this->set_custom_preset_("Electric");
+        break;
+      case 5:
+        this->set_custom_preset_("Vacation");
+        break;
+      default:
+        this->set_custom_preset_("Off");
+    }
+  }
+  this->publish_state();
 }
 
 void EconetClimate::control(const climate::ClimateCall &call) {
-  climate::ClimateMode climate_mode = this->mode;
-  std::string fan_mode = this->custom_fan_mode.value_or("Auto");
-
   if (call.get_target_temperature_low().has_value()) {
     this->econet->set_new_setpoint_low(call.get_target_temperature_low().value() * 9 / 5 + 32);
   }
@@ -156,11 +149,10 @@ void EconetClimate::control(const climate::ClimateCall &call) {
 
   if (call.get_target_temperature().has_value()) {
     this->econet->set_new_setpoint(call.get_target_temperature().value() * 9 / 5 + 32);
-    // ESP_LOGD("econet", "Lets change the temp to %f", setpoint);
   }
 
   if (call.get_mode().has_value()) {
-    climate_mode = call.get_mode().value();
+    climate::ClimateMode climate_mode = call.get_mode().value();
     uint8_t new_mode = 0;
 
     switch (climate_mode) {
@@ -184,15 +176,12 @@ void EconetClimate::control(const climate::ClimateCall &call) {
     }
     ESP_LOGI("econet", "Raw Mode is %d", climate_mode);
     ESP_LOGI("econet", "Lets change the mode to %d", new_mode);
-    // call.get_preset().value()
-    // Call to this->econet->setMode
     this->econet->set_new_mode(new_mode);
   }
 
   if (call.get_custom_fan_mode().has_value()) {
-    fan_mode = call.get_custom_fan_mode().value();
+    const std::string &fan_mode = call.get_custom_fan_mode().value();
     int new_fan_mode = 0;
-    // {"Auto", "Speed 1 (Low)", "Speed 2 (Medium Low)", "Speed 3 (Medium)", "Speed 4 (Medium High)", "Speed 5 (High)"}
     if (fan_mode == "Automatic") {
       new_fan_mode = 0;
     } else if (fan_mode == "Speed 1 (Low)") {
@@ -209,14 +198,8 @@ void EconetClimate::control(const climate::ClimateCall &call) {
     this->econet->set_new_fan_mode(new_fan_mode);
   }
 
-  if (call.get_preset().has_value()) {
-    // ESP_LOGI("econet", "Lets change the temp to %f", setpoint);
-    // call.get_preset().value()
-    // Call to this->econet->setMode
-    // this->econet->set_new_mode(mode);
-  }
   if (call.get_custom_preset().has_value()) {
-    std::string preset = call.get_custom_preset().value();
+    const std::string &preset = call.get_custom_preset().value();
 
     ESP_LOGI("econet", "Set custom preset: %s", preset);
 
