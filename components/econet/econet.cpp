@@ -198,13 +198,12 @@ void Econet::make_request() {
 
   uint8_t src_bus = 0x00;
 
-  std::vector<uint8_t> data;
-
   if (send_enable_disable == true) {
     this->write_value(dst_adr, src_adr, "WHTRENAB", EconetDatapointType::ENUM_TEXT, static_cast<float>(enable_disable_cmd));
-
     send_enable_disable = false;
-  } else if (send_new_mode == true) {
+    return;
+  }
+  if (send_new_mode == true) {
     // Modes
     // 0 - Off
     // 1 - Energy Saver
@@ -217,81 +216,90 @@ void Econet::make_request() {
       this->write_value(dst_adr, src_adr, "WHTRCNFG", EconetDatapointType::ENUM_TEXT, new_mode);
     }
     send_new_mode = false;
-  } else if (send_new_setpoint_high == true) {
+    return;
+  }
+  if (send_new_setpoint_high == true) {
     if (this->model_type_ == MODEL_TYPE_HVAC) {
       this->write_value(dst_adr, src_adr, "COOLSETP", EconetDatapointType::FLOAT, new_setpoint_high);
     }
-
     send_new_setpoint_high = false;
-  } else if (send_new_setpoint_low == true) {
+    return;
+  }
+  if (send_new_setpoint_low == true) {
     if (this->model_type_ == MODEL_TYPE_HVAC) {
       this->write_value(dst_adr, src_adr, "HEATSETP", EconetDatapointType::FLOAT, new_setpoint_low);
     }
-
     send_new_setpoint_low = false;
-  } else if (send_new_setpoint == true) {
+    return;
+  }
+  if (send_new_setpoint == true) {
     if (this->model_type_ == MODEL_TYPE_HVAC) {
       this->write_value(dst_adr, src_adr, "COOLSETP", EconetDatapointType::FLOAT, new_setpoint);
     } else {
       this->write_value(dst_adr, src_adr, "WHTRSETP", EconetDatapointType::FLOAT, new_setpoint);
     }
-
     send_new_setpoint = false;
-  } else if (send_new_fan_mode == true) {
+    return;
+  }
+  if (send_new_fan_mode == true) {
     if (this->model_type_ == MODEL_TYPE_HVAC) {
       this->write_value(dst_adr, src_adr, "STATNFAN", EconetDatapointType::ENUM_TEXT, new_fan_mode);
       cc_fan_mode = new_fan_mode;
     }
-
     send_new_fan_mode = false;
-  } else {
-    std::vector<std::string> str_ids{};
+    return;
+  }
 
-    if (req_id == 0) {
-      if (model_type_ == MODEL_TYPE_TANKLESS) {
-        str_ids.push_back("FLOWRATE");
-        str_ids.push_back("TEMP_OUT");
-        str_ids.push_back("TEMP__IN");
-        str_ids.push_back("WHTRENAB");
-        str_ids.push_back("WHTRMODE");
-        str_ids.push_back("WHTRSETP");
-        str_ids.push_back("WTR_USED");
-        str_ids.push_back("WTR_BTUS");
-        str_ids.push_back("IGNCYCLS");
-        str_ids.push_back("BURNTIME");
-      } else if (model_type_ == MODEL_TYPE_HEATPUMP) {
-        str_ids.push_back("WHTRENAB");
-        str_ids.push_back("WHTRCNFG");
-        str_ids.push_back("WHTRSETP");
-        str_ids.push_back("HOTWATER");
-        str_ids.push_back("HEATCTRL");
-        str_ids.push_back("FAN_CTRL");
-        str_ids.push_back("COMP_RLY");
-        str_ids.push_back("AMBIENTT");
-        str_ids.push_back("LOHTRTMP");
-        str_ids.push_back("UPHTRTMP");
-        str_ids.push_back("POWRWATT");
-        str_ids.push_back("EVAPTEMP");
-        str_ids.push_back("SUCTIONT");
-        str_ids.push_back("DISCTEMP");
-      } else if (model_type_ == MODEL_TYPE_HVAC) {
-        // str_ids.push_back("AIRHSTAT");
-        /*
-        str_ids.push_back("AAUX1CFM");
-        str_ids.push_back("AAUX2CFM");
-        str_ids.push_back("AAUX3CFM");
-        str_ids.push_back("AAUX4CFM");
-        */
-      }
-      if (model_type_ != MODEL_TYPE_HVAC) {
-        request_strings(dst_adr, src_adr, str_ids);
-      }
-    } else if (req_id == 1) {
-      if (model_type_ == MODEL_TYPE_TANKLESS) {
-        str_ids.push_back("HWSTATUS");
-        request_strings(FURNACE, CONTROL_CENTER, str_ids);
-      }
+  std::vector<std::string> str_ids{};
+
+  if (req_id == 0) {
+    if (model_type_ == MODEL_TYPE_TANKLESS) {
+      str_ids.push_back("FLOWRATE");
+      str_ids.push_back("TEMP_OUT");
+      str_ids.push_back("TEMP__IN");
+      str_ids.push_back("WHTRENAB");
+      str_ids.push_back("WHTRMODE");
+      str_ids.push_back("WHTRSETP");
+      str_ids.push_back("WTR_USED");
+      str_ids.push_back("WTR_BTUS");
+      str_ids.push_back("IGNCYCLS");
+      str_ids.push_back("BURNTIME");
+    } else if (model_type_ == MODEL_TYPE_HEATPUMP) {
+      str_ids.push_back("WHTRENAB");
+      str_ids.push_back("WHTRCNFG");
+      str_ids.push_back("WHTRSETP");
+      str_ids.push_back("HOTWATER");
+      str_ids.push_back("HEATCTRL");
+      str_ids.push_back("FAN_CTRL");
+      str_ids.push_back("COMP_RLY");
+      str_ids.push_back("AMBIENTT");
+      str_ids.push_back("LOHTRTMP");
+      str_ids.push_back("UPHTRTMP");
+      str_ids.push_back("POWRWATT");
+      str_ids.push_back("EVAPTEMP");
+      str_ids.push_back("SUCTIONT");
+      str_ids.push_back("DISCTEMP");
+    } else if (model_type_ == MODEL_TYPE_HVAC) {
+      // str_ids.push_back("AIRHSTAT");
+      /*
+      str_ids.push_back("AAUX1CFM");
+      str_ids.push_back("AAUX2CFM");
+      str_ids.push_back("AAUX3CFM");
+      str_ids.push_back("AAUX4CFM");
+      */
     }
+    if (model_type_ != MODEL_TYPE_HVAC) {
+      request_strings(dst_adr, src_adr, str_ids);
+    }
+    return;
+  }
+
+  if (req_id == 1) {
+    if (model_type_ == MODEL_TYPE_TANKLESS) {
+      str_ids.push_back("HWSTATUS");
+      request_strings(FURNACE, CONTROL_CENTER, str_ids);
+    }
+    return;
   }
 }
 
