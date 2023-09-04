@@ -634,59 +634,33 @@ void Econet::read_buffer(int bytes_available) {
 
   uint8_t bytes[bytes_to_read];
 
-  // Read multiple bytes at the same time
   if (!this->read_array(bytes, bytes_to_read)) {
     return;
   }
 
   for (int i = 0; i < bytes_to_read; i++) {
     uint8_t byte = bytes[i];
-    if (pos == DST_ADR_POS) {
-      if (byte == 0x80) {
-        buffer[pos] = byte;
-        pos++;
-      } else {
-        buffer[pos] = byte;
-        pos++;
-        // Not the byte we are looking for
-        // ESP_LOGI("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, pos).c_str());
-        pos = 0;
-      }
-    } else if (pos == SRC_ADR_POS) {
-      if (byte == 0x80) {
-        buffer[pos] = byte;
-        pos++;
-      } else {
-        buffer[pos] = byte;
-        pos++;
-        // Not the byte we are looking for
-        // ESP_LOGI("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, pos).c_str());
-        // Not the byte we are looking for
-        // TODO
-        // Loop through and check if we were off by a couple bytes
-        pos = 0;
-      }
-    } else if (pos == LEN_POS) {
+    buffer[pos] = byte;
+    if ((pos == DST_ADR_POS || pos == SRC_ADR_POS) && byte != 0x80) {
+      pos = 0;
+      continue;
+    }
+    if (pos == LEN_POS) {
       data_len = byte;
       msg_len = data_len + MSG_HEADER_SIZE + MSG_CRC_SIZE;
-      buffer[pos] = byte;
-      pos++;
-    } else {
-      buffer[pos] = byte;
-      pos++;
     }
+    pos++;
 
-    if (pos == msg_len && msg_len != 0 && pos != 0) {
+    if (pos == msg_len && msg_len != 0) {
       // We have a full message
       this->parse_rx_message();
       pos = 0;
       msg_len = 0;
       data_len = 0;
-    } else if (pos == msg_len && msg_len != 0) {
-      ESP_LOGD("econet", "This would have cuased problems");
     }
   }
 }
+
 void Econet::loop() {
   const uint32_t now = millis();
 
