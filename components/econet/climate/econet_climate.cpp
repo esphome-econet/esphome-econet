@@ -10,6 +10,13 @@ using namespace esphome;
 namespace esphome {
 namespace econet {
 
+namespace {
+
+float fahrenheit_to_celsius(float f) { return (f - 32) * 5 / 9; }
+float celsius_to_fahrenheit(float c) { return c * 9 / 5 + 32; }
+
+}  // namespace
+
 #define SETPOINT_MIN 26.6667
 #define SETPOINT_MAX 4838889
 #define SETPOINT_STEP 1.0f
@@ -64,16 +71,12 @@ climate::ClimateTraits EconetClimate::traits() {
 
 void EconetClimate::update() {
   if (this->parent_->get_type_id() == 2) {
-    // this->set_target_temperature_low_(nullptr);
-    // this->target_temperature_low = NAN;
-    this->target_temperature_low = (this->parent_->get_cc_heat_setpoint() - 32) * 5 / 9;
-    // this->target_temperature_low = nullptr;
-    this->target_temperature_high = (this->parent_->get_cc_cool_setpoint() - 32) * 5 / 9;
-    // this->target_temperature = (this->parent_->get_cc_cool_setpoint() - 32)*5/9;
-    this->current_temperature = (this->parent_->get_cc_spt_stat() - 32) * 5 / 9;
+    this->target_temperature_low = fahrenheit_to_celsius(this->parent_->get_cc_heat_setpoint());
+    this->target_temperature_high = fahrenheit_to_celsius(this->parent_->get_cc_cool_setpoint());
+    this->current_temperature = fahrenheit_to_celsius(this->parent_->get_cc_spt_stat());
   } else {
-    this->target_temperature = (this->parent_->get_setpoint() - 32) * 5 / 9;
-    this->current_temperature = (this->parent_->get_current_temp() - 32) * 5 / 9;
+    this->target_temperature = fahrenheit_to_celsius(this->parent_->get_setpoint());
+    this->current_temperature = fahrenheit_to_celsius(this->parent_->get_current_temp());
   }
   if (this->parent_->get_type_id() == 2) {
     if (this->parent_->get_cc_statmode() == 0) {
@@ -140,15 +143,15 @@ void EconetClimate::update() {
 
 void EconetClimate::control(const climate::ClimateCall &call) {
   if (call.get_target_temperature_low().has_value()) {
-    this->parent_->set_new_setpoint_low(call.get_target_temperature_low().value() * 9 / 5 + 32);
+    this->parent_->set_new_setpoint_low(celsius_to_fahrenheit(call.get_target_temperature_low().value()));
   }
 
   if (call.get_target_temperature_high().has_value()) {
-    this->parent_->set_new_setpoint_high(call.get_target_temperature_high().value() * 9 / 5 + 32);
+    this->parent_->set_new_setpoint_high(celsius_to_fahrenheit(call.get_target_temperature_high().value()));
   }
 
   if (call.get_target_temperature().has_value()) {
-    this->parent_->set_new_setpoint(call.get_target_temperature().value() * 9 / 5 + 32);
+    this->parent_->set_new_setpoint(celsius_to_fahrenheit(call.get_target_temperature().value()));
   }
 
   if (call.get_mode().has_value()) {
