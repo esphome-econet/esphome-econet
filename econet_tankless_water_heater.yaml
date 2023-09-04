@@ -1,0 +1,110 @@
+substitutions:
+  name: "econet-twh"
+  device_description: "Rheem Tankless Water Heater"
+  tx_pin: GPIO19
+  rx_pin: GPIO22
+
+esphome:
+  name: ${name}
+  comment: ${device_description}
+
+preferences:
+  flash_write_interval: "24h"
+
+esp32:
+  board: esp32dev
+  framework: 
+    type: arduino
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+api:
+
+ota:
+
+logger:
+  baud_rate: 0 # Make sure logging is not using the serial port
+  level: INFO
+  tx_buffer_size: 2000
+
+external_components:
+  # - source: github://stockmopar/esphome-econet
+ - source: components
+
+uart:
+  id: uart_0
+  baud_rate: 38400
+  rx_buffer_size: 1500
+  tx_pin: ${tx_pin}
+  rx_pin: ${rx_pin}
+
+econet:
+  uart_id: uart_0
+  model: "Tankless"
+
+climate:
+  - platform: econet
+    name: "Water Heater"
+
+sensor:
+  - platform: econet
+    name: "Temperature In"
+    sensor_datapoint: TEMP__IN
+    unit_of_measurement: "°F"
+    accuracy_decimals: 1
+    device_class: "temperature"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Temperature Out"
+    sensor_datapoint: TEMP_OUT
+    unit_of_measurement: "°F"
+    accuracy_decimals: 1
+    device_class: "temperature"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Set Point Temperature"
+    sensor_datapoint: WHTRSETP
+    unit_of_measurement: "°F"
+    accuracy_decimals: 1
+    device_class: "temperature"
+    state_class: "measurement"
+  - platform: econet
+    name: "BTUs Used"
+    sensor_datapoint: WTR_BTUS
+    unit_of_measurement: "kbtu"
+    accuracy_decimals: 3
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Water Used"
+    sensor_datapoint: WTR_USED
+    unit_of_measurement: "gal"
+    accuracy_decimals: 1
+    device_class: "water"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Flow Rate"
+    sensor_datapoint: FLOWRATE
+    unit_of_measurement: "gpm"
+    accuracy_decimals: 1
+    state_class: "measurement"
+    entity_category: "diagnostic"
+    filters:
+      # Convert liters per minute to gpm
+      - multiply: 0.264172
+  - platform: econet
+    name: "Ignition Cycles"
+    sensor_datapoint: IGNCYCLS
+    unit_of_measurement: ""
+    accuracy_decimals: 0
+    entity_category: "diagnostic"
+
+binary_sensor:
+  - platform: econet
+    name: "Water Heater Enabled (Sensor)"
+    sensor_datapoint: WHTRENAB
+    device_class: "running"

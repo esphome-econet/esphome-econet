@@ -1,13 +1,13 @@
 #pragma once
 
 #include "esphome/core/component.h"
-#include "esphome/components/binary_sensor/binary_sensor.h"
+#include "esphome/components/text_sensor/text_sensor.h"
 #include "../econet.h"
 
 namespace esphome {
 namespace econet {
 
-class EconetBinarySensor : public binary_sensor::BinarySensor, public Component, public EconetClient {
+class EconetTextSensor : public text_sensor::TextSensor, public Component, public EconetClient {
  public:
   void setup() override;
   void dump_config() override;

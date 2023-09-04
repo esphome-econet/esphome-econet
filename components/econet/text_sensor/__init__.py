@@ -1,20 +1,21 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import binary_sensor
+from esphome.components import text_sensor
 from esphome.const import CONF_SENSOR_DATAPOINT
 
 from .. import CONF_ECONET_ID, ECONET_CLIENT_SCHEMA, EconetClient, econet_ns
 
 DEPENDENCIES = ["econet"]
 
-EconetBinarySensor = econet_ns.class_(
-    "EconetBinarySensor", binary_sensor.BinarySensor, cg.Component, EconetClient
+EconetTextSensor = econet_ns.class_(
+    "EconetTextSensor", text_sensor.TextSensor, cg.Component, EconetClient
 )
 
 CONFIG_SCHEMA = (
-    binary_sensor.binary_sensor_schema(EconetBinarySensor)
+    text_sensor.text_sensor_schema()
     .extend(
         {
+            cv.GenerateID(): cv.declare_id(EconetTextSensor),
             cv.Required(CONF_SENSOR_DATAPOINT): cv.string,
         }
     )
@@ -24,7 +25,7 @@ CONFIG_SCHEMA = (
 
 
 async def to_code(config):
-    var = await binary_sensor.new_binary_sensor(config)
+    var = await text_sensor.new_text_sensor(config)
     await cg.register_component(var, config)
 
     paren = await cg.get_variable(config[CONF_ECONET_ID])
