@@ -51,6 +51,7 @@ climate:
 sensor:
   - platform: econet
     name: "Temperature In"
+    id: temp_in
     sensor_datapoint: TEMP__IN
     unit_of_measurement: "°F"
     accuracy_decimals: 1
@@ -59,6 +60,7 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "Temperature Out"
+    id: temp_out
     sensor_datapoint: TEMP_OUT
     unit_of_measurement: "°F"
     accuracy_decimals: 1
@@ -88,6 +90,7 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "Flow Rate"
+    id: flow_rate
     sensor_datapoint: FLOWRATE
     unit_of_measurement: "gpm"
     accuracy_decimals: 1
@@ -102,6 +105,14 @@ sensor:
     unit_of_measurement: ""
     accuracy_decimals: 0
     entity_category: "diagnostic"
+  - platform: template
+    name: "Instant BTUs"
+    unit_of_measurement: "kbtu/hr"
+    accuracy_decimals: 3
+    state_class: "measurement"
+    entity_category: "diagnostic"
+    lambda: |-
+      return max((id(temp_out).state - id(temp_in).state) * id(flow_rate).state * 8.334 * 60 / 0.92 / 1000, 0.0);
 
 binary_sensor:
   - platform: econet
