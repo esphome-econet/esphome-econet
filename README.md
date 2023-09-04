@@ -50,15 +50,19 @@ Three econet based water heater types are supported.  Each has its own `yaml` co
 
 **Tankless Water Heater**
 
-- TBD
+- econet_tankless_water_heater.yaml
 
 **Heat Pump Water Heater**
 
-- econet_heatpump.yaml
+- econet_heatpump_water_heater.yaml
+
+**HVAC**
+
+- econet_hvac.yaml
 
 **Electric Water Heater**
 
-- TBD
+- Not currently supported
 
 ### Compiling and Uploading esphome-econet ###
 
