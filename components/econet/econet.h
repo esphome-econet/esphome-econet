@@ -24,6 +24,13 @@ class ReadRequest {
   std::vector<std::string> obj_names;
 };
 
+enum class EconetDatapointType : uint8_t {
+  FLOAT = 0,
+  TEXT = 1,
+  ENUM_TEXT = 2,
+  RAW = 4,
+};
+
 struct DatapointListener {
   uint8_t datapoint_id;
   std::function<void(float)> on_datapoint;
@@ -109,7 +116,7 @@ class Econet : public Component, public uart::UARTDevice {
 
   void transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t command, std::vector<uint8_t> data);
   void request_strings(uint32_t dst_adr, uint32_t src_adr, std::vector<std::string> objects);
-  void write_value(uint32_t dst_adr, uint32_t src_adr, std::string object, uint8_t type, float value);
+  void write_value(uint32_t dst_adr, uint32_t src_adr, std::string object, EconetDatapointType type, float value);
 
   float temp_in = 0;
   float temp_out = 0;
@@ -198,9 +205,6 @@ class Econet : public Component, public uart::UARTDevice {
   uint8_t ACK = 0x06;
   uint8_t READ_COMMAND = 0x1E;   // 30
   uint8_t WRITE_COMMAND = 0x1F;  // 31
-
-  uint8_t FLOAT = 0;
-  uint8_t ENUM_TEXT = 2;
 };
 
 class EconetClient {
