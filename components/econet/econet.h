@@ -9,6 +9,8 @@
 namespace esphome {
 namespace econet {
 
+enum ModelType { MODEL_TYPE_TANKLESS = 0, MODEL_TYPE_HEATPUMP = 1, MODEL_TYPE_HVAC = 2 };
+
 class ReadRequest {
  public:
   uint32_t dst_adr;
@@ -31,7 +33,10 @@ class Econet : public Component, public uart::UARTDevice {
  public:
   void loop() override;
   void dump_config() override;
-  void set_type_id(uint8_t type_id) { this->type_id_ = type_id; }
+
+  void set_model_type(ModelType model_type) { model_type_ = model_type; }
+  ModelType get_model_type() { return model_type_; }
+
   void set_enable_state(bool state);
 
   void set_new_setpoint(float setpoint);
@@ -41,7 +46,6 @@ class Econet : public Component, public uart::UARTDevice {
   void set_new_mode(float mode);
   void set_new_fan_mode(float fan_mode);
 
-  uint8_t get_type_id() { return this->type_id_; }
   float get_temp_in() { return this->temp_in; }
   float get_temp_out() { return this->temp_out; }
   float get_flow_rate() { return this->flow_rate; }
@@ -66,9 +70,9 @@ class Econet : public Component, public uart::UARTDevice {
   float get_discharge_temp() { return this->discharge_temp; }
 
   float get_current_temp() {
-    if (this->type_id_ == 0) {
+    if (this->model_type_ == MODEL_TYPE_TANKLESS) {
       return this->temp_out;
-    } else if (this->type_id_ == 1) {
+    } else if (this->model_type_ == MODEL_TYPE_HEATPUMP) {
       return this->upper_water_heater_temp;
     } else {
       return this->setpoint;
@@ -86,7 +90,7 @@ class Econet : public Component, public uart::UARTDevice {
   void register_listener(uint8_t datapoint_id, const std::function<void(float)> &func);
 
  protected:
-  uint8_t type_id_{0};
+  ModelType model_type_;
   std::vector<DatapointListener> listeners_;
   ReadRequest read_req;
   void send_datapoint(uint8_t datapoint_id, float value);

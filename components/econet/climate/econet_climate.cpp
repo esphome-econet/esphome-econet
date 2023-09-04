@@ -34,14 +34,14 @@ climate::ClimateTraits EconetClimate::traits() {
 
   traits.set_supports_action(false);
 
-  if (this->parent_->get_type_id() == 2) {
+  if (this->parent_->get_model_type() == MODEL_TYPE_HVAC) {
     traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_COOL, climate::CLIMATE_MODE_HEAT,
                                 climate::CLIMATE_MODE_HEAT_COOL, climate::CLIMATE_MODE_FAN_ONLY});
   } else {
     traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_AUTO});
   }
 
-  if (this->parent_->get_type_id() == 1) {
+  if (this->parent_->get_model_type() == MODEL_TYPE_HEATPUMP) {
     traits.add_supported_custom_preset("Off");
     traits.add_supported_custom_preset("Eco Mode");
     traits.add_supported_custom_preset("Heat Pump");
@@ -50,7 +50,7 @@ climate::ClimateTraits EconetClimate::traits() {
     traits.add_supported_custom_preset("Vacation");
   }
   traits.set_supports_current_temperature(true);
-  if (this->parent_->get_type_id() == 2) {
+  if (this->parent_->get_model_type() == MODEL_TYPE_HVAC) {
     traits.set_visual_min_temperature(10);
     traits.set_visual_max_temperature(32);
 
@@ -70,7 +70,7 @@ climate::ClimateTraits EconetClimate::traits() {
 }
 
 void EconetClimate::update() {
-  if (this->parent_->get_type_id() == 2) {
+  if (this->parent_->get_model_type() == MODEL_TYPE_HVAC) {
     this->target_temperature_low = fahrenheit_to_celsius(this->parent_->get_cc_heat_setpoint());
     this->target_temperature_high = fahrenheit_to_celsius(this->parent_->get_cc_cool_setpoint());
     this->current_temperature = fahrenheit_to_celsius(this->parent_->get_cc_spt_stat());
@@ -78,7 +78,7 @@ void EconetClimate::update() {
     this->target_temperature = fahrenheit_to_celsius(this->parent_->get_setpoint());
     this->current_temperature = fahrenheit_to_celsius(this->parent_->get_current_temp());
   }
-  if (this->parent_->get_type_id() == 2) {
+  if (this->parent_->get_model_type() == MODEL_TYPE_HVAC) {
     if (this->parent_->get_cc_statmode() == 0) {
       this->mode = climate::CLIMATE_MODE_HEAT;
     } else if (this->parent_->get_cc_statmode() == 1) {
@@ -114,7 +114,7 @@ void EconetClimate::update() {
       this->mode = climate::CLIMATE_MODE_OFF;
     }
   }
-  if (this->parent_->get_type_id() == 1) {
+  if (this->parent_->get_model_type() == MODEL_TYPE_HEATPUMP) {
     switch ((int) this->parent_->get_mode()) {
       case 0:
         this->set_custom_preset_("Off");

@@ -11,11 +11,18 @@ econet_ns = cg.esphome_ns.namespace("econet")
 Econet = econet_ns.class_("Econet", cg.Component, uart.UARTDevice)
 EconetClient = econet_ns.class_("EconetClient")
 
+ModelType = econet_ns.enum("ModelType")
+MODEL_TYPES = {
+    "Tankless": ModelType.MODEL_TYPE_TANKLESS,
+    "Heatpump": ModelType.MODEL_TYPE_HEATPUMP,
+    "HVAC": ModelType.MODEL_TYPE_HVAC,
+}
+
 CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(Econet),
-            cv.Required("model"): cv.string,
+            cv.Required(CONF_MODEL): cv.enum(MODEL_TYPES),
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
@@ -34,9 +41,4 @@ async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
-    if config[CONF_MODEL] == "Tankless":
-        cg.add(var.set_type_id(0))
-    if config[CONF_MODEL] == "Heatpump":
-        cg.add(var.set_type_id(1))
-    if config[CONF_MODEL] == "HVAC":
-        cg.add(var.set_type_id(2))
+    cg.add(var.set_model_type(config[CONF_MODEL]))

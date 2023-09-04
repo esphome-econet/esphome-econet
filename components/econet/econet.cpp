@@ -156,9 +156,9 @@ void Econet::handle_binary(uint32_t src_adr, std::string obj_string, std::vector
 
 void Econet::make_request() {
   uint32_t dst_adr = SMARTEC_TRANSLATOR;
-  if (type_id_ == 1) {
+  if (model_type_ == MODEL_TYPE_HEATPUMP) {
     dst_adr = HEAT_PUMP_WATER_HEATER;
-  } else if (type_id_ == 2) {
+  } else if (model_type_ == MODEL_TYPE_HVAC) {
     dst_adr = CONTROL_CENTER;
   }
 
@@ -181,26 +181,26 @@ void Econet::make_request() {
     // 2 - Heat Pump
     // 3 - High Demand
     // 4 - Electric / Gas
-    if (this->type_id_ == 2) {
+    if (this->model_type_ == MODEL_TYPE_HVAC) {
       this->write_value(dst_adr, src_adr, "STATMODE", ENUM_TEXT, new_mode);
     } else {
       this->write_value(dst_adr, src_adr, "WHTRCNFG", ENUM_TEXT, new_mode);
     }
     send_new_mode = false;
   } else if (send_new_setpoint_high == true) {
-    if (this->type_id_ == 2) {
+    if (this->model_type_ == MODEL_TYPE_HVAC) {
       this->write_value(dst_adr, src_adr, "COOLSETP", FLOAT, new_setpoint_high);
     }
 
     send_new_setpoint_high = false;
   } else if (send_new_setpoint_low == true) {
-    if (this->type_id_ == 2) {
+    if (this->model_type_ == MODEL_TYPE_HVAC) {
       this->write_value(dst_adr, src_adr, "HEATSETP", FLOAT, new_setpoint_low);
     }
 
     send_new_setpoint_low = false;
   } else if (send_new_setpoint == true) {
-    if (this->type_id_ == 2) {
+    if (this->model_type_ == MODEL_TYPE_HVAC) {
       this->write_value(dst_adr, src_adr, "COOLSETP", FLOAT, new_setpoint);
     } else {
       this->write_value(dst_adr, src_adr, "WHTRSETP", FLOAT, new_setpoint);
@@ -208,7 +208,7 @@ void Econet::make_request() {
 
     send_new_setpoint = false;
   } else if (send_new_fan_mode == true) {
-    if (this->type_id_ == 2) {
+    if (this->model_type_ == MODEL_TYPE_HVAC) {
       this->write_value(dst_adr, src_adr, "STATNFAN", ENUM_TEXT, new_fan_mode);
       cc_fan_mode = new_fan_mode;
     }
@@ -218,7 +218,7 @@ void Econet::make_request() {
     std::vector<std::string> str_ids{};
 
     if (req_id == 0) {
-      if (type_id_ == 0) {
+      if (model_type_ == MODEL_TYPE_TANKLESS) {
         str_ids.push_back("FLOWRATE");
         str_ids.push_back("TEMP_OUT");
         str_ids.push_back("TEMP__IN");
@@ -229,7 +229,7 @@ void Econet::make_request() {
         str_ids.push_back("WTR_BTUS");
         str_ids.push_back("IGNCYCLS");
         str_ids.push_back("BURNTIME");
-      } else if (type_id_ == 1) {
+      } else if (model_type_ == MODEL_TYPE_HEATPUMP) {
         str_ids.push_back("WHTRENAB");
         str_ids.push_back("WHTRCNFG");
         str_ids.push_back("WHTRSETP");
@@ -244,7 +244,7 @@ void Econet::make_request() {
         str_ids.push_back("EVAPTEMP");
         str_ids.push_back("SUCTIONT");
         str_ids.push_back("DISCTEMP");
-      } else if (type_id_ == 2) {
+      } else if (model_type_ == MODEL_TYPE_HVAC) {
         // str_ids.push_back("AIRHSTAT");
         /*
         str_ids.push_back("AAUX1CFM");
@@ -253,11 +253,11 @@ void Econet::make_request() {
         str_ids.push_back("AAUX4CFM");
         */
       }
-      if (type_id_ != 2) {
+      if (model_type_ != MODEL_TYPE_HVAC) {
         request_strings(dst_adr, src_adr, str_ids);
       }
     } else if (req_id == 1) {
-      if (type_id_ == 0) {
+      if (model_type_ == MODEL_TYPE_TANKLESS) {
         str_ids.push_back("HWSTATUS");
         request_strings(0x1c0, 0x380, str_ids);
       }
@@ -571,7 +571,7 @@ void Econet::parse_message(bool is_tx) {
   uint32_t exp_src_adr = SMARTEC_TRANSLATOR;
   int exp_msg_len = 115;
 
-  if (type_id_ == 1) {
+  if (model_type_ == MODEL_TYPE_HEATPUMP) {
     exp_dst_adr = WIFI_MODULE;
     exp_src_adr = HEAT_PUMP_WATER_HEATER;
     exp_msg_len = 166;
@@ -592,7 +592,7 @@ void Econet::parse_message(bool is_tx) {
         if (item_type == 0) {
           float item_value = bytes_to_float(pdata[tpos + 4], pdata[tpos + 5], pdata[tpos + 6], pdata[tpos + 7]);
 
-          if (type_id_ == 1) {
+          if (model_type_ == MODEL_TYPE_HEATPUMP) {
             if (item_num == 3) {
               setpoint = item_value;
             } else if (item_num == 4) {
@@ -628,7 +628,7 @@ void Econet::parse_message(bool is_tx) {
 
           std::string s(char_arr, sizeof(char_arr));
 
-          if (type_id_ == 1) {
+          if (model_type_ == MODEL_TYPE_HEATPUMP) {
             if (item_num == 1) {
               if (item_value == 0) {
                 enable_state = false;
