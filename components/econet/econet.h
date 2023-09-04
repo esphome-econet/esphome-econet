@@ -178,11 +178,11 @@ class Econet : public Component, public uart::UARTDevice {
   uint8_t wbuffer[max_message_size];
   uint16_t wmsg_len = 0;
 
-  uint32_t FURNACE = 0x1c0;                  // 80 00 01 C0
-  uint32_t WIFI_MODULE = 832;                // 80 00 03 40
-  uint32_t SMARTEC_TRANSLATOR = 4160;        // 80 00 10 40
-  uint32_t HEAT_PUMP_WATER_HEATER = 0x1280;  // 80 00 12 80
-  uint32_t CONTROL_CENTER = 0x380;           // 80 00 03 80
+  uint32_t FURNACE = 0x1c0;
+  uint32_t WIFI_MODULE = 0x340;
+  uint32_t SMARTEC_TRANSLATOR = 0x1040;
+  uint32_t HEAT_PUMP_WATER_HEATER = 0x1280;
+  uint32_t CONTROL_CENTER = 0x380;
 
   uint8_t DST_ADR_POS = 0;
   uint8_t SRC_ADR_POS = 5;
@@ -195,9 +195,9 @@ class Econet : public Component, public uart::UARTDevice {
   uint8_t BYTES_BETWEEN_ADRS = 5;
   uint8_t MSG_CRC_SIZE = 2;
 
-  uint8_t ACK = 6;
-  uint8_t READ_COMMAND = 30;
-  uint8_t WRITE_COMMAND = 31;
+  uint8_t ACK = 0x06;
+  uint8_t READ_COMMAND = 0x1E;   // 30
+  uint8_t WRITE_COMMAND = 0x1F;  // 31
 
   uint8_t FLOAT = 0;
   uint8_t ENUM_TEXT = 2;

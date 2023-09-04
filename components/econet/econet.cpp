@@ -259,7 +259,7 @@ void Econet::make_request() {
     } else if (req_id == 1) {
       if (model_type_ == MODEL_TYPE_TANKLESS) {
         str_ids.push_back("HWSTATUS");
-        request_strings(0x1c0, 0x380, str_ids);
+        request_strings(FURNACE, CONTROL_CENTER, str_ids);
       }
     }
   }
