@@ -1,27 +1,28 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
+from esphome.components import uart
 from esphome.const import CONF_ID
 
 DEPENDENCIES = ["uart"]
 
-CONF_UART = "uart"
-CONF_ECONET_ID = "econet"
 CONF_MODEL = "model"
 
 econet_ns = cg.esphome_ns.namespace("econet")
-Econet = econet_ns.class_("Econet", cg.Component)
+Econet = econet_ns.class_("Econet", cg.Component, uart.UARTDevice)
 EconetClient = econet_ns.class_("EconetClient")
-uart_ns = cg.esphome_ns.namespace("uart")
-UARTComponent = uart_ns.class_("UARTComponent")
 
-CONFIG_SCHEMA = cv.Schema(
-    {
-        cv.GenerateID(): cv.declare_id(Econet),
-        cv.Required(CONF_UART): cv.use_id(UARTComponent),
-        cv.Required("model"): cv.string,
-    }
+CONFIG_SCHEMA = (
+    cv.Schema(
+        {
+            cv.GenerateID(): cv.declare_id(Econet),
+            cv.Required("model"): cv.string,
+        }
+    )
+    .extend(cv.COMPONENT_SCHEMA)
+    .extend(uart.UART_DEVICE_SCHEMA)
 )
 
+CONF_ECONET_ID = "econet_id"
 ECONET_CLIENT_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_ECONET_ID): cv.use_id(Econet),
@@ -32,8 +33,7 @@ ECONET_CLIENT_SCHEMA = cv.Schema(
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
-    uart = await cg.get_variable(config[CONF_UART])
-    cg.add(var.set_uart(uart))
+    await uart.register_uart_device(var, config)
     if config[CONF_MODEL] == "Tankless":
         cg.add(var.set_type_id(0))
     if config[CONF_MODEL] == "Heatpump":

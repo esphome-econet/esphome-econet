@@ -27,11 +27,10 @@ struct DatapointListener {
   std::function<void(float)> on_datapoint;
 };
 
-class Econet : public Component {
+class Econet : public Component, public uart::UARTDevice {
  public:
   void loop() override;
   void dump_config() override;
-  void set_uart(uart::UARTComponent *econet_uart);
   void set_type_id(uint8_t type_id) { this->type_id_ = type_id; }
   void set_enable_state(bool state);
 
@@ -90,7 +89,6 @@ class Econet : public Component {
   uint8_t type_id_{0};
   std::vector<DatapointListener> listeners_;
   ReadRequest read_req;
-  void check_uart_settings();
   void send_datapoint(uint8_t datapoint_id, float value);
 
   void make_request();
@@ -108,8 +106,6 @@ class Econet : public Component {
   void transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t command, std::vector<uint8_t> data);
   void request_strings(uint32_t dst_adr, uint32_t src_adr, std::vector<std::string> objects);
   void write_value(uint32_t dst_adr, uint32_t src_adr, std::string object, uint8_t type, float value);
-
-  uart::UARTComponent *econet_uart{nullptr};
 
   float temp_in = 0;
   float temp_out = 0;

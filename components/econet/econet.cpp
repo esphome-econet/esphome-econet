@@ -73,22 +73,8 @@ uint32_t float_to_uint32(float f) {
   return fbits;
 }
 
-void Econet::set_uart(uart::UARTComponent *econet_uart) { this->econet_uart = econet_uart; }
-
-#define ECONET_BAUD_RATE 38400
-
-void Econet::check_uart_settings() {
-  for (auto uart : {this->econet_uart}) {
-    if (uart->get_baud_rate() != ECONET_BAUD_RATE) {
-      ESP_LOGE(TAG,
-               "  Invalid baud_rate: Integration requested baud_rate %u but you "
-               "have %u!",
-               ECONET_BAUD_RATE, uart->get_baud_rate());
-    }
-  }
+void Econet::dump_config() {
 }
-
-void Econet::dump_config() { this->check_uart_settings(); }
 
 void Econet::handle_float(uint32_t src_adr, std::string obj_string, float value) {
   if (src_adr == SMARTEC_TRANSLATOR) {
@@ -692,7 +678,7 @@ void Econet::read_buffer(int bytes_available) {
   uint8_t bytes[bytes_to_read];
 
   // Read multiple bytes at the same time
-  if (!econet_uart->read_array(bytes, bytes_to_read)) {
+  if (!this->read_array(bytes, bytes_to_read)) {
     return;
   }
 
@@ -752,7 +738,7 @@ void Econet::loop() {
     this->act_loop_time_ = now - this->last_read_;
     this->last_read_ = now;
     // Read Everything that is in the buffer
-    int bytes_available = econet_uart->available();
+    int bytes_available = this->available();
 
     if (bytes_available > 0) {
       this->last_read_data_ = now;
@@ -884,8 +870,8 @@ void Econet::transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t comman
   wbuffer[wdata_len + 14] = (uint8_t) crc;
   wbuffer[wdata_len + 14 + 1] = (uint8_t) (crc >> 8);
 
-  econet_uart->write_array(wbuffer, wdata_len + 14 + 2);
-  // econet_uart->flush();
+  this->write_array(wbuffer, wdata_len + 14 + 2);
+  // this->flush();
 
   parse_tx_message();
 }

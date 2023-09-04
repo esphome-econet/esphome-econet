@@ -30,21 +30,19 @@ logger:
   tx_buffer_size: 2000
 
 external_components:
-  - source: github://stockmopar/esphome-econet
-#  - source: components
+  # - source: github://stockmopar/esphome-econet
+ - source: components
 
 uart:
   id: uart_0
   baud_rate: 38400
   rx_buffer_size: 1500
-  tx_pin: 
-    number: ${tx_pin}
-  rx_pin:
-    number: ${rx_pin}
+  tx_pin: ${tx_pin}
+  rx_pin: ${rx_pin}
 
 # The base UART communication hub.
 econet:
-  uart: uart_0
+  uart_id: uart_0
   model: "Tankless"
 
 climate:
