@@ -700,7 +700,8 @@ void Econet::loop() {
   }
 }
 
-void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, std::string object, EconetDatapointType type, float value) {
+void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, const std::string &object, EconetDatapointType type,
+                         float value) {
   std::vector<uint8_t> data;
 
   data.push_back(1);
@@ -731,7 +732,7 @@ void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, std::string object,
   transmit_message(dst_adr, src_adr, WRITE_COMMAND, data);
 }
 
-void Econet::request_strings(uint32_t dst_adr, uint32_t src_adr, std::vector<std::string> objects) {
+void Econet::request_strings(uint32_t dst_adr, uint32_t src_adr, const std::vector<std::string> &objects) {
   std::vector<uint8_t> data;
 
   int num_of_strs = objects.size();
@@ -752,7 +753,7 @@ void Econet::request_strings(uint32_t dst_adr, uint32_t src_adr, std::vector<std
     data.push_back(0);
     data.push_back(0);
 
-    std::string my_str = objects[i];
+    const std::string &my_str = objects[i];
 
     std::vector<uint8_t> sdata(my_str.begin(), my_str.end());
     uint8_t *p = &sdata[0];
@@ -768,7 +769,7 @@ void Econet::request_strings(uint32_t dst_adr, uint32_t src_adr, std::vector<std
   transmit_message(dst_adr, src_adr, READ_COMMAND, data);
 }
 
-void Econet::transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t command, std::vector<uint8_t> data) {
+void Econet::transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t command, const std::vector<uint8_t> &data) {
   uint8_t dst_bus = 0;
   uint8_t src_bus = 0;
   uint16_t wdata_len = data.size();

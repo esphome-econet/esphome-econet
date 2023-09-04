@@ -114,9 +114,10 @@ class Econet : public Component, public uart::UARTDevice {
   void handle_text(uint32_t src_adr, std::string obj_string, std::string text);
   void handle_binary(uint32_t src_adr, std::string obj_string, std::vector<uint8_t> data);
 
-  void transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t command, std::vector<uint8_t> data);
-  void request_strings(uint32_t dst_adr, uint32_t src_adr, std::vector<std::string> objects);
-  void write_value(uint32_t dst_adr, uint32_t src_adr, std::string object, EconetDatapointType type, float value);
+  void transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t command, const std::vector<uint8_t> &data);
+  void request_strings(uint32_t dst_adr, uint32_t src_adr, const std::vector<std::string> &objects);
+  void write_value(uint32_t dst_adr, uint32_t src_adr, const std::string &object, EconetDatapointType type,
+                   float value);
 
   float temp_in = 0;
   float temp_out = 0;
