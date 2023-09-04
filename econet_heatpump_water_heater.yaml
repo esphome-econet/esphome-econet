@@ -1,11 +1,13 @@
 substitutions:
   name: "econet-hpwh"
+  friendly_name: "Water Heater"
   device_description: "Rheem Heat Pump Water Heater"
   tx_pin: GPIO19
   rx_pin: GPIO22
 
 esphome:
   name: ${name}
+  friendly_name: ${friendly_name}
   comment: ${device_description}
 
 preferences:
@@ -13,7 +15,7 @@ preferences:
 
 esp32:
   board: esp32dev
-  framework: 
+  framework:
     type: arduino
 
 wifi:
@@ -47,6 +49,10 @@ econet:
 climate:
   - platform: econet
     name: "Water Heater"
+    visual:
+      min_temperature: "43.3333"
+      max_temperature: "60"
+      temperature_step: 1.0f
 
 sensor:
   - platform: econet
@@ -56,7 +62,6 @@ sensor:
     accuracy_decimals: 0
     device_class: "moisture"
     state_class: "measurement"
-    entity_category: "diagnostic"
   - platform: econet
     name: "Ambient Temperature"
     sensor_datapoint: AMBIENTT
@@ -113,10 +118,14 @@ sensor:
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
+  - platform: wifi_signal
+    name: "WiFi Signal Strength"
+    update_interval: 30s
+    entity_category: "diagnostic"
 
 binary_sensor:
   - platform: econet
-    name: "Water Heater Enabled (Sensor)"
+    name: "Water Heater Enabled"
     sensor_datapoint: WHTRENAB
     device_class: "running"
   - platform: econet
@@ -128,6 +137,8 @@ text_sensor:
   - platform: econet
     name: "Water Heater Fan Speed"
     sensor_datapoint: FAN_CTRL
+    icon: "mdi:fan"
   - platform: econet
     name: "Water Heater Heating Element State"
     sensor_datapoint: HEATCTRL
+    icon: "mdi:heating-coil"

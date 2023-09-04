@@ -1,11 +1,13 @@
 substitutions:
   name: "econet-twh"
+  friendly_name: "Tankless Water Heater"
   device_description: "Rheem Tankless Water Heater"
   tx_pin: GPIO19
   rx_pin: GPIO22
 
 esphome:
   name: ${name}
+  friendly_name: ${friendly_name}
   comment: ${device_description}
 
 preferences:
@@ -13,7 +15,7 @@ preferences:
 
 esp32:
   board: esp32dev
-  framework: 
+  framework:
     type: arduino
 
 wifi:
@@ -47,6 +49,10 @@ econet:
 climate:
   - platform: econet
     name: "Water Heater"
+    visual:
+      min_temperature: "43.3333"
+      max_temperature: "60"
+      temperature_step: 1.0f
 
 sensor:
   - platform: econet
@@ -80,6 +86,7 @@ sensor:
     unit_of_measurement: "kbtu"
     accuracy_decimals: 3
     entity_category: "diagnostic"
+    icon: "mdi:flash"
   - platform: econet
     name: "Water Used"
     sensor_datapoint: WTR_USED
@@ -99,12 +106,14 @@ sensor:
     filters:
       # Convert liters per minute to gpm
       - multiply: 0.264172
+    icon: "mdi:water"
   - platform: econet
     name: "Ignition Cycles"
     sensor_datapoint: IGNCYCLS
     unit_of_measurement: ""
     accuracy_decimals: 0
     entity_category: "diagnostic"
+    icon: "mdi:heating-coil"
   - platform: template
     name: "Instant BTUs"
     unit_of_measurement: "kbtu/hr"
@@ -113,9 +122,13 @@ sensor:
     entity_category: "diagnostic"
     lambda: |-
       return max((id(temp_out).state - id(temp_in).state) * id(flow_rate).state * 8.334 * 60 / 0.92 / 1000, 0.0);
+  - platform: wifi_signal
+    name: "WiFi Signal Strength"
+    update_interval: 30s
+    entity_category: "diagnostic"
 
 binary_sensor:
   - platform: econet
-    name: "Water Heater Enabled (Sensor)"
+    name: "Water Heater Enabled"
     sensor_datapoint: WHTRENAB
     device_class: "running"

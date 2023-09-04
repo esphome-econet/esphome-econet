@@ -1,11 +1,13 @@
 substitutions:
   name: "econet-hvac"
-  device_description: "Econet HVAC"
+  friendly_name: "Rheem HVAC"
+  device_description: "Rheem HVAC"
   tx_pin: GPIO19
   rx_pin: GPIO22
 
 esphome:
   name: ${name}
+  friendly_name: ${friendly_name}
   comment: ${device_description}
 
 preferences:
@@ -13,7 +15,7 @@ preferences:
 
 esp32:
   board: esp32dev
-  framework: 
+  framework:
     type: arduino
 
 wifi:
@@ -56,6 +58,10 @@ econet:
 climate:
   - platform: econet
     name: "HVAC"
+    visual:
+      min_temperature: "10"
+      max_temperature: "32.2222"
+      temperature_step: 1.0f
 
 sensor:
   - platform: econet
@@ -63,6 +69,7 @@ sensor:
     sensor_datapoint: HVACMODE
     unit_of_measurement: ""
     accuracy_decimals: 0
+    icon: "mdi:hvac"
   - platform: econet
     name: "HVAC Thermostat Temperature"
     sensor_datapoint: SPT_STAT
@@ -82,6 +89,7 @@ sensor:
     sensor_datapoint: AUTOMODE
     unit_of_measurement: ""
     accuracy_decimals: 0
+    icon: "mdi:hvac"
   - platform: econet
     name: "Thermostat Current Humidity"
     sensor_datapoint: RELH7005
@@ -111,6 +119,7 @@ sensor:
     unit_of_measurement: ""
     accuracy_decimals: 1
     entity_category: "diagnostic"
+    icon: "mdi:speedometer"
   - platform: econet
     name: "HVAC ODU Crankcase Heater Temperature"
     sensor_datapoint: TEMP_CPT
@@ -125,6 +134,7 @@ sensor:
     unit_of_measurement: ""
     accuracy_decimals: 1
     entity_category: "diagnostic"
+    icon: "mdi:valve"
   - platform: econet
     name: "HVAC ODU Expansion Valve Super Heat"
     sensor_datapoint: EXVSUPER
@@ -155,20 +165,28 @@ sensor:
     unit_of_measurement: ""
     accuracy_decimals: 0
     entity_category: "diagnostic"
+    icon: "mdi:fan"
   - platform: template
     name: "HVAC Air Handler RPM"
     id: blower_rpm
     unit_of_measurement: ""
     accuracy_decimals: 0
     entity_category: "diagnostic"
+    icon: "mdi:fan"
+  - platform: wifi_signal
+    name: "WiFi Signal Strength"
+    update_interval: 30s
+    entity_category: "diagnostic"
 
 text_sensor:
   - platform: econet
     name: "HVAC Operating Mode Text"
     sensor_datapoint: HVACMODE
+    icon: "mdi:hvac"
   - platform: econet
     name: "HVAC Auto Mode Text"
     sensor_datapoint: AUTOMODE
+    icon: "mdi:hvac"
 
 number:
   - platform: econet
@@ -177,9 +195,11 @@ number:
     min_value: 10
     max_value: 80
     step: 1
-    mode: 'slider'
+    mode: "slider"
+    icon: "mdi:air-humidifier-off"
 
 switch:
   - platform: econet
     name: "HVAC Dehumidification Enable State"
     switch_datapoint: DHUMENAB
+    icon: "mdi:air-humidifier-off"
