@@ -58,7 +58,7 @@ uint16_t gen_crc16(const uint8_t *data, uint16_t size) {
   return crc;
 }
 
-float bytesToFloat(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3) {
+float bytes_to_float(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3) {
   uint8_t byte_array[] = {b3, b2, b1, b0};
   float result;
   std::copy(reinterpret_cast<const char *>(&byte_array[0]), reinterpret_cast<const char *>(&byte_array[4]),
@@ -66,7 +66,7 @@ float bytesToFloat(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3) {
   return result;
 }
 
-uint32_t floatToUint32(float f) {
+uint32_t float_to_uint32(float f) {
   uint32_t fbits = 0;
   memcpy(&fbits, &f, sizeof fbits);
 
@@ -458,7 +458,7 @@ void Econet::parse_message(bool is_tx) {
           uint8_t item_type = pdata[tpos + 1] & 0x7F;
 
           if (item_type == 0 && tpos + 7 < data_len) {
-            float item_value = bytesToFloat(pdata[tpos + 4], pdata[tpos + 5], pdata[tpos + 6], pdata[tpos + 7]);
+            float item_value = bytes_to_float(pdata[tpos + 4], pdata[tpos + 5], pdata[tpos + 6], pdata[tpos + 7]);
 
             if (item_num < read_req.obj_names.size()) {
               handle_float(src_adr, read_req.obj_names[item_num], item_value);
@@ -553,7 +553,7 @@ void Econet::parse_message(bool is_tx) {
 
           int tpos = start + strlen;
 
-          float item_value = bytesToFloat(pdata[tpos + 0], pdata[tpos + 1], pdata[tpos + 2], pdata[tpos + 3]);
+          float item_value = bytes_to_float(pdata[tpos + 0], pdata[tpos + 1], pdata[tpos + 2], pdata[tpos + 3]);
 
           ESP_LOGI("econet", "  %s: %f", s.c_str(), item_value);
         } else {
@@ -604,7 +604,7 @@ void Econet::parse_message(bool is_tx) {
         uint8_t item_type = pdata[tpos + 1] & 0x7F;
 
         if (item_type == 0) {
-          float item_value = bytesToFloat(pdata[tpos + 4], pdata[tpos + 5], pdata[tpos + 6], pdata[tpos + 7]);
+          float item_value = bytes_to_float(pdata[tpos + 4], pdata[tpos + 5], pdata[tpos + 6], pdata[tpos + 7]);
 
           if (type_id_ == 1) {
             if (item_num == 3) {
@@ -806,7 +806,7 @@ void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, std::string object,
     }
   }
 
-  uint32_t f_to_32 = floatToUint32(value);
+  uint32_t f_to_32 = float_to_uint32(value);
 
   data.push_back((uint8_t) (f_to_32 >> 24));
   data.push_back((uint8_t) (f_to_32 >> 16));
