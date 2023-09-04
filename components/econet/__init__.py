@@ -7,6 +7,7 @@ from esphome.const import CONF_ID, CONF_SENSOR_DATAPOINT, CONF_TRIGGER_ID
 DEPENDENCIES = ["uart"]
 
 CONF_MODEL = "model"
+CONF_HVAC_WIFI_MODULE_CONNECTED = "hvac_wifi_module_connected"
 
 CONF_ON_DATAPOINT_UPDATE = "on_datapoint_update"
 CONF_DATAPOINT_TYPE = "datapoint_type"
@@ -49,6 +50,7 @@ CONFIG_SCHEMA = (
         {
             cv.GenerateID(): cv.declare_id(Econet),
             cv.Required(CONF_MODEL): cv.enum(MODEL_TYPES),
+            cv.Optional(CONF_HVAC_WIFI_MODULE_CONNECTED, default=True): cv.boolean,
             cv.Optional(CONF_ON_DATAPOINT_UPDATE): automation.validate_automation(
                 {
                     cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(
@@ -80,6 +82,7 @@ async def to_code(config):
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
     cg.add(var.set_model_type(config[CONF_MODEL]))
+    cg.add(var.set_hvac_wifi_module_connected(config[CONF_HVAC_WIFI_MODULE_CONNECTED]))
     for conf in config.get(CONF_ON_DATAPOINT_UPDATE, []):
         trigger = cg.new_Pvariable(
             conf[CONF_TRIGGER_ID], var, conf[CONF_SENSOR_DATAPOINT]

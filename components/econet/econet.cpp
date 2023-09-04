@@ -156,16 +156,21 @@ void Econet::make_request() {
       str_ids.push_back("EVAPTEMP");
       str_ids.push_back("SUCTIONT");
       str_ids.push_back("DISCTEMP");
-    } else if (model_type_ == MODEL_TYPE_HVAC) {
-      // str_ids.push_back("AIRHSTAT");
-      /*
-      str_ids.push_back("AAUX1CFM");
-      str_ids.push_back("AAUX2CFM");
-      str_ids.push_back("AAUX3CFM");
-      str_ids.push_back("AAUX4CFM");
-      */
+    } else if (model_type_ == MODEL_TYPE_HVAC && !hvac_wifi_module_connected_) {
+      str_ids.push_back("DHUMSETP");
+      str_ids.push_back("DHUMENAB");
+      str_ids.push_back("DH_DRAIN");
+      str_ids.push_back("OAT_TEMP");
+      str_ids.push_back("COOLSETP");
+      str_ids.push_back("HEATSETP");
+      str_ids.push_back("STATNFAN");
+      str_ids.push_back("STATMODE");
+      str_ids.push_back("AUTOMODE");
+      str_ids.push_back("HVACMODE");
+      str_ids.push_back("RELH7005");
+      str_ids.push_back("SPT_STAT");
     }
-    if (model_type_ != MODEL_TYPE_HVAC) {
+    if (!str_ids.empty()) {
       request_strings(dst_adr, src_adr, str_ids);
     }
     return;

@@ -70,6 +70,9 @@ class Econet : public Component, public uart::UARTDevice {
   void set_model_type(ModelType model_type) { model_type_ = model_type; }
   ModelType get_model_type() { return model_type_; }
 
+  void set_hvac_wifi_module_connected(bool hvac_wifi_module_connected) {
+    hvac_wifi_module_connected_ = hvac_wifi_module_connected;
+  }
 
   void set_float_datapoint_value(const std::string &datapoint_id, float value);
   void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value);
@@ -96,6 +99,8 @@ class Econet : public Component, public uart::UARTDevice {
 
   std::map<std::string, EconetDatapoint> datapoints_{};
   std::map<std::string, EconetDatapoint> pending_writes_{};
+
+  bool hvac_wifi_module_connected_ = true;
 
   uint8_t req_id = 0;
   uint32_t last_request_{0};
