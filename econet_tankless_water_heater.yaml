@@ -1,12 +1,17 @@
 substitutions:
   name: "econet-twh"
+  friendly_name: "Tankless Water Heater"
   device_description: "Rheem Tankless Water Heater"
   tx_pin: GPIO19
   rx_pin: GPIO22
 
 esphome:
   name: ${name}
+  friendly_name: ${friendly_name}
   comment: ${device_description}
+  project:
+    name: "daniel-dev22.econet"
+    version: 0.1.9
 
 preferences:
   flash_write_interval: "24h"
@@ -47,11 +52,14 @@ econet:
 climate:
   - platform: econet
     name: "Water Heater"
+    visual:
+      min_temperature: "43.3333"
+      max_temperature: "60"
+      temperature_step: 1.0f
 
 sensor:
   - platform: econet
     name: "Temperature In"
-    id: temp_in
     sensor_datapoint: TEMP__IN
     unit_of_measurement: "°F"
     accuracy_decimals: 1
@@ -60,7 +68,6 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "Temperature Out"
-    id: temp_out
     sensor_datapoint: TEMP_OUT
     unit_of_measurement: "°F"
     accuracy_decimals: 1
@@ -80,6 +87,7 @@ sensor:
     unit_of_measurement: "kbtu"
     accuracy_decimals: 3
     entity_category: "diagnostic"
+    icon: "mdi:flash"
   - platform: econet
     name: "Water Used"
     sensor_datapoint: WTR_USED
@@ -90,7 +98,6 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "Flow Rate"
-    id: flow_rate
     sensor_datapoint: FLOWRATE
     unit_of_measurement: "gpm"
     accuracy_decimals: 1
@@ -99,23 +106,21 @@ sensor:
     filters:
       # Convert liters per minute to gpm
       - multiply: 0.264172
+    icon: "mdi:water"
   - platform: econet
     name: "Ignition Cycles"
     sensor_datapoint: IGNCYCLS
     unit_of_measurement: ""
     accuracy_decimals: 0
     entity_category: "diagnostic"
-  - platform: template
-    name: "Instant BTUs"
-    unit_of_measurement: "kbtu/hr"
-    accuracy_decimals: 3
-    state_class: "measurement"
+    icon: "mdi:heating-coil"
+  - platform: wifi_signal
+    name: "WiFi Signal Strength"
+    update_interval: 30s
     entity_category: "diagnostic"
-    lambda: |-
-      return max((id(temp_out).state - id(temp_in).state) * id(flow_rate).state * 8.334 * 60 / 0.92 / 1000, 0.0);
 
 binary_sensor:
   - platform: econet
-    name: "Water Heater Enabled (Sensor)"
+    name: "Water Heater Enabled"
     sensor_datapoint: WHTRENAB
     device_class: "running"
