@@ -9,9 +9,7 @@
 namespace esphome {
 namespace econet {
 
-class EconetClimate : public climate::Climate,
-                         public PollingComponent,
-                         public EconetClient {
+class EconetClimate : public climate::Climate, public PollingComponent, public EconetClient {
  public:
   void update() override;
   void dump_config() override;
@@ -26,5 +24,5 @@ class EconetClimate : public climate::Climate,
   climate::ClimateTraits traits() override;
 };
 
-}  // namespace daikin_s21
+}  // namespace econet
 }  // namespace esphome

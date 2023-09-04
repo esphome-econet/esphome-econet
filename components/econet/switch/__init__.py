@@ -5,18 +5,9 @@ Switch component for Econet
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import switch
-from esphome.const import (
-    CONF_ID,
-	CONF_SWITCH_DATAPOINT
-)
+from esphome.const import CONF_SWITCH_DATAPOINT
 
-from .. import (
-    econet_ns,
-	Econet,
-    CONF_ECONET_ID,
-    ECONET_CLIENT_SCHEMA,
-    EconetClient,
-)
+from .. import CONF_ECONET_ID, Econet, EconetClient, econet_ns
 
 EconetSwitch = econet_ns.class_(
     "EconetSwitch", switch.Switch, cg.PollingComponent, EconetClient
@@ -33,8 +24,10 @@ CONFIG_SCHEMA = (
             cv.Required(CONF_SWITCH_DATAPOINT): cv.uint8_t,
         }
     )
-    .extend(cv.COMPONENT_SCHEMA).extend(cv.polling_component_schema("1s"))
+    .extend(cv.COMPONENT_SCHEMA)
+    .extend(cv.polling_component_schema("1s"))
 )
+
 
 async def to_code(config):
     """Generate main.cpp code"""
