@@ -5,6 +5,8 @@ from esphome.const import CONF_ID
 
 from .. import CONF_ECONET_ID, ECONET_CLIENT_SCHEMA, EconetClient, econet_ns
 
+DEPENDENCIES = ["econet"]
+
 EconetBinarySensor = econet_ns.class_(
     "EconetBinarySensor", cg.PollingComponent, EconetClient
 )

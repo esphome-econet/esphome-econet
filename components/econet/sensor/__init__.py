@@ -10,6 +10,8 @@ from esphome.const import (
 
 from .. import CONF_ECONET_ID, ECONET_CLIENT_SCHEMA, EconetClient, econet_ns
 
+DEPENDENCIES = ["econet"]
+
 EconetSensor = econet_ns.class_("EconetSensor", cg.PollingComponent, EconetClient)
 
 CONF_TEMP_IN = "temp_in"

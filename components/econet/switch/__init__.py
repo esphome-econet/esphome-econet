@@ -5,6 +5,8 @@ from esphome.const import CONF_SWITCH_DATAPOINT
 
 from .. import CONF_ECONET_ID, ECONET_CLIENT_SCHEMA, EconetClient, econet_ns
 
+DEPENDENCIES = ["econet"]
+
 EconetSwitch = econet_ns.class_(
     "EconetSwitch", switch.Switch, cg.PollingComponent, EconetClient
 )
