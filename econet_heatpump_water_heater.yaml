@@ -9,16 +9,13 @@ esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   comment: ${device_description}
-  project:
-    name: "daniel-dev22.econet"
-    version: 0.1.9
 
 preferences:
   flash_write_interval: "24h"
 
 esp32:
   board: esp32dev
-  framework: 
+  framework:
     type: arduino
 
 wifi:
@@ -35,8 +32,8 @@ logger:
   tx_buffer_size: 2000
 
 external_components:
-    - source: github://stockmopar/esphome-econet
-    # - source: components
+  - source: github://stockmopar/esphome-econet
+  # - source: components
 
 uart:
   id: uart_0

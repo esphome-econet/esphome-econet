@@ -9,16 +9,13 @@ esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   comment: ${device_description}
-  project:
-    name: "daniel-dev22.econet"
-    version: 0.1.9
 
 preferences:
   flash_write_interval: "24h"
 
 esp32:
   board: esp32dev
-  framework: 
+  framework:
     type: arduino
 
 wifi:
@@ -198,7 +195,7 @@ number:
     min_value: 10
     max_value: 80
     step: 1
-    mode: 'slider'
+    mode: "slider"
     icon: "mdi:air-humidifier-off"
 
 switch:
