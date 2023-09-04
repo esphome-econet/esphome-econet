@@ -1,9 +1,10 @@
 #pragma once
 
-#include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
 #include "esphome/core/helpers.h"
+#include "esphome/components/uart/uart.h"
 #include <map>
+#include <vector>
 
 namespace esphome {
 namespace econet {
@@ -17,19 +18,8 @@ class ReadRequest {
   uint8_t src_bus;
 
   bool awaiting_res = false;
-  // uint8_t read_class;
-  // uint8_t read_prop;
 
   std::vector<std::string> obj_names;
-};
-
-enum class EconetClimateMode : uint8_t {
-  Disabled = '0',
-  Auto = '1',
-  Dry = '2',
-  Cool = '3',
-  Heat = '4',
-  Fan = '6',
 };
 
 struct DatapointListener {
@@ -43,12 +33,6 @@ class Econet : public Component {
   void dump_config() override;
   void set_uart(uart::UARTComponent *econet_uart);
   void set_type_id(uint8_t type_id) { this->type_id_ = type_id; }
-  bool is_ready() { return this->ready; }
-  void make_request();
-  void read_buffer(int bytes_available);
-  void parse_message(bool is_tx);
-  void parse_rx_message();
-  void parse_tx_message();
   void set_enable_state(bool state);
 
   void set_new_setpoint(float setpoint);
@@ -105,11 +89,15 @@ class Econet : public Component {
  protected:
   uint8_t type_id_{0};
   std::vector<DatapointListener> listeners_;
-  ReadRequest read_req;  // dst_adr
-  // std::vector<ReadRequest> read_reqs_;
-  void dump_state();
+  ReadRequest read_req;
   void check_uart_settings();
   void send_datapoint(uint8_t datapoint_id, float value);
+
+  void make_request();
+  void read_buffer(int bytes_available);
+  void parse_message(bool is_tx);
+  void parse_rx_message();
+  void parse_tx_message();
 
   void handle_float(uint32_t src_adr, std::string obj_string, float value);
   void handle_enumerated_text(uint32_t src_adr, std::string obj_string, uint8_t value, std::string text);
@@ -117,16 +105,11 @@ class Econet : public Component {
   void handle_text(uint32_t src_adr, std::string obj_string, std::string text);
   void handle_binary(uint32_t src_adr, std::string obj_string, std::vector<uint8_t> data);
 
-  void transmit_message(std::vector<uint8_t> data);
-  void transmit_sync();
   void transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t command, std::vector<uint8_t> data);
   void request_strings(uint32_t dst_adr, uint32_t src_adr, std::vector<std::string> objects);
   void write_value(uint32_t dst_adr, uint32_t src_adr, std::string object, uint8_t type, float value);
 
   uart::UARTComponent *econet_uart{nullptr};
-  bool ready = true;
-
-  // ReadRequest *read_request;
 
   float temp_in = 0;
   float temp_out = 0;
@@ -141,7 +124,6 @@ class Econet : public Component {
   bool heatctrl = false;
   bool fan_ctrl = false;
   bool comp_rly = false;
-  bool do_once = false;
 
   float ambient_temp = 0;
   float lower_water_heater_temp = 0;
@@ -169,7 +151,6 @@ class Econet : public Component {
   uint32_t last_read_{0};
   uint32_t last_read_data_{0};
   uint32_t act_loop_time_{0};
-  int quiet_counter = 0;
   uint8_t data_len = 0;
   uint16_t msg_len = 0;
   int pos = 0;
@@ -197,14 +178,10 @@ class Econet : public Component {
   uint8_t wbuffer[max_message_size];
   uint16_t wmsg_len = 0;
 
-  uint32_t COMPUTER = 192;                   // 80 00 00 C0
   uint32_t FURNACE = 0x1c0;                  // 80 00 01 C0
-  uint32_t UNKNOWN_HANDLER = 241;            // 80 00 00 F1
   uint32_t WIFI_MODULE = 832;                // 80 00 03 40
   uint32_t SMARTEC_TRANSLATOR = 4160;        // 80 00 10 40
-  uint32_t INTERNAL = 4736;                  // 80 00 10 40
   uint32_t HEAT_PUMP_WATER_HEATER = 0x1280;  // 80 00 12 80
-  uint32_t AIR_HANDLER = 0x3c0;              // 80 00 03 C0
   uint32_t CONTROL_CENTER = 0x380;           // 80 00 03 80
 
   uint8_t DST_ADR_POS = 0;

@@ -1,7 +1,5 @@
 #include "econet.h"
 
-using namespace esphome;
-
 namespace esphome {
 namespace econet {
 
@@ -59,6 +57,7 @@ uint16_t gen_crc16(const uint8_t *data, uint16_t size) {
 
   return crc;
 }
+
 float bytesToFloat(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3) {
   uint8_t byte_array[] = {b3, b2, b1, b0};
   float result;
@@ -66,6 +65,7 @@ float bytesToFloat(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3) {
             reinterpret_cast<char *>(&result));
   return result;
 }
+
 uint32_t floatToUint32(float f) {
   uint32_t fbits = 0;
   memcpy(&fbits, &f, sizeof fbits);
@@ -89,6 +89,7 @@ void Econet::check_uart_settings() {
 }
 
 void Econet::dump_config() { this->check_uart_settings(); }
+
 void Econet::handle_float(uint32_t src_adr, std::string obj_string, float value) {
   if (src_adr == SMARTEC_TRANSLATOR) {
     if (obj_string == "FLOWRATE") {
@@ -122,28 +123,7 @@ void Econet::handle_float(uint32_t src_adr, std::string obj_string, float value)
     }
   }
 }
-/*
 
-            if(item_num == 4)
-          {
-            if(item_value == 0)
-            {
-              enable_state = false;
-              // send_datapoint(0,0);
-            }
-            else if(item_value == 1)
-            {
-              enable_state = true;
-              // send_datapoint(0,1);
-            }
-          }
-          else if(item_num == 5)
-          {
-            ESP_LOGD("econet", "WHTRMODE (val): %d", item_value);
-            ESP_LOGD("econet", "WHTRMODE (str): %s", s.c_str());
-          }
-
-*/
 void Econet::handle_enumerated_text(uint32_t src_adr, std::string obj_string, uint8_t value, std::string text) {
   if (src_adr == SMARTEC_TRANSLATOR) {
     if (obj_string == "WHTRENAB") {
@@ -164,11 +144,13 @@ void Econet::handle_enumerated_text(uint32_t src_adr, std::string obj_string, ui
     }
   }
 }
+
 void Econet::handle_text(uint32_t src_adr, std::string obj_string, std::string text) {
   if (src_adr == 0x1040) {
   } else if (src_adr == 0x380) {
   }
 }
+
 void Econet::handle_binary(uint32_t src_adr, std::string obj_string, std::vector<uint8_t> data) {
   if (src_adr == 0x1c0) {
     if (obj_string == "HWSTATUS") {
@@ -185,6 +167,7 @@ void Econet::handle_binary(uint32_t src_adr, std::string obj_string, std::vector
     }
   }
 }
+
 void Econet::make_request() {
   uint32_t dst_adr = SMARTEC_TRANSLATOR;
   if (type_id_ == 1) {
@@ -295,8 +278,11 @@ void Econet::make_request() {
     }
   }
 }
+
 void Econet::parse_tx_message() { this->parse_message(true); }
+
 void Econet::parse_rx_message() { this->parse_message(false); }
+
 void Econet::parse_message(bool is_tx) {
   bool logvals = true;
 
@@ -450,12 +436,7 @@ void Econet::parse_message(bool is_tx) {
     } else {
       ESP_LOGI("econet", "  Don't Currently Support This Class Type", type);
     }
-    // tuple<uint32_t, uint32_t> req_tup(dst_adr,src_adr);
 
-    // read_reqs
-    // This is a read request so let's track it so that when an ACK/response comes to this we know what data it is!
-    // for(
-    // read_reqs_
   } else if (command == ACK) {
     if (read_req.dst_adr == src_adr && read_req.src_adr == dst_adr && read_req.awaiting_res == true) {
       if (read_req.obj_names.size() == 1) {
@@ -582,22 +563,15 @@ void Econet::parse_message(bool is_tx) {
         // 01.01.00.07.00.00.4F.43.4F.4D.4D.41.4E.44.42.48.00.00
         // Object - OCOMMAND
         //
-      } else if (datatype == 2) {
-        // ENUM TEXT
-
       } else if (datatype == 4) {
         // BYTES
         ESP_LOGI("econet", "  DataType: %d (Bytes)", datatype);
-
-        // if(
       } else {
         ESP_LOGI("econet", "  DataType: %d", datatype);
       }
     } else if (type == 7) {
       // TIME AND DATA
-    }
-
-    else if (type == 9) {
+    } else if (type == 9) {
       // SYSTEM HANDLER - LISTING OF ADDRESSES ON BUS
       // 09.01.00.00.03.80.00.00.03.40.00.00.05.00
       // 00 00 03 80
@@ -606,20 +580,6 @@ void Econet::parse_message(bool is_tx) {
     } else {
     }
   }
-
-  /*
-
-  uint32_t UNKNOWN_HANDLER =  			241	;	// 80 00 00 F1
-  uint32_t WIFI_MODULE =    				832	;	// 80 00 03 40
-  uint32_t SMARTEC_TRANSLATOR = 			4160;	// 80 00 10 40
-  uint32_t INTERNAL = 					4736; 	// 80 00 10 40
-  uint32_t HEAT_PUMP_WATER_HEATER =       0x1280;
-  uint32_t AIR_HANDLER = 					0x3c0;
-  uint32_t CONTROL_CENTER = 				0x380;
-
-  */
-
-  bool recognized = false;
 
   uint32_t exp_dst_adr = WIFI_MODULE;
   uint32_t exp_src_adr = SMARTEC_TRANSLATOR;
@@ -636,8 +596,6 @@ void Econet::parse_message(bool is_tx) {
 
   if (dst_adr == exp_dst_adr && src_adr == exp_src_adr) {
     if (command == ACK && pmsg_len == exp_msg_len) {
-      recognized = false;
-
       int tpos = 0;
       uint8_t item_num = 1;
 
@@ -720,133 +678,9 @@ void Econet::parse_message(bool is_tx) {
 
       instant_btus = std::max((float) ((temp_out - temp_in) * flow_rate * 8.334 * 60 / 0.92 / 1000), (float) 0.0);
     }
-    // publish_state(format_hex_pretty((const uint8_t *) buffer, msg_len));
-  } else if (dst_adr == UNKNOWN_HANDLER) {
-    // Filter these for now
-    recognized = false;
-  } else if (src_adr == UNKNOWN_HANDLER) {
-    // Filter these for now
-    recognized = false;
-  } else if (dst_adr == SMARTEC_TRANSLATOR && src_adr == WIFI_MODULE) {
-    // Filter these for now
   }
-
-  if (recognized == false) {
-    if (false) {
-      if (command == 30) {
-        // READ
-        uint8_t type = pdata[0];
-        ESP_LOGI("econet", "  Type    : %d", type);
-
-        if (type == 1) {
-          char char_arr[data_len - 6];
-
-          for (int a = 0; a < data_len - 6; a++) {
-            char_arr[a] = pdata[a + 4];
-          }
-
-          std::string s(char_arr, sizeof(char_arr));
-
-          ESP_LOGD("econet", "  ValName : %s", s.c_str());
-        } else if (type == 2) {
-          int tpos = 0;
-          uint8_t item_num = 1;
-
-          while (tpos < data_len) {
-            ESP_LOGD("econet", "  Item[%d] ", item_num);
-
-            uint8_t item_len = pdata[tpos];
-            uint8_t item_type = pdata[tpos + 1] & 0x7F;
-
-            ESP_LOGD("econet", "  ItemLen : %d", item_len);
-            ESP_LOGD("econet", "  ItemType: %d", item_type);
-
-            if (item_type == 0) {
-              float item_value = bytesToFloat(pdata[tpos + 4], pdata[tpos + 5], pdata[tpos + 6], pdata[tpos + 7]);
-              ESP_LOGD("econet", "  ItemVal : %f", item_value);
-            } else if (item_type == 2) {
-              // Enumerated Text
-
-              uint8_t item_value = pdata[tpos + 4];
-
-              ESP_LOGD("econet", "  ItemVal : %d", item_value);
-
-              uint8_t item_text_len = pdata[tpos + 5];
-
-              // uint8_t str_arr[item_text_len];
-              char char_arr[item_text_len];
-
-              for (int a = 0; a < item_text_len; a++) {
-                // str_arr[a] = pdata[tpos+a+6];
-                char_arr[a] = pdata[tpos + a + 6];
-              }
-
-              std::string s(char_arr, sizeof(char_arr));
-
-              ESP_LOGD("econet", "  ItemStr : %s", s.c_str());
-            }
-            tpos += item_len + 1;
-            item_num++;
-          }
-        }
-      } else if (command == 6) {
-        // ACK
-
-        uint8_t type = pdata[0] & 0x7F;
-
-        //
-        if (type == 0) {
-          float item_value = bytesToFloat(pdata[11], pdata[12], pdata[13], pdata[14]);
-          ESP_LOGD("econet", "  ItemVal : %f", item_value);
-        } else if (type == 2) {
-          int tpos = 0;
-          uint8_t item_num = 1;
-
-          while (tpos < data_len) {
-            ESP_LOGD("econet", "  Item[%d] ", item_num);
-
-            uint8_t item_len = pdata[tpos];
-            uint8_t item_type = pdata[tpos + 1] & 0x7F;
-
-            ESP_LOGD("econet", "  ItemLen : %d", item_len);
-            ESP_LOGD("econet", "  ItemType: %d", item_type);
-
-            if (item_type == 0) {
-              float item_value = bytesToFloat(pdata[tpos + 4], pdata[tpos + 5], pdata[tpos + 6], pdata[tpos + 7]);
-              ESP_LOGD("econet", "  ItemVal : %f", item_value);
-            } else if (item_type == 2) {
-              // Enumerated Text
-
-              uint8_t item_value = pdata[tpos + 4];
-
-              ESP_LOGD("econet", "  ItemVal : %d", item_value);
-
-              uint8_t item_text_len = pdata[tpos + 5];
-
-              // uint8_t str_arr[item_text_len];
-              char char_arr[item_text_len];
-
-              for (int a = 0; a < item_text_len; a++) {
-                // str_arr[a] = pdata[tpos+a+6];
-                char_arr[a] = pdata[tpos + a + 6];
-              }
-
-              // std::string item_string = reinterpret_cast<char *>(str_arr);
-              std::string s(char_arr, sizeof(char_arr));
-
-              ESP_LOGD("econet", "  ItemStr : %s", s.c_str());
-            }
-            tpos += item_len + 1;
-            item_num++;
-          }
-        }
-      }
-    }
-  } else {
-    // ESP_LOGD("econet", "<<< %s", format_hex_pretty((const uint8_t *) buffer, msg_len).c_str());
-  }
-  // return true;
 }
+
 void Econet::read_buffer(int bytes_available) {
   if (bytes_available > 1200) {
     ESP_LOGI("econet", "BA=%d,LT=%d ms", bytes_available, this->act_loop_time_);
@@ -858,7 +692,7 @@ void Econet::read_buffer(int bytes_available) {
   uint8_t bytes[bytes_to_read];
 
   // Read multiple bytes at the same time
-  if (econet_uart->read_array(bytes, bytes_to_read) == false) {
+  if (!econet_uart->read_array(bytes, bytes_to_read)) {
     return;
   }
 
@@ -912,7 +746,6 @@ void Econet::read_buffer(int bytes_available) {
 }
 void Econet::loop() {
   const uint32_t now = millis();
-  bool flag = false;
 
   // Read Every 50ms After 10s afer boot
   if (now - this->last_read_ > 10) {
@@ -924,7 +757,6 @@ void Econet::loop() {
     if (bytes_available > 0) {
       this->last_read_data_ = now;
       ESP_LOGI("econet", "Read %d. ms=%d, lt=%d", bytes_available, now, act_loop_time_);
-      flag = true;
       this->read_buffer(bytes_available);
     } else {
       // ESP_LOGI("econet", "--- millis()=%d", now);
@@ -949,121 +781,10 @@ void Econet::loop() {
           }
         }
       }
-      if (now - this->last_request_ > 10000 && type_id_ == 2) {
-        if (false) {
-          std::vector<uint8_t> data;
-
-          // std::vector<uint8_t> req1 =
-          // {0x80,0x00,0x03,0x80,0x00,0x80,0x00,0x03,0x40,0x00,0x98,0x00,0x00,0x1E,0x02,0x01,0x00,0x00,0x41,0x55,0x54,0x4F,0x4D,0x4F,0x44,0x45,0x00,0x00,0x41,0x57,0x41,0x59,0x4D,0x4F,0x44,0x45,0x00,0x00,0x43,0x4F,0x4F,0x4C,0x53,0x45,0x54,0x50,0x00,0x00,0x44,0x45,0x41,0x44,0x42,0x41,0x4E,0x44,0x00,0x00,0x46,0x55,0x52,0x4E,0x47,0x46,0x41,0x4E,0x00,0x00,0x48,0x45,0x41,0x54,0x53,0x45,0x54,0x50,0x00,0x00,0x48,0x56,0x41,0x43,0x4D,0x4F,0x44,0x45,0x00,0x00,0x48,0x57,0x5F,0x47,0x5F,0x46,0x41,0x4E,0x00,0x00,0x52,0x45,0x4C,0x48,0x37,0x30,0x30,0x35,0x00,0x00,0x53,0x50,0x54,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x53,0x50,0x54,0x5F,0x53,0x54,0x41,0x54,0x00,0x00,0x53,0x54,0x41,0x54,0x4D,0x4F,0x44,0x45,0x00,0x00,0x53,0x54,0x41,0x54,0x4E,0x46,0x41,0x4E,0x00,0x00,0x53,0x54,0x41,0x54,0x5F,0x46,0x41,0x4E,0x00,0x00,0x56,0x41,0x43,0x53,0x54,0x41,0x54,0x45,0x54,0x06};
-
-          // data = announce1;
-
-          /*
-          for(int i=0; i < data.size(); i++)
-          {
-            wbuffer[i] = data[i];
-          }
-
-          parse_tx_message();
-          */
-        }
-        if (false) {
-          this->last_request_ = now;
-
-          ESP_LOGI("econet", "request ms=%d", now);
-
-          // do_once = true;
-          // wbuffer
-
-          std::vector<uint8_t> announce1 = {0x80, 0x00, 0x00, 0xF1, 0x00, 0x80, 0x00, 0x03, 0x80,
-                                            0x00, 0x0A, 0x00, 0x00, 0x1F, 0x08, 0x06, 0x0A, 0x19,
-                                            0x10, 0x17, 0x29, 0x29, 0x77, 0xA9, 0xAF, 0xED};
-          std::vector<uint8_t> announce2 = {0x80, 0x00, 0x03, 0x80, 0x00, 0x80, 0x00, 0x00, 0xF1,
-                                            0x00, 0x01, 0x00, 0x00, 0x06, 0x00, 0x5E, 0x9A};
-          std::vector<uint8_t> announce3 = {0x80, 0x00, 0x00, 0xF1, 0x00, 0x80, 0x00, 0x03, 0x80, 0x00, 0x06,
-                                            0x00, 0x01, 0x1F, 0x09, 0x01, 0x00, 0x00, 0x03, 0x80, 0x7E, 0xBB};
-
-          std::vector<uint8_t> airhstat_req = {0x80, 0x00, 0x03, 0xC0, 0x00, 0x80, 0x00, 0x03, 0x80, 0x00,
-                                               0x0C, 0x00, 0x00, 0x1E, 0x01, 0x01, 0x00, 0x00, 0x41, 0x49,
-                                               0x52, 0x48, 0x53, 0x54, 0x41, 0x54, 0xA5, 0x29};
-
-          std::vector<uint8_t> prodmodn = {0x80, 0x00, 0x03, 0xC0, 0x00, 0x80, 0x00, 0x03, 0x80, 0x00,
-                                           0x0C, 0x00, 0x00, 0x1E, 0x01, 0x00, 0x00, 0x00, 0x50, 0x52,
-                                           0x4F, 0x44, 0x4D, 0x4F, 0x44, 0x4E, 0x2D, 0x2C};
-
-          std::vector<uint8_t> prodmodn_data = {0x01, 0x00, 0x00, 0x00, 0x50, 0x52, 0x4F, 0x44, 0x4D, 0x4F, 0x44, 0x4E};
-
-          std::vector<uint8_t> hwell_id = {0x80, 0x00, 0x01, 0xC0, 0x00, 0x80, 0x00, 0x03, 0x80, 0x00,
-                                           0x0C, 0x00, 0x00, 0x1E, 0x01, 0x01, 0x00, 0x00, 0x48, 0x57,
-                                           0x45, 0x4C, 0x4C, 0x5F, 0x49, 0x44, 0xA0, 0xD5};
-
-          //
-          /*
-          transmit_message(announce1);
-          transmit_sync();
-
-          delay(40);
-
-          transmit_message(announce2);
-          transmit_sync();
-
-          delay(250);
-
-          transmit_message(announce3);
-          transmit_sync();
-
-          delay(44);
-
-          transmit_message(announce3);
-          transmit_sync();
-
-          delay(10);
-          */
-
-          // std::vector<std::string> str_ids{};
-
-          /*
-          str_ids.push_back("AAUX1CFM");
-          str_ids.push_back("AAUX2CFM");
-          str_ids.push_back("AAUX3CFM");
-          str_ids.push_back("AAUX4CFM");
-          */
-
-          // str_ids.push_back("HWELL_ID");
-          // str_ids.push_back("HWELMODL");
-          // str_ids.push_back("HWCONFIG");
-          // str_ids.push_back("HWSTATUS");
-          // HWSTATUS
-          // request_strings(0x1c0, 0x380, str_ids);
-
-          // transmit_message(hwell_id);
-          /*
-          if(do_once == false && false)
-          {
-
-            do_once = true;
-
-            transmit_message(hwell_id);
-
-            transmit_sync();
-
-            transmit_message(hwell_id);
-
-            transmit_sync();
-
-            transmit_message(hwell_id);
-
-            transmit_sync();
-
-          }
-
-          econet_uart->flush();
-          */
-        }
-      }
     }
   }
 }
+
 void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, std::string object, uint8_t type, float value) {
   std::vector<uint8_t> data;
 
@@ -1094,6 +815,7 @@ void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, std::string object,
 
   transmit_message(dst_adr, src_adr, WRITE_COMMAND, data);
 }
+
 void Econet::request_strings(uint32_t dst_adr, uint32_t src_adr, std::vector<std::string> objects) {
   std::vector<uint8_t> data;
 
@@ -1130,6 +852,7 @@ void Econet::request_strings(uint32_t dst_adr, uint32_t src_adr, std::vector<std
   }
   transmit_message(dst_adr, src_adr, READ_COMMAND, data);
 }
+
 void Econet::transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t command, std::vector<uint8_t> data) {
   uint8_t dst_bus = 0;
   uint8_t src_bus = 0;
@@ -1166,17 +889,7 @@ void Econet::transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t comman
 
   parse_tx_message();
 }
-void Econet::transmit_message(std::vector<uint8_t> data) {
-  for (int i = 0; i < data.size(); i++) {
-    wbuffer[i] = data[i];
-  }
 
-  econet_uart->write_array(wbuffer, data.size());
-  // econet_uart->flush();
-
-  parse_tx_message();
-}
-void Econet::transmit_sync() { econet_uart->flush(); }
 void Econet::send_datapoint(uint8_t datapoint_id, float value) {
   for (auto &listener : this->listeners_) {
     if (listener.datapoint_id == datapoint_id) {
@@ -1184,6 +897,7 @@ void Econet::send_datapoint(uint8_t datapoint_id, float value) {
     }
   }
 }
+
 void Econet::set_enable_state(bool state) {
   if (state) {
     this->send_enable_disable = true;
@@ -1193,27 +907,32 @@ void Econet::set_enable_state(bool state) {
     this->enable_disable_cmd = false;
   }
 }
+
 void Econet::set_new_setpoint(float setpoint) {
   send_new_setpoint = true;
   new_setpoint = setpoint;
 }
+
 void Econet::set_new_setpoint_low(float setpoint) {
   send_new_setpoint_low = true;
   new_setpoint_low = setpoint;
 }
+
 void Econet::set_new_setpoint_high(float setpoint) {
   send_new_setpoint_high = true;
   new_setpoint_high = setpoint;
 }
+
 void Econet::set_new_mode(float mode) {
   send_new_mode = true;
   new_mode = mode;
 }
+
 void Econet::set_new_fan_mode(float fan_mode) {
   send_new_fan_mode = true;
   new_fan_mode = fan_mode;
 }
-void Econet::dump_state() {}
+
 void Econet::register_listener(uint8_t datapoint_id, const std::function<void(float)> &func) {
   auto listener = DatapointListener{
       .datapoint_id = datapoint_id,
