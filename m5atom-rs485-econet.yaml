@@ -18,7 +18,7 @@ api:
   encryption:
     key: "redacted"
 
-  services: # This is how I plan to send the hex data during testing.. 
+  services: # This is how I plan to send the hex data during testing..
     - service: set_whtrsetp_124  #app > set temperature to 124f = WHTRSETP 0x42, 0xF8, 0x00, 0x00 = 124 (decimal converted from hex float)
       then:
         - uart.write: [0x80, 0x00, 0x12, 0x80, 0x00, 0x80, 0x00, 0x03, 0x40, 0x00, 0x12, 0x00, 0x00, 0x1F, 0x01, 0x01, 0x00, 0x07, 0x00, 0x00, 0x57, 0x48, 0x54, 0x52, 0x53, 0x45, 0x54, 0x50, 0x42, 0xF8, 0x00, 0x00, 0xE4, 0xEE]
@@ -80,5 +80,5 @@ uart:
       dummy_receiver: true #necessary to log data if no other device is using this serial port
       sequence:
         - lambda: |-
-            UARTDebug::log_hex(direction, bytes, ' '); 
+            UARTDebug::log_hex(direction, bytes, ' ');
             UARTDebug::log_string(direction, bytes);
