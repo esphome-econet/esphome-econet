@@ -368,7 +368,7 @@ void Econet::parse_message(bool is_tx) {
                 const std::string &datapoint_id = read_req.obj_names[item_num];
                 ESP_LOGI("econet", "  %s : %d (%s)", datapoint_id.c_str(), item_value, s.c_str());
                 this->send_datapoint(datapoint_id,
-                                      EconetDatapoint{.type = item_type, .value_enum = item_value, .value_string = s});
+                                     EconetDatapoint{.type = item_type, .value_enum = item_value, .value_string = s});
               }
             }
           }
