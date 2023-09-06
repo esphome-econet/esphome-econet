@@ -9,6 +9,7 @@ esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   comment: ${device_description}
+  min_version: "2023.2.0"
 
 preferences:
   flash_write_interval: "24h"
