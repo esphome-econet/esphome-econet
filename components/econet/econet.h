@@ -116,6 +116,8 @@ class Econet : public Component, public uart::UARTDevice {
   uint8_t wbuffer[max_message_size];
   uint16_t wmsg_len = 0;
 
+  uint32_t dst_adr = 0;
+
   uint32_t FURNACE = 0x1c0;
   uint32_t WIFI_MODULE = 0x340;
   uint32_t SMARTEC_TRANSLATOR = 0x1040;
