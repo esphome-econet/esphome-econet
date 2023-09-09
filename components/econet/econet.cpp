@@ -97,11 +97,15 @@ void Econet::dump_config() {
 }
 
 void Econet::make_request() {
-  uint32_t dst_adr = SMARTEC_TRANSLATOR;
-  if (model_type_ == MODEL_TYPE_HEATPUMP) {
-    dst_adr = HEAT_PUMP_WATER_HEATER;
-  } else if (model_type_ == MODEL_TYPE_HVAC) {
-    dst_adr = CONTROL_CENTER;
+  uint32_t dst_adr = this->dst_adr;
+  if (!dst_adr) {
+    if (model_type_ == MODEL_TYPE_HEATPUMP) {
+      dst_adr = HEAT_PUMP_WATER_HEATER;
+    } else if (model_type_ == MODEL_TYPE_HVAC) {
+      dst_adr = CONTROL_CENTER;
+    } else {
+      dst_adr = SMARTEC_TRANSLATOR;
+    }
   }
 
   uint8_t dst_bus = 0x00;
@@ -386,6 +390,7 @@ void Econet::parse_message(bool is_tx) {
       read_req.awaiting_res = false;
     }
   } else if (command == WRITE_COMMAND) {
+    this->dst_adr = src_adr;
     uint8_t type = pdata[0];
     uint8_t prop_type = pdata[1];
 
