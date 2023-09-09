@@ -75,6 +75,7 @@ uint32_t float_to_uint32(float f) {
 
 void Econet::dump_config() {
   ESP_LOGCONFIG(TAG, "Econet:");
+  this->check_uart_settings(38400);
   for (auto &kv : this->datapoints_) {
     switch (kv.second.type) {
       case EconetDatapointType::FLOAT:
