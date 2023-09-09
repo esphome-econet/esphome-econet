@@ -27,8 +27,9 @@ preferences:
   flash_write_interval: "24h"
 
 wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
+  ap:
+
+captive_portal:
 
 api:
 

@@ -59,24 +59,28 @@ The below econet based devices are supported.  Each has its own `yaml` configura
 
 ### Compiling and Uploading esphome-econet
 
-For easier future updates it's recommended to use `example-esp32.yaml` or `example-esp8266.yaml` below.
-
 #### ESPHome in a Docker Container
 
 Once ESPHome is installed, run `ls /dev/ttyUSB*` from a command line to list the USB ports currently in use.  Then, plug the USB-C cable into the ATOM and into the computer running ESPHome.
-Run `ls /dev/ttyUSB*` again and note the new port shown, perhaps /dev/ttyUSB2 (there should be one more than before).  That is the port used by the ATOM ESP32 board, and is the port to which the esphome-econet program will be uploaded.
+Run `ls /dev/ttyUSB*` again and note the new port shown, perhaps `/dev/ttyUSB2` (there should be one more than before).  That is the port used by the ATOM ESP32 board, and is the port to which the esphome-econet program will be uploaded.
 
-Extract the contents of the water heater's configuration file from the repo to a new file in the Home Assistant /config directory.
+1. Extract the contents of `example-esp32.yaml` or `example-esp8266.yaml` to a new file in the Home Assistant /config directory.
+2. Edit it:
+   1. Reference the correct file in the econet package based on your device.
+   2. Add/edit any `substitutions` if needed.
+   3. Insert the local network's wifi credentials or create `secrets.yaml` with:
 
-Edit the configuration file:
+      ```yaml
+      wifi_ssid: "your ssid"
+      wifi_password: "your password"
+      ```
 
-- Insert the local network's wifi credentials or `secret` references in place of the sample entries.
-- Save and exit the file
+   4. Save the file.
 
 Run the following command to compile and upload esphome-econet to the ATOM.  This assumes the docker container is named `esphome` and that the ATOM is found on `/dev/ttyUSB2`. Change as necessary.
 
 ```bash
-docker run --rm -v "${PWD}":/config --device=/dev/ttyUSB2 -it esphome/esphome run econet_heatpump_water_heater.yaml
+docker run --rm -v "${PWD}":/config --device=/dev/ttyUSB2 -it esphome/esphome run example-esp32.yaml
 ```
 
 The program should compile and ask whether to install OTA or via USB. Choose USB.  It should then upload.  
