@@ -15,6 +15,13 @@ esphome:
   min_version: "2023.2.0"
   platform: $platform
   board: $board
+  project:
+    name: "stockmopar.econet"
+    version: 0.2.0
+
+dashboard_import:
+  package_import_url: github://stockmopar/esphome-econet/econet_tankless_water_heater.yaml@main
+  import_full_config: false
 
 preferences:
   flash_write_interval: "24h"
