@@ -84,7 +84,7 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<EconetDatapointListener> listeners_;
   ReadRequest read_req;
   void set_datapoint(const std::string &datapoint_id, EconetDatapoint value);
-  void send_datapoint(const std::string &datapoint_id, EconetDatapoint value);
+  void send_datapoint(const std::string &datapoint_id, EconetDatapoint value, bool skip_update_state = false);
 
   void make_request();
   void read_buffer(int bytes_available);
@@ -99,6 +99,7 @@ class Econet : public Component, public uart::UARTDevice {
 
   std::map<std::string, EconetDatapoint> datapoints_{};
   std::map<std::string, EconetDatapoint> pending_writes_{};
+  std::map<std::string, EconetDatapoint> pending_confirmation_writes_{};
 
   bool hvac_wifi_module_connected_ = true;
 

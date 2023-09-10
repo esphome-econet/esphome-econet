@@ -18,7 +18,7 @@ esphome:
   board: $board
   project:
     name: "stockmopar.econet"
-    version: 0.2.1
+    version: 0.2.2
 
 dashboard_import:
   package_import_url: github://stockmopar/esphome-econet/econet_hvac.yaml@main

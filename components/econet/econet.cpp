@@ -136,8 +136,8 @@ void Econet::make_request() {
   uint32_t src_adr = WIFI_MODULE;
   // uint8_t src_bus = 0x00;
 
-  if (!this->pending_writes_.empty()) {
-    const auto &kv = this->pending_writes_.begin();
+  if (!pending_writes_.empty()) {
+    const auto &kv = pending_writes_.begin();
     switch (kv->second.type) {
       case EconetDatapointType::FLOAT:
         this->write_value(dst_adr, src_adr, kv->first, EconetDatapointType::FLOAT, kv->second.value_float);
@@ -150,7 +150,8 @@ void Econet::make_request() {
         ESP_LOGW(TAG, "Unexpected pending write: datapoint %s", kv->first.c_str());
         break;
     }
-    this->pending_writes_.erase(kv->first);
+    pending_confirmation_writes_[kv->first] = kv->second;
+    pending_writes_.erase(kv->first);
     return;
   }
 
@@ -585,17 +586,30 @@ void Econet::set_datapoint(const std::string &datapoint_id, EconetDatapoint valu
     }
   }
   pending_writes_[datapoint_id] = value;
+  make_request();
+  send_datapoint(datapoint_id, value, true);
 }
 
-void Econet::send_datapoint(const std::string &datapoint_id, EconetDatapoint value) {
-  if (datapoints_.count(datapoint_id) == 1) {
-    EconetDatapoint old_value = datapoints_[datapoint_id];
-    if (old_value == value) {
-      ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", datapoint_id.c_str());
-      return;
+void Econet::send_datapoint(const std::string &datapoint_id, EconetDatapoint value, bool skip_update_state) {
+  if (!skip_update_state) {
+    if (pending_confirmation_writes_.count(datapoint_id) == 1) {
+      if (value == pending_confirmation_writes_[datapoint_id]) {
+        ESP_LOGV(TAG, "Confirmed write for datapoint %s", datapoint_id.c_str());
+      } else {
+        ESP_LOGW(TAG, "Retrying write for datapoint %s", datapoint_id.c_str());
+        pending_writes_[datapoint_id] = pending_confirmation_writes_[datapoint_id];
+      }
+      pending_confirmation_writes_.erase(datapoint_id);
     }
+    if (datapoints_.count(datapoint_id) == 1) {
+      EconetDatapoint old_value = datapoints_[datapoint_id];
+      if (old_value == value) {
+        ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", datapoint_id.c_str());
+        return;
+      }
+    }
+    datapoints_[datapoint_id] = value;
   }
-  datapoints_[datapoint_id] = value;
   for (auto &listener : this->listeners_) {
     if (listener.datapoint_id == datapoint_id) {
       listener.on_datapoint(value);
