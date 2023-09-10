@@ -58,8 +58,8 @@ uint16_t gen_crc16(const uint8_t *data, uint16_t size) {
   return crc;
 }
 
-float bytes_to_float(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3) {
-  uint8_t byte_array[] = {b3, b2, b1, b0};
+float bytes_to_float(const uint8_t *b) {
+  uint8_t byte_array[] = {b[3], b[2], b[1], b[0]};
   float result;
   std::copy(reinterpret_cast<const char *>(&byte_array[0]), reinterpret_cast<const char *>(&byte_array[4]),
             reinterpret_cast<char *>(&result));
@@ -69,8 +69,31 @@ float bytes_to_float(uint8_t b0, uint8_t b1, uint8_t b2, uint8_t b3) {
 uint32_t float_to_uint32(float f) {
   uint32_t fbits = 0;
   memcpy(&fbits, &f, sizeof fbits);
-
   return fbits;
+}
+
+// Extracts strings in pdata separated by 0x00
+void extract_obj_names(const uint8_t *pdata, uint8_t data_len, std::vector<std::string> *obj_names) {
+  const uint8_t *start = pdata + 4;
+  while (true) {
+    // Look for the first occurrence of 0x00 in the remaining bytes
+    size_t num = data_len - (start - pdata);
+    const uint8_t *end = (const uint8_t *) memchr(start, 0, num);
+    if (!end) {
+      // Not found, so add all the remaining bytes and finish
+      std::string s((const char *) start, num);
+      obj_names->push_back(s);
+      break;
+    }
+    // Add all bytes until the first occurrence of 0x00
+    std::string s((const char *) start, end - start);
+    obj_names->push_back(s);
+    start = end + 1;
+    // Skip all 0x00 bytes
+    while (!*start) {
+      start++;
+    }
+  }
 }
 
 void Econet::dump_config() {
@@ -97,6 +120,7 @@ void Econet::dump_config() {
 }
 
 void Econet::make_request() {
+  // Use the address learned from a previous WRITE_COMMAND if possible.
   uint32_t dst_adr = this->dst_adr;
   if (!dst_adr) {
     if (model_type_ == MODEL_TYPE_HEATPUMP) {
@@ -107,12 +131,10 @@ void Econet::make_request() {
       dst_adr = SMARTEC_TRANSLATOR;
     }
   }
-
-  uint8_t dst_bus = 0x00;
+  // uint8_t dst_bus = 0x00;
 
   uint32_t src_adr = WIFI_MODULE;
-
-  uint8_t src_bus = 0x00;
+  // uint8_t src_bus = 0x00;
 
   if (!this->pending_writes_.empty()) {
     const auto &kv = this->pending_writes_.begin();
@@ -196,15 +218,14 @@ void Econet::parse_rx_message() { this->parse_message(false); }
 
 void Econet::parse_message(bool is_tx) {
   const uint8_t *b = is_tx ? wbuffer : buffer;
+
   uint32_t dst_adr = ((b[0] & 0x7f) << 24) + (b[1] << 16) + (b[2] << 8) + b[3];
-  uint8_t dst_bus = b[4];
+  // uint8_t dst_bus = b[4];
 
   uint32_t src_adr = ((b[5] & 0x7f) << 24) + (b[6] << 16) + (b[7] << 8) + b[8];
-  uint8_t src_bus = b[9];
+  // uint8_t src_bus = b[9];
 
   uint8_t data_len = b[10];
-
-  uint16_t pmsg_len = data_len + MSG_HEADER_SIZE + MSG_CRC_SIZE;
 
   uint8_t command = b[13];
 
@@ -212,97 +233,43 @@ void Econet::parse_message(bool is_tx) {
 
   uint16_t crc_check = gen_crc16(b, data_len + 14);
 
-  uint8_t pdata[255];
-  for (int i = 0; i < data_len; i++) {
-    pdata[i] = b[MSG_HEADER_SIZE + i];
-  }
+  const uint8_t *pdata = b + MSG_HEADER_SIZE;
 
-  ESP_LOGI("econet", "%s %s", is_tx ? ">>>" : "<<<", format_hex_pretty(b, pmsg_len).c_str());
-
+  ESP_LOGI("econet", "%s %s", is_tx ? ">>>" : "<<<",
+           format_hex_pretty(b, MSG_HEADER_SIZE + data_len + MSG_CRC_SIZE).c_str());
   ESP_LOGI("econet", "  Dst Adr : 0x%x", dst_adr);
   ESP_LOGI("econet", "  Src Adr : 0x%x", src_adr);
   ESP_LOGI("econet", "  Length  : %d", data_len);
   ESP_LOGI("econet", "  Command : %d", command);
-  ESP_LOGI("econet", "  Data    : %s", format_hex_pretty((const uint8_t *) pdata, data_len).c_str());
+  ESP_LOGI("econet", "  Data    : %s", format_hex_pretty(pdata, data_len).c_str());
 
   // Track Read Requests
   if (command == READ_COMMAND) {
-    uint8_t type = pdata[0];
+    EconetDatapointType type = EconetDatapointType(pdata[0] & 0x7F);
     uint8_t prop_type = pdata[1];
 
     ESP_LOGI("econet", "  Type    : %d", type);
     ESP_LOGI("econet", "  PropType: %d", prop_type);
 
-    std::vector<std::string> obj_names;
-
-    if (type == 1) {
-      if (prop_type == 1) {
-        // pdata[2] = 0
-        // pdata[3] = 0
-        char char_arr[data_len - 4];
-
-        for (int a = 0; a < data_len - 4; a++) {
-          char_arr[a] = pdata[a + 4];
-        }
-
-        std::string s(char_arr, sizeof(char_arr));
-
-        obj_names.push_back(s);
-
-        ESP_LOGI("econet", "  %s", s.c_str());
-      } else {
-        ESP_LOGI("econet", "  Don't Currently Support This Property Type", prop_type);
-      }
-      read_req.dst_adr = dst_adr;
-      read_req.src_adr = src_adr;
-      read_req.obj_names = obj_names;
-      read_req.awaiting_res = true;
-    } else if (type == 2) {
-      if (prop_type == 1) {
-        int start = 4;
-        int end = -1;
-        int str_len = -1;
-        for (int tpos = 5; tpos < data_len; tpos++) {
-          bool mflag = false;
-          if (pdata[tpos - 1] == 0 && pdata[tpos] == 0) {
-            // This detects a 00 00
-            str_len = tpos - start - 1;
-            mflag = true;
-          }
-          if (tpos + 1 >= data_len) {
-            str_len = tpos - start + 1;
-            mflag = true;
-          }
-
-          if (mflag == true) {
-            if (str_len > 0) {
-              char char_arr[str_len];
-
-              for (int a = 0; a < str_len; a++) {
-                if (start + a > 0 && start + a < data_len) {
-                  char_arr[a] = pdata[start + a];
-                }
-              }
-
-              std::string s(char_arr, sizeof(char_arr));
-
-              obj_names.push_back(s);
-
-              ESP_LOGI("econet", "  %s", s.c_str());
-            }
-            start = tpos + 1;
-          }
-        }
-      } else {
-        ESP_LOGI("econet", "  Don't Currently Support This Property Type", prop_type);
-      }
-
-      read_req.dst_adr = dst_adr;
-      read_req.src_adr = src_adr;
-      read_req.obj_names = obj_names;
-      read_req.awaiting_res = true;
-    } else {
+    if (type != EconetDatapointType::TEXT && type != EconetDatapointType::ENUM_TEXT) {
       ESP_LOGI("econet", "  Don't Currently Support This Class Type", type);
+      return;
+    }
+    if (prop_type != 1) {
+      ESP_LOGI("econet", "  Don't Currently Support This Property Type", prop_type);
+      return;
+    }
+
+    std::vector<std::string> obj_names;
+    extract_obj_names(pdata, data_len, &obj_names);
+    for (auto &obj_name : obj_names) {
+      ESP_LOGI("econet", "  %s", obj_name.c_str());
+    }
+    if (!obj_names.empty()) {
+      read_req.dst_adr = dst_adr;
+      read_req.src_adr = src_adr;
+      read_req.obj_names = obj_names;
+      read_req.awaiting_res = true;
     }
 
   } else if (command == ACK) {
@@ -311,7 +278,6 @@ void Econet::parse_message(bool is_tx) {
         EconetDatapointType item_type = EconetDatapointType(pdata[0] & 0x7F);
         if (item_type == EconetDatapointType::RAW) {
           std::vector<uint8_t> raw;
-
           for (int i = 0; i < data_len; i++) {
             raw.push_back(pdata[i]);
           }
@@ -322,75 +288,45 @@ void Econet::parse_message(bool is_tx) {
         int tpos = 0;
         uint8_t item_num = 0;
 
-        while (tpos < data_len) {
+        while (tpos < data_len && item_num < read_req.obj_names.size()) {
           uint8_t item_len = pdata[tpos];
           EconetDatapointType item_type = EconetDatapointType(pdata[tpos + 1] & 0x7F);
+          const std::string &datapoint_id = read_req.obj_names[item_num];
 
           if (item_type == EconetDatapointType::FLOAT && tpos + 7 < data_len) {
-            float item_value = bytes_to_float(pdata[tpos + 4], pdata[tpos + 5], pdata[tpos + 6], pdata[tpos + 7]);
-
-            if (item_num < read_req.obj_names.size()) {
-              const std::string &datapoint_id = read_req.obj_names[item_num];
-              ESP_LOGI("econet", "  %s : %f", datapoint_id.c_str(), item_value);
-              this->send_datapoint(datapoint_id, EconetDatapoint{.type = item_type, .value_float = item_value});
-            }
-          } else if (item_type == EconetDatapointType::TEXT) {
+            float item_value = bytes_to_float(pdata + tpos + 4);
+            ESP_LOGI("econet", "  %s : %f", datapoint_id.c_str(), item_value);
+            this->send_datapoint(datapoint_id, EconetDatapoint{.type = item_type, .value_float = item_value});
+          } else if (item_type == EconetDatapointType::TEXT && tpos + 4 < data_len) {
             uint8_t item_text_len = item_len - 4;
-
-            if (item_text_len > 0) {
-              char char_arr[item_text_len];
-
-              for (int a = 0; a < item_text_len; a++) {
-                if (tpos + a + 4 < data_len) {
-                  char_arr[a] = pdata[tpos + a + 4];
-                }
-              }
-
-              std::string s(char_arr, sizeof(char_arr));
-
-              if (item_num < read_req.obj_names.size()) {
-                const std::string &datapoint_id = read_req.obj_names[item_num];
-                ESP_LOGI("econet", "  %s : (%s)", datapoint_id.c_str(), s.c_str());
-                // this->send_datapoint(datapoint_id, EconetDatapoint{.type = item_type, .value_string = s});
-              }
+            if (item_text_len > 0 && tpos + 4 + item_text_len < data_len) {
+              std::string s((const char *) pdata + tpos + 4, item_text_len);
+              ESP_LOGI("econet", "  %s : (%s)", datapoint_id.c_str(), s.c_str());
+              // this->send_datapoint(datapoint_id, EconetDatapoint{.type = item_type, .value_string = s});
             }
           } else if (item_type == EconetDatapointType::ENUM_TEXT && tpos + 5 < data_len) {
             uint8_t item_value = pdata[tpos + 4];
-
             uint8_t item_text_len = pdata[tpos + 5];
-
-            if (item_text_len > 0) {
-              char char_arr[item_text_len];
-
-              for (int a = 0; a < item_text_len; a++) {
-                if (tpos + a + 6 < data_len) {
-                  char_arr[a] = pdata[tpos + a + 6];
-                }
+            if (item_text_len > 0 && tpos + 6 + item_text_len < data_len) {
+              while (pdata[tpos + 6 + item_text_len - 1] == ' ') {
+                item_text_len--;
               }
-
-              std::string s(char_arr, sizeof(char_arr));
-              if (item_num < read_req.obj_names.size()) {
-                const std::string &datapoint_id = read_req.obj_names[item_num];
-                ESP_LOGI("econet", "  %s : %d (%s)", datapoint_id.c_str(), item_value, s.c_str());
-                this->send_datapoint(datapoint_id,
-                                     EconetDatapoint{.type = item_type, .value_enum = item_value, .value_string = s});
-              }
+              std::string s((const char *) pdata + tpos + 6, item_text_len);
+              ESP_LOGI("econet", "  %s : %d (%s)", datapoint_id.c_str(), item_value, s.c_str());
+              this->send_datapoint(datapoint_id,
+                                   EconetDatapoint{.type = item_type, .value_enum = item_value, .value_string = s});
             }
           }
           tpos += item_len + 1;
           item_num++;
         }
       }
-      // This is likely the response to our request and now we "know" what was requested!
-      // ESP_LOGI("econet", "  RESPONSE RECEIVED!!!");
-      // for(int a = 0; a < read_req.obj_names.size(); a++)
-      // {
-      // ESP_LOGI("econet", "  ValName : %s", read_req.obj_names[a].c_str());
-      // }
       read_req.awaiting_res = false;
     }
   } else if (command == WRITE_COMMAND) {
+    // Update the address to use for subsequent requests.
     this->dst_adr = src_adr;
+
     uint8_t type = pdata[0];
     uint8_t prop_type = pdata[1];
 
@@ -409,22 +345,8 @@ void Econet::parse_message(bool is_tx) {
         }
 
         if (data_len == 18) {
-          int strlen = 8;
-          char char_arr[strlen];
-          int start = 6;
-
-          for (int a = 0; a < strlen; a++) {
-            if (start + a > 0 && start + a < data_len) {
-              char_arr[a] = pdata[start + a];
-            }
-          }
-
-          std::string s(char_arr, sizeof(char_arr));
-
-          int tpos = start + strlen;
-
-          float item_value = bytes_to_float(pdata[tpos + 0], pdata[tpos + 1], pdata[tpos + 2], pdata[tpos + 3]);
-
+          std::string s((const char *) pdata + 6, 8);
+          float item_value = bytes_to_float(pdata + 6 + 8);
           ESP_LOGI("econet", "  %s: %f", s.c_str(), item_value);
         } else {
           ESP_LOGI("econet", "  Unexpected Write Data Length", datatype);
@@ -540,7 +462,6 @@ void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, const std::string &
 
   data.push_back(1);
   data.push_back(1);
-  // Sometimes this is 2 and sometimes this is 0
   data.push_back((uint8_t) type);
   data.push_back(1);
   data.push_back(0);
@@ -626,15 +547,15 @@ void Econet::transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t comman
   wbuffer[13] = command;
 
   for (int i = 0; i < wdata_len; i++) {
-    wbuffer[14 + i] = data[i];
+    wbuffer[MSG_HEADER_SIZE + i] = data[i];
   }
 
-  uint16_t crc = gen_crc16(wbuffer, wdata_len + 14);
+  uint16_t crc = gen_crc16(wbuffer, wdata_len + MSG_HEADER_SIZE);
 
-  wbuffer[wdata_len + 14] = (uint8_t) crc;
-  wbuffer[wdata_len + 14 + 1] = (uint8_t) (crc >> 8);
+  wbuffer[wdata_len + MSG_HEADER_SIZE] = (uint8_t) crc;
+  wbuffer[wdata_len + MSG_HEADER_SIZE + 1] = (uint8_t) (crc >> 8);
 
-  this->write_array(wbuffer, wdata_len + 14 + 2);
+  this->write_array(wbuffer, wdata_len + MSG_HEADER_SIZE + 2);
   // this->flush();
 
   parse_tx_message();
