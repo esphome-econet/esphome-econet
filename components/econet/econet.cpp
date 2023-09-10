@@ -229,10 +229,6 @@ void Econet::parse_message(bool is_tx) {
 
   uint8_t command = b[13];
 
-  uint16_t crc = (b[data_len + MSG_HEADER_SIZE]) + (b[data_len + MSG_HEADER_SIZE + 1] << 8);
-
-  uint16_t crc_check = gen_crc16(b, data_len + 14);
-
   const uint8_t *pdata = b + MSG_HEADER_SIZE;
 
   ESP_LOGI("econet", "%s %s", is_tx ? ">>>" : "<<<",
@@ -242,6 +238,13 @@ void Econet::parse_message(bool is_tx) {
   ESP_LOGI("econet", "  Length  : %d", data_len);
   ESP_LOGI("econet", "  Command : %d", command);
   ESP_LOGI("econet", "  Data    : %s", format_hex_pretty(pdata, data_len).c_str());
+
+  uint16_t crc = (b[MSG_HEADER_SIZE + data_len]) + (b[MSG_HEADER_SIZE + data_len + 1] << 8);
+  uint16_t crc_check = gen_crc16(b, MSG_HEADER_SIZE + data_len);
+  if (crc != crc_check) {
+    ESP_LOGW("econet", "Ignoring message with incorrect crc");
+    return;
+  }
 
   // Track Read Requests
   if (command == READ_COMMAND) {
