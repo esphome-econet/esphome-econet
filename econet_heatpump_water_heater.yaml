@@ -57,7 +57,7 @@ econet:
 
 climate:
   - platform: econet
-    name: "Water Heater"
+    name: None
     visual:
       min_temperature: "43.3333"
       max_temperature: "60"
@@ -134,7 +134,7 @@ sensor:
 
 binary_sensor:
   - platform: econet
-    name: "Water Heater Enabled"
+    name: "Enabled"
     sensor_datapoint: WHTRENAB
     device_class: "running"
   - platform: econet
@@ -144,10 +144,10 @@ binary_sensor:
 
 text_sensor:
   - platform: econet
-    name: "Water Heater Fan Speed"
+    name: "Fan Speed"
     sensor_datapoint: FAN_CTRL
     icon: "mdi:fan"
   - platform: econet
-    name: "Water Heater Heating Element State"
+    name: "Heating Element State"
     sensor_datapoint: HEATCTRL
     icon: "mdi:heating-coil"

@@ -57,7 +57,7 @@ econet:
 
 climate:
   - platform: econet
-    name: "Water Heater"
+    name: None
     visual:
       min_temperature: "43.3333"
       max_temperature: "60"
@@ -138,6 +138,6 @@ sensor:
 
 binary_sensor:
   - platform: econet
-    name: "Water Heater Enabled"
+    name: "Enabled"
     sensor_datapoint: WHTRENAB
     device_class: "running"
