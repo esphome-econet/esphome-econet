@@ -7,6 +7,7 @@ substitutions:
   platform: esp32
   board: esp32dev
   external_components_source: github://stockmopar/esphome-econet@main
+  logger_level: INFO
 
 esphome:
   name: ${name}
@@ -37,7 +38,7 @@ ota:
 
 logger:
   baud_rate: 0 # Make sure logging is not using the serial port
-  level: INFO
+  level: ${logger_level}
   tx_buffer_size: 2000
 
 external_components:
