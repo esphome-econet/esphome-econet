@@ -7,6 +7,7 @@ substitutions:
   platform: esp32
   board: esp32dev
   external_components_source: github://stockmopar/esphome-econet@main
+  logger_level: INFO
 
 esphome:
   name: ${name}
@@ -17,7 +18,7 @@ esphome:
   board: $board
   project:
     name: "stockmopar.econet"
-    version: 0.2.0
+    version: 0.2.1
 
 dashboard_import:
   package_import_url: github://stockmopar/esphome-econet/econet_tankless_water_heater.yaml@main
@@ -37,7 +38,7 @@ ota:
 
 logger:
   baud_rate: 0 # Make sure logging is not using the serial port
-  level: INFO
+  level: ${logger_level}
   tx_buffer_size: 2000
 
 external_components:
@@ -56,7 +57,7 @@ econet:
 
 climate:
   - platform: econet
-    name: "Water Heater"
+    name: None
     visual:
       min_temperature: "43.3333"
       max_temperature: "60"
@@ -137,6 +138,6 @@ sensor:
 
 binary_sensor:
   - platform: econet
-    name: "Water Heater Enabled"
+    name: "Enabled"
     sensor_datapoint: WHTRENAB
     device_class: "running"
