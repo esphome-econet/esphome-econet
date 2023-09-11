@@ -8,3 +8,5 @@ rules:
 
 ignore: |
   .esphome
+  .clang-format
+  m5atom-rs485-econet.yaml
