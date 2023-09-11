@@ -134,10 +134,6 @@ sensor:
 
 binary_sensor:
   - platform: econet
-    name: "Enabled"
-    sensor_datapoint: WHTRENAB
-    device_class: "running"
-  - platform: econet
     name: "Compressor Relay"
     sensor_datapoint: COMP_RLY
     device_class: "running"
