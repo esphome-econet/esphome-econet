@@ -155,61 +155,11 @@ void Econet::make_request() {
     return;
   }
 
-  std::vector<std::string> str_ids{};
-
-  if (req_id == 0) {
-    if (model_type_ == MODEL_TYPE_TANKLESS) {
-      str_ids.push_back("FLOWRATE");
-      str_ids.push_back("TEMP_OUT");
-      str_ids.push_back("TEMP__IN");
-      str_ids.push_back("WHTRENAB");
-      str_ids.push_back("WHTRMODE");
-      str_ids.push_back("WHTRSETP");
-      str_ids.push_back("WTR_USED");
-      str_ids.push_back("WTR_BTUS");
-      str_ids.push_back("IGNCYCLS");
-      str_ids.push_back("BURNTIME");
-    } else if (model_type_ == MODEL_TYPE_HEATPUMP) {
-      str_ids.push_back("WHTRENAB");
-      str_ids.push_back("WHTRCNFG");
-      str_ids.push_back("WHTRSETP");
-      str_ids.push_back("HOTWATER");
-      str_ids.push_back("HEATCTRL");
-      str_ids.push_back("FAN_CTRL");
-      str_ids.push_back("COMP_RLY");
-      str_ids.push_back("AMBIENTT");
-      str_ids.push_back("LOHTRTMP");
-      str_ids.push_back("UPHTRTMP");
-      str_ids.push_back("POWRWATT");
-      str_ids.push_back("EVAPTEMP");
-      str_ids.push_back("SUCTIONT");
-      str_ids.push_back("DISCTEMP");
-    } else if (model_type_ == MODEL_TYPE_HVAC && !hvac_wifi_module_connected_) {
-      str_ids.push_back("DHUMSETP");
-      str_ids.push_back("DHUMENAB");
-      str_ids.push_back("DH_DRAIN");
-      str_ids.push_back("OAT_TEMP");
-      str_ids.push_back("COOLSETP");
-      str_ids.push_back("HEATSETP");
-      str_ids.push_back("STATNFAN");
-      str_ids.push_back("STATMODE");
-      str_ids.push_back("AUTOMODE");
-      str_ids.push_back("HVACMODE");
-      str_ids.push_back("RELH7005");
-      str_ids.push_back("SPT_STAT");
-    }
-    if (!str_ids.empty()) {
-      request_strings(dst_adr, src_adr, str_ids);
-    }
-    return;
-  }
-
-  if (req_id == 1) {
-    if (model_type_ == MODEL_TYPE_TANKLESS) {
-      str_ids.push_back("HWSTATUS");
-      request_strings(FURNACE, CONTROL_CENTER, str_ids);
-    }
-    return;
+  if (model_type_ != MODEL_TYPE_HVAC || !hvac_wifi_module_connected_) {
+    std::vector<std::string> str_ids(datapoint_ids_.begin(), datapoint_ids_.end());
+    // TODO: Better handle RAW that likely need to be requested separately.
+    str_ids.erase(std::remove(str_ids.begin(), str_ids.end(), "AIRHSTAT"), str_ids.end());
+    request_strings(dst_adr, src_adr, str_ids);
   }
 }
 
@@ -305,7 +255,7 @@ void Econet::parse_message(bool is_tx) {
             if (item_text_len > 0 && tpos + 4 + item_text_len < data_len) {
               std::string s((const char *) pdata + tpos + 4, item_text_len);
               ESP_LOGI(TAG, "  %s : (%s)", datapoint_id.c_str(), s.c_str());
-              // this->send_datapoint(datapoint_id, EconetDatapoint{.type = item_type, .value_string = s});
+              this->send_datapoint(datapoint_id, EconetDatapoint{.type = item_type, .value_string = s});
             }
           } else if (item_type == EconetDatapointType::ENUM_TEXT && tpos + 5 < data_len) {
             uint8_t item_value = pdata[tpos + 4];
@@ -442,21 +392,9 @@ void Econet::loop() {
     return;
   }
 
-  // If there are any needed write requests they will be made every 500ms.
-  // Read requests are made every 1s unless there are pending write requests in
-  // which case they will be at the next available 500ms slot.
-
-  // Bus is assumed Available For Sending
   ESP_LOGI(TAG, "request ms=%d", now);
   this->last_request_ = now;
   this->make_request();
-  req_id++;
-  if (req_id > 1) {
-    ESP_LOGI(TAG, "request ms=%d", now);
-    this->last_request_ = now;
-    this->make_request();
-    req_id = 0;
-  }
 }
 
 void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, const std::string &object, EconetDatapointType type,
@@ -618,6 +556,7 @@ void Econet::send_datapoint(const std::string &datapoint_id, EconetDatapoint val
 }
 
 void Econet::register_listener(const std::string &datapoint_id, const std::function<void(EconetDatapoint)> &func) {
+  datapoint_ids_.insert(datapoint_id);
   auto listener = EconetDatapointListener{
       .datapoint_id = datapoint_id,
       .on_datapoint = func,

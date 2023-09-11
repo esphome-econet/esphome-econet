@@ -5,6 +5,7 @@
 #include "esphome/components/uart/uart.h"
 #include <map>
 #include <vector>
+#include <set>
 
 namespace esphome {
 namespace econet {
@@ -97,13 +98,13 @@ class Econet : public Component, public uart::UARTDevice {
   void write_value(uint32_t dst_adr, uint32_t src_adr, const std::string &object, EconetDatapointType type,
                    float value);
 
+  std::set<std::string> datapoint_ids_{};
   std::map<std::string, EconetDatapoint> datapoints_{};
   std::map<std::string, EconetDatapoint> pending_writes_{};
   std::map<std::string, EconetDatapoint> pending_confirmation_writes_{};
 
   bool hvac_wifi_module_connected_ = true;
 
-  uint8_t req_id = 0;
   uint32_t last_request_{0};
   uint32_t last_read_{0};
   uint32_t last_read_data_{0};
@@ -119,7 +120,6 @@ class Econet : public Component, public uart::UARTDevice {
 
   uint32_t dst_adr = 0;
 
-  uint32_t FURNACE = 0x1c0;
   uint32_t WIFI_MODULE = 0x340;
   uint32_t SMARTEC_TRANSLATOR = 0x1040;
   uint32_t HEAT_PUMP_WATER_HEATER = 0x1280;
