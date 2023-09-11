@@ -155,23 +155,11 @@ void Econet::make_request() {
     return;
   }
 
-  if (req_id == 0) {
-    if (model_type_ != MODEL_TYPE_HVAC || !hvac_wifi_module_connected_) {
-      std::vector<std::string> str_ids(datapoint_ids_.begin(), datapoint_ids_.end());
-      // TODO: Better handle RAW that likely need to be requested separately.
-      str_ids.erase(std::remove(str_ids.begin(), str_ids.end(), "AIRHSTAT"), str_ids.end());
-      request_strings(dst_adr, src_adr, str_ids);
-    }
-    return;
-  }
-
-  if (req_id == 1) {
-    if (model_type_ == MODEL_TYPE_TANKLESS) {
-      std::vector<std::string> str_ids{};
-      str_ids.push_back("HWSTATUS");
-      request_strings(FURNACE, CONTROL_CENTER, str_ids);
-    }
-    return;
+  if (model_type_ != MODEL_TYPE_HVAC || !hvac_wifi_module_connected_) {
+    std::vector<std::string> str_ids(datapoint_ids_.begin(), datapoint_ids_.end());
+    // TODO: Better handle RAW that likely need to be requested separately.
+    str_ids.erase(std::remove(str_ids.begin(), str_ids.end(), "AIRHSTAT"), str_ids.end());
+    request_strings(dst_adr, src_adr, str_ids);
   }
 }
 
@@ -404,21 +392,9 @@ void Econet::loop() {
     return;
   }
 
-  // If there are any needed write requests they will be made every 500ms.
-  // Read requests are made every 1s unless there are pending write requests in
-  // which case they will be at the next available 500ms slot.
-
-  // Bus is assumed Available For Sending
   ESP_LOGI(TAG, "request ms=%d", now);
   this->last_request_ = now;
   this->make_request();
-  req_id++;
-  if (req_id > 1) {
-    ESP_LOGI(TAG, "request ms=%d", now);
-    this->last_request_ = now;
-    this->make_request();
-    req_id = 0;
-  }
 }
 
 void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, const std::string &object, EconetDatapointType type,

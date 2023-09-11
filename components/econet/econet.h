@@ -105,7 +105,6 @@ class Econet : public Component, public uart::UARTDevice {
 
   bool hvac_wifi_module_connected_ = true;
 
-  uint8_t req_id = 0;
   uint32_t last_request_{0};
   uint32_t last_read_{0};
   uint32_t last_read_data_{0};
@@ -121,7 +120,6 @@ class Econet : public Component, public uart::UARTDevice {
 
   uint32_t dst_adr = 0;
 
-  uint32_t FURNACE = 0x1c0;
   uint32_t WIFI_MODULE = 0x340;
   uint32_t SMARTEC_TRANSLATOR = 0x1040;
   uint32_t HEAT_PUMP_WATER_HEATER = 0x1280;
