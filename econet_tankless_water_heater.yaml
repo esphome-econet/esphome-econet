@@ -83,13 +83,6 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
-    name: "Set Point Temperature"
-    sensor_datapoint: WHTRSETP
-    unit_of_measurement: "°F"
-    accuracy_decimals: 1
-    device_class: "temperature"
-    state_class: "measurement"
-  - platform: econet
     name: "BTUs Used"
     sensor_datapoint: WTR_BTUS
     unit_of_measurement: "kbtu"
@@ -135,9 +128,3 @@ sensor:
     name: "WiFi Signal Strength"
     update_interval: 30s
     entity_category: "diagnostic"
-
-binary_sensor:
-  - platform: econet
-    name: "Enabled"
-    sensor_datapoint: WHTRENAB
-    device_class: "running"
