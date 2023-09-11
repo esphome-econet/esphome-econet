@@ -7,7 +7,7 @@ substitutions:
   platform: esp32
   board: esp32dev
   external_components_source: github://stockmopar/esphome-econet@main
-  logger_level: INFO
+  logger_level: WARN
 
 esphome:
   name: ${name}
