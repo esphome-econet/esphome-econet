@@ -183,6 +183,7 @@ void Econet::make_request() {
       str_ids.push_back("EVAPTEMP");
       str_ids.push_back("SUCTIONT");
       str_ids.push_back("DISCTEMP");
+      str_ids.push_back("ALRMALRT");
     } else if (model_type_ == MODEL_TYPE_HVAC && !hvac_wifi_module_connected_) {
       str_ids.push_back("DHUMSETP");
       str_ids.push_back("DHUMENAB");

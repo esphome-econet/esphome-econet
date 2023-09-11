@@ -127,6 +127,14 @@ sensor:
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
+  - platform: econet
+    name: "Active Alerts"
+    sensor_datapoint: ALRMALRT
+    accuracy_decimals: 0
+    icon: "mdi:water-boiler-alert"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+    disabled_by_default: "true"
   - platform: wifi_signal
     name: "WiFi Signal Strength"
     update_interval: 30s
