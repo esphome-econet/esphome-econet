@@ -155,50 +155,11 @@ void Econet::make_request() {
     return;
   }
 
-  std::vector<std::string> str_ids{};
-
   if (req_id == 0) {
-    if (model_type_ == MODEL_TYPE_TANKLESS) {
-      str_ids.push_back("FLOWRATE");
-      str_ids.push_back("TEMP_OUT");
-      str_ids.push_back("TEMP__IN");
-      str_ids.push_back("WHTRENAB");
-      str_ids.push_back("WHTRMODE");
-      str_ids.push_back("WHTRSETP");
-      str_ids.push_back("WTR_USED");
-      str_ids.push_back("WTR_BTUS");
-      str_ids.push_back("IGNCYCLS");
-      str_ids.push_back("BURNTIME");
-    } else if (model_type_ == MODEL_TYPE_HEATPUMP) {
-      str_ids.push_back("WHTRENAB");
-      str_ids.push_back("WHTRCNFG");
-      str_ids.push_back("WHTRSETP");
-      str_ids.push_back("HOTWATER");
-      str_ids.push_back("HEATCTRL");
-      str_ids.push_back("FAN_CTRL");
-      str_ids.push_back("COMP_RLY");
-      str_ids.push_back("AMBIENTT");
-      str_ids.push_back("LOHTRTMP");
-      str_ids.push_back("UPHTRTMP");
-      str_ids.push_back("POWRWATT");
-      str_ids.push_back("EVAPTEMP");
-      str_ids.push_back("SUCTIONT");
-      str_ids.push_back("DISCTEMP");
-    } else if (model_type_ == MODEL_TYPE_HVAC && !hvac_wifi_module_connected_) {
-      str_ids.push_back("DHUMSETP");
-      str_ids.push_back("DHUMENAB");
-      str_ids.push_back("DH_DRAIN");
-      str_ids.push_back("OAT_TEMP");
-      str_ids.push_back("COOLSETP");
-      str_ids.push_back("HEATSETP");
-      str_ids.push_back("STATNFAN");
-      str_ids.push_back("STATMODE");
-      str_ids.push_back("AUTOMODE");
-      str_ids.push_back("HVACMODE");
-      str_ids.push_back("RELH7005");
-      str_ids.push_back("SPT_STAT");
-    }
-    if (!str_ids.empty()) {
+    if (model_type_ != MODEL_TYPE_HVAC || !hvac_wifi_module_connected_) {
+      std::vector<std::string> str_ids(datapoint_ids_.begin(), datapoint_ids_.end());
+      // TODO: Better handle RAW that likely need to be requested separately.
+      str_ids.erase(std::remove(str_ids.begin(), str_ids.end(), "AIRHSTAT"), str_ids.end());
       request_strings(dst_adr, src_adr, str_ids);
     }
     return;
@@ -206,6 +167,7 @@ void Econet::make_request() {
 
   if (req_id == 1) {
     if (model_type_ == MODEL_TYPE_TANKLESS) {
+      std::vector<std::string> str_ids{};
       str_ids.push_back("HWSTATUS");
       request_strings(FURNACE, CONTROL_CENTER, str_ids);
     }
@@ -618,6 +580,7 @@ void Econet::send_datapoint(const std::string &datapoint_id, EconetDatapoint val
 }
 
 void Econet::register_listener(const std::string &datapoint_id, const std::function<void(EconetDatapoint)> &func) {
+  datapoint_ids_.insert(datapoint_id);
   auto listener = EconetDatapointListener{
       .datapoint_id = datapoint_id,
       .on_datapoint = func,
