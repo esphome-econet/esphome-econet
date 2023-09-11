@@ -50,7 +50,6 @@ api:
       then:
         - uart.write: [0x80, 0x00, 0x12, 0x80, 0x00, 0x80, 0x00, 0x03, 0x40, 0x00, 0x12, 0x00, 0x00, 0x1F, 0x01, 0x01, 0x00, 0x07, 0x00, 0x00, 0x57, 0x48, 0x54, 0x52, 0x43, 0x4E, 0x46, 0x47, 0x40, 0x80, 0x00, 0x00, 0xA9, 0xF2]
 
-
 ota:
   password: "redacted"
 
@@ -66,19 +65,19 @@ wifi:
 captive_portal:
 
 uart:
-    rx_pin: 32
-    tx_pin: 26
-    baud_rate: 38400   # 38400 for econet
-    rx_buffer_size: 1900
-    debug: # Minimal debug configuration example, logs hex strings by default
-      after:
-        bytes: 1500 #max bytes
-        #timeout: 1s #max timeout - default 150ms
-        #delimiter: [0xCF, 0x6F] #list of bytes to send the serial data on BF E7 EF EB
-        #delimiter: [0x6F, 0xEF] #list of bytes to send the serial data on         #F8 72 6F EF CF
+  rx_pin: 32
+  tx_pin: 26
+  baud_rate: 38400   # 38400 for econet
+  rx_buffer_size: 1900
+  debug: # Minimal debug configuration example, logs hex strings by default
+    after:
+      bytes: 1500 #max bytes
+      #timeout: 1s #max timeout - default 150ms
+      #delimiter: [0xCF, 0x6F] #list of bytes to send the serial data on BF E7 EF EB
+      #delimiter: [0x6F, 0xEF] #list of bytes to send the serial data on         #F8 72 6F EF CF
 
-      dummy_receiver: true #necessary to log data if no other device is using this serial port
-      sequence:
-        - lambda: |-
-            UARTDebug::log_hex(direction, bytes, ' ');
-            UARTDebug::log_string(direction, bytes);
+    dummy_receiver: true #necessary to log data if no other device is using this serial port
+    sequence:
+      - lambda: |-
+          UARTDebug::log_hex(direction, bytes, ' ');
+          UARTDebug::log_string(direction, bytes);
