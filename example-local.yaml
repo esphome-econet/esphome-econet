@@ -1,3 +1,4 @@
+---
 packages:
   econet: !include
     # Change this file to the correct one for your device

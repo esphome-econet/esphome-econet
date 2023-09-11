@@ -1,3 +1,4 @@
+---
 substitutions:
   name: "econet-hpwh"
   friendly_name: "Water Heater"
@@ -37,7 +38,7 @@ api:
 ota:
 
 logger:
-  baud_rate: 0 # Make sure logging is not using the serial port
+  baud_rate: 0  # Make sure logging is not using the serial port
   level: ${logger_level}
   tx_buffer_size: 2000
 

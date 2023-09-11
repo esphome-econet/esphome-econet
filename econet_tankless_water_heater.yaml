@@ -1,3 +1,4 @@
+---
 substitutions:
   name: "econet-tlwh"
   friendly_name: "Tankless Water Heater"
@@ -37,7 +38,7 @@ api:
 ota:
 
 logger:
-  baud_rate: 0 # Make sure logging is not using the serial port
+  baud_rate: 0  # Make sure logging is not using the serial port
   level: ${logger_level}
   tx_buffer_size: 2000
 
@@ -122,8 +123,10 @@ sensor:
     accuracy_decimals: 3
     state_class: "measurement"
     entity_category: "diagnostic"
+    # yamllint disable rule:line-length
     lambda: |-
       return max((id(temp_out).state - id(temp_in).state) * id(flow_rate).state * 8.334 * 60 / 0.92 / 1000, 0.0);
+    # yamllint enable rule:line-length
   - platform: wifi_signal
     name: "WiFi Signal Strength"
     update_interval: 30s
