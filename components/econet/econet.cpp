@@ -267,7 +267,7 @@ void Econet::parse_message(bool is_tx) {
             if (item_text_len > 0 && tpos + 4 + item_text_len < data_len) {
               std::string s((const char *) pdata + tpos + 4, item_text_len);
               ESP_LOGI(TAG, "  %s : (%s)", datapoint_id.c_str(), s.c_str());
-              // this->send_datapoint(datapoint_id, EconetDatapoint{.type = item_type, .value_string = s});
+              this->send_datapoint(datapoint_id, EconetDatapoint{.type = item_type, .value_string = s});
             }
           } else if (item_type == EconetDatapointType::ENUM_TEXT && tpos + 5 < data_len) {
             uint8_t item_value = pdata[tpos + 4];
