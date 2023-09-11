@@ -1,3 +1,4 @@
+---
 substitutions:
   tx_pin: GPIO19
   rx_pin: GPIO22

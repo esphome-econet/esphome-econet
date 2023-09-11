@@ -1,3 +1,4 @@
+---
 esphome:
   name: m5atom-rs485-econet
   friendly_name: m5atom-rs485-econet

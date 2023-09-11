@@ -1,3 +1,4 @@
+---
 substitutions:
   name: "econet-hvac"
   friendly_name: "Rheem HVAC"
@@ -37,7 +38,7 @@ api:
 ota:
 
 logger:
-  baud_rate: 0 # Make sure logging is not using the serial port
+  baud_rate: 0  # Make sure logging is not using the serial port
   level: ${logger_level}
   tx_buffer_size: 2000
 
@@ -59,10 +60,12 @@ econet:
     - sensor_datapoint: AIRHSTAT
       datapoint_type: raw
       then:
+        # yamllint disable rule:line-length
         - lambda: |-
             ESP_LOGD("main", "on_datapoint_update %s", format_hex_pretty(x).c_str());
             id(blower_cfm).publish_state((x[16] << 8) + x[17]);
             id(blower_rpm).publish_state((x[20] << 8) + x[21]);
+        # yamllint enable rule:line-length
 
 climate:
   - platform: econet
