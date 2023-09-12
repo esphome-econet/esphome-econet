@@ -18,8 +18,8 @@ esphome:
   platform: $platform
   board: $board
   project:
-    name: "stockmopar.econet"
-    version: 0.2.3
+    name: "esphome-econet.esphome-econet"
+    version: 0.2.4
 
 dashboard_import:
   package_import_url: github://esphome-econet/esphome-econet/econet_tankless_water_heater.yaml@main
