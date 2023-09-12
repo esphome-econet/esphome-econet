@@ -1,20 +1,24 @@
 # esphome-econet
 
-This ESPHome package creates a local network connection to econet-based devices, such as water heaters like the Rheem Heat Pump Water Heater (HPWH), and creates entities in Home Assistant to control and monitor the devices.  This package also provides more detailed sensors than the Rheem econet cloud-based integration available in Home Assistant.  However, both can coexist.
+This ESPHome package creates a local network connection to econet-based device, like a Rheem Heat Pump Water Heater (HPWH), and creates entities in Home Assistant to control and monitor these devices.  This package provides more detailed and reliable sensors than Rheem's cloud-based [econet integration](https://www.home-assistant.io/integrations/econet/) available in Home Assistant.  This package and the Rheem econet integration can, however, coexist if desired.
 
-## Hardware
+## Supported Rheem Hardware
 
-You will need:
+Rheem Heat Pump Water Heaters, Tankless Hot Water Heaters, and HVAC Systems are supported. Electric Water Heater support is currently under development.
 
-- one M5Stack ATOM RS485 K045 Kit: [digikey](https://www.digikey.com/en/products/detail/m5stack-technology-co-ltd/K045/14318599) or [mouser](https://www.mouser.com/ProductDetail/M5Stack/K045?qs=81r%252BiQLm7BQ2ho0A5VkoNw%3D%3D), and
+## Suggested Hardware Setup
 
-- one cable: [digikey](https://www.digikey.com/en/products/detail/assmann-wsw-components/AT-S-26-6-4-S-7-OE/1972674) or [mouser](https://www.mouser.com/ProductDetail/Bel/BC-64SS007F?qs=wnTfsH77Xs4cyAAV7TLsUQ%3D%3D). Or any other similar RJ11/12 cable as long as it is 6P/6C or 6P/4C - we only need 3 wires for this but the 6 wire version is fine too.
+For a simple and proven platform on which to run this package, you will need:
 
-You can also use many other ESP32 or ESP8266 development boards with the required RS485 converter - this is just an easy pre-wired setup that only requires you to cut, strip, attach 3 wires to the screw terminal, no soldering.
+- one M5Stack ATOM RS485 K045 Kit: [digikey](https://www.digikey.com/en/products/detail/m5stack-technology-co-ltd/K045/14318599) or [mouser](https://www.mouser.com/ProductDetail/M5Stack/K045?qs=81r%252BiQLm7BQ2ho0A5VkoNw%3D%3D)
 
-## Installation
+- one cable: [digikey](https://www.digikey.com/en/products/detail/assmann-wsw-components/AT-S-26-6-4-S-7-OE/1972674) or [mouser](https://www.mouser.com/ProductDetail/Bel/BC-64SS007F?qs=wnTfsH77Xs4cyAAV7TLsUQ%3D%3D), or any other similar RJ11/12 cable as long as it is 6P/6C or 6P/4C (we only need 3 wires for this but the 6 wire version is fine too)
 
-The  M5Stack ATOM RS485 K045 Kit includes two components, the RS485 interface, and an ESP32 board (ATOM Lite) plugged into that interface.  Three wires from a RJ11/12 cable attach via screw terminals to the RS485 interface, and a USB-C cable provides the power and the initial programming interface to the ATOM.  Once deployed, the ATOM communicates via WIFI to the local network and the RS485 converter provides the interface between the water heater and the ATOM.  No configuration is required for the converter. The esphome-econet software is compiled and loaded onto the ATOM using standard ESPHome tools.
+You can also use many other ESP32 or ESP8266 development boards with the required RS485 converter - the above is just an easy pre-wired setup that only requires you to cut, strip, and attach 3 wires to the screw terminal with no soldering required.
+
+### Installation Overview
+
+The  M5Stack ATOM RS485 K045 Kit includes two components, the RS485 interface, and an ESP32 board (the [M5Stack ATOM Lite](https://shop.m5stack.com/products/atom-lite-esp32-development-kit)) plugged into that interface.  Three wires from a RJ11/12 cable attach via screw terminals to the RS485 interface, and a USB-C cable provides power and an initial programming interface to the ATOM.  Once deployed, the ATOM communicates via WiFi to the local network and the RS485 converter provides the interface between the water heater and the ATOM.  No configuration is required for the converter. The esphome-econet software is compiled and loaded onto the ATOM using standard ESPHome tools.
 
 ### Hardware Installation
 
@@ -22,7 +26,7 @@ Cut the connector off one one end of the RJ11/12 cable, then strip and connect t
 
 *NOTE: Wire colors can vary from cable to cable. Ensure you are matching the pins as shown in the diagram below regardless of cable color, i.e. Pin 3 to B, Pin 4 to A, Pin 5 to G.*
 
-```
+```text
     6P4C RJ11/RJ12 male connector end view   
     
                +---------+
@@ -35,92 +39,53 @@ Yellow  GND 5  ---       +--+
                +---------+
 ```
 
-### Software Installation
+## Software Installation
 
-Requires having first installed ESPHome. See Getting Started at <https://esphome.io/index.html> for ESPHome installation instructions.
+Setup can be done from the command line using the esphome docker image, or via a (mostly) graphical interface by using an esphome dashboard installation; see Getting Started at <https://esphome.io/index.html> for full ESPHome installation and usage instructions. Initial installation must be done over USB. After this, updates and configuration changes can be made entirely over WiFi.
 
-The below econet based devices are supported.  Each has its own `yaml` configuration file in this repo that defines the applicable Home Assistant Sensors and Controls.  These are:
+Installation is a three-step process:
 
-#### Tankless Water Heater
+1. Customize the basic configuration yaml for your device and environment
+2. Deploy to the device via command line or ESPHome Dashbaord
+3. Add your device to Home Assistant
 
-- `econet_tankless_water_heater.yaml`
+### Step 1: Customizing the esphome-econet yaml for Your Device
 
-#### Heat Pump Water Heater
+Before installing, you will need to create a customized yaml for your device/environment. Start with either the [example-esp32.yaml](https://github.com/stockmopar/esphome-econet/blob/main/example-esp32.yaml) or [example-esp8266.yaml](https://github.com/stockmopar/esphome-econet/blob/main/example-esp8266.yaml) files as a template, depending on your chosen hardware.
 
-- `econet_heatpump_water_heater.yaml`
+At a minimum, you will need to either [put in your own WiFi network details](https://esphome.io/components/wifi) or provide a `secrets.yaml` file with the `wifi_ssid` and `wifi_password` fields configured. An example `secret.yaml` would look like:
 
-#### HVAC
+```yaml
+wifi_ssid: "your ssid"
+wifi_password: "your password"
+```
 
-- `econet_hvac.yaml`
+You will also need to update the `packages -> econet -> file` entry with the name of the configuration file that corresponds to your device:
 
-#### Electric Water Heater
+* **Heatpump Water Heaters**: `econet_heatpump_water_heater.yaml`
+* **Tankless Water Heaters**: `econet_tankless_water_heater.yaml`
+* **HVAC Systems**: `econet_hvac.yaml`
 
-- Not currently supported
+If you are using hardware other than the kit recommended above, you may also need to update the GPIO Pin fields. See the individual device configuration files for more customizeable options.
 
-### Compiling and Uploading esphome-econet
+### Step 2: Compiling and Uploading esphome-econet to Your Device
 
-#### ESPHome in a Docker Container
+Once you've customzied your YAML you can install it either by copying your yaml file (and `secrets.yaml` file) to the config directory of your esphome-dashboard installation and running the install command, or by using the ESPHome command line via Docker.
 
-Once ESPHome is installed, run `ls /dev/ttyUSB*` from a command line to list the USB ports currently in use.  Then, plug the USB-C cable into the ATOM and into the computer running ESPHome.
-Run `ls /dev/ttyUSB*` again and note the new port shown, perhaps `/dev/ttyUSB2` (there should be one more than before).  That is the port used by the ATOM ESP32 board, and is the port to which the esphome-econet program will be uploaded.
+#### Installing via ESPHome in a Docker Container
 
-1. Extract the contents of `example-esp32.yaml` or `example-esp8266.yaml` to a new file in the Home Assistant /config directory.
-2. Edit it:
-   1. Reference the correct file in the econet package based on your device.
-   2. Add/edit any `substitutions` if needed.
-   3. Insert the local network's wifi credentials or create `secrets.yaml` with:
+Run `ls /dev/ttyUSB*` from a command line to list the USB ports currently in use.  Then, plug the USB-C cable into the ATOM and into the computer running ESPHome. Run `ls /dev/ttyUSB*` again and note the new port shown, e.g. `/dev/ttyUSB1` (there should be one more than before).  That is the port used by the ATOM ESP32 board, and is the port to which the esphome-econet program will need to be installed.
 
-      ```yaml
-      wifi_ssid: "your ssid"
-      wifi_password: "your password"
-      ```
-
-   4. Save the file.
-
-Run the following command to compile and upload esphome-econet to the ATOM.  This assumes the docker container is named `esphome` and that the ATOM is found on `/dev/ttyUSB2`. Change as necessary.
+Run the following command from the directory containing your configuration file and your `secrets.yaml` to compile and upload esphome-econet to the ATOM.  This assumes that your configuration file is `example-esp32.yaml` and that the ATOM is found on `/dev/ttyUSB1`; change as necessary.
 
 ```bash
-docker run --rm -v "${PWD}":/config --device=/dev/ttyUSB2 -it esphome/esphome run example-esp32.yaml
+docker run --rm -v "${PWD}":/config --device=/dev/ttyUSB1 -it esphome/esphome run example-esp32.yaml
 ```
 
 The program should compile and ask whether to install OTA or via USB. Choose USB.  It should then upload.  
 
 Once uploaded, unplug the USB cable from the computer and move the device to the water heater.  Connect the RJ11/12 cable to the port on the display panel and provide power from a wall wart to the USB cable that is plugged into the ATOM.
 
-Open Home Assistant and Add a New ESPHome Integration choosing esphome.  The device may be discovered automatically, in which case just accept the new device and wait a few moments.  A number of sensors will soon appear in `Developer Tools > States`. These will reflect the name of your water heater that you may have configured in the Rheem econet app on a mobile device.  This package though is strictly local and does not require a cloud account or its credentials.
+### Step 3: Adding New Device to Home Assistant
 
-## Protocol Documentation
-
-Example commands to change a heat pump water heater settings [here](https://github.com/stockmopar/esphome-econet/blob/main/m5atom-rs485-econet.yaml)
-
-Decode this into Charcode [here](https://gchq.github.io/CyberChef/#recipe=From_Charcode('Space',16)Strings('Single%20byte',4,'Alphanumeric%20%2B%20punctuation%20(A)',false,false,false/disabled)&input=MHg4MCwgMHgwMCwgMHgxMiwgMHg4MCwgMHgwMCwgMHg4MCwgMHgwMCwgMHgwMywgMHg0MCwgMHgwMCwgMHgxMiwgMHgwMCwgMHgwMCwgMHgxRiwgMHgwMSwgMHgwMSwgMHgwMCwgMHgwNywgMHgwMCwgMHgwMCwgMHg1NywgMHg0OCwgMHg1NCwgMHg1MiwgMHg1MywgMHg0NSwgMHg1NCwgMHg1MCwgMHg0MiwgMHhGOCwgMHgwMCwgMHgwMCwgMHhFNCwgMHhFRQ)
-
-Addresses
-
-Commands
-
-- READ_COMMAND 0x1E (30)
-- ACK 0x06 (6)
-- WRITE_COMMAND 0x1F (31)
-
-Object Strings
-
-| String        | Units         | Gas Tankless | Heat Pump    | Electric | Values     |
-| ------------- | ------------- |------------- |------------- |--------- |------------|
-| WHTRENAB      |               | Y            |Y             |          | 1,0        |
-| WHTRSETP      |               | Y            |Y             |          |            |
-| WHTRMODE      |               | Y            |              |          |            |
-| WHTRCNFG      |               |              |Y             |          | 0,1,2,3,4  |
-| FLOWRATE      |               | Y            |              |          |            |
-| TEMP_OUT      |               | Y            |              |          |            |
-| TEMP__IN      |               | Y            |              |          |            |
-| WTR_USED      |               | Y            |              |          |            |
-| WTR_BTUS      |               | Y            |              |          |            |
-| IGNCYCLS      |               | Y            |              |          |            |
-| BURNTIME      |               | Y            |              |          |            |
-
-Credits:
-
-- <https://github.com/syssi/esphome-solax-x1-mini>
-- <https://github.com/glmnet/esphome_devices>
-- <https://github.com/esphome/esphome/tree/dev/esphome/components/tuya>
+Open Home Assistant and add a new [ESPHome Integration](https://my.home-assistant.io/redirect/config_flow_start?domain=esphome), inputing the hostname of your device (e.g. "econet-hpwh.local" by default for Heat Pump Water Heaters).  The device may be discovered automatically, in which case just accept the new device and wait a few moments.  Once added, you can visit the device's details page (via `Settings -> Devices & Services`) to see all of the provided sensors are working.
