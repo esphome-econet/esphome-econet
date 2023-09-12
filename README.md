@@ -43,20 +43,22 @@ Yellow  GND 5  ---       +--+
 
 Setup can be done from the command line using the esphome docker image, or via a (mostly) graphical interface by using an esphome dashboard installation; see Getting Started at <https://esphome.io/index.html> for full ESPHome installation and usage instructions. Initial installation must be done over USB. After this, updates and configuration changes can be made entirely over WiFi.
 
-Installation is a two step process:
+Installation is a three-step process:
 
 1. Customize the basic configuration yaml for your device and environment
 2. Deploy to the device via command line or ESPHome Dashbaord
+3. Add your device to Home Assistant
 
 ### Step 1: Customizing the esphome-econet yaml for Your Device
 
 Before installing, you will need to create a customized yaml for your device/environment. Start with either the [example-esp32.yaml](https://github.com/stockmopar/esphome-econet/blob/main/example-esp32.yaml) or [example-esp8266.yaml](https://github.com/stockmopar/esphome-econet/blob/main/example-esp8266.yaml) files as a template, depending on your chosen hardware.
 
 At a minimum, you will need to either [put in your own WiFi network details](https://esphome.io/components/wifi) or provide a `secrets.yaml` file with the `wifi_ssid` and `wifi_password` fields configured. An example `secret.yaml` would look like:
-      ```yaml
-      wifi_ssid: "your ssid"
-      wifi_password: "your password"
-      ```
+
+```yaml
+wifi_ssid: "your ssid"
+wifi_password: "your password"
+```
 
 You will also need to update the `packages -> econet -> file` entry with the name of the configuration file that corresponds to your device:
 
@@ -66,7 +68,7 @@ You will also need to update the `packages -> econet -> file` entry with the nam
 
 If you are using hardware other than the kit recommended above, you may also need to update the GPIO Pin fields. See the individual device configuration files for more customizeable options.
 
-### Compiling and Uploading esphome-econet
+### Step 2: Compiling and Uploading esphome-econet to Your Device
 
 Once you've customzied your YAML you can install it either by copying your yaml file (and `secrets.yaml` file) to the config directory of your esphome-dashboard installation and running the install command, or by using the ESPHome command line via Docker.
 
@@ -84,4 +86,6 @@ The program should compile and ask whether to install OTA or via USB. Choose USB
 
 Once uploaded, unplug the USB cable from the computer and move the device to the water heater.  Connect the RJ11/12 cable to the port on the display panel and provide power from a wall wart to the USB cable that is plugged into the ATOM.
 
-Open Home Assistant and add a new ESPHome Integration, inputing the hostname of your device (e.g. "econet-hpwh.local" by default for Heat Pump Water Heaters).  The device may be discovered automatically, in which case just accept the new device and wait a few moments.  A number of sensors should soon appear in `Developer Tools > States`.
+### Step 3: Adding New Device to Home Assistant
+
+Open Home Assistant and add a new [ESPHome Integration](https://my.home-assistant.io/redirect/config_flow_start?domain=esphome), inputing the hostname of your device (e.g. "econet-hpwh.local" by default for Heat Pump Water Heaters).  The device may be discovered automatically, in which case just accept the new device and wait a few moments.  Once added, you can visit the device's details page (via `Settings -> Devices & Services`) to see all of the provided sensors are working.
