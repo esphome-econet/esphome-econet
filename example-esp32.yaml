@@ -7,7 +7,7 @@ substitutions:
 
 packages:
   econet:
-    url: https://github.com/stockmopar/esphome-econet
+    url: https://github.com/esphome-econet/esphome-econet
     ref: main
     # Change this file to the correct one for your device
     file: econet_heatpump_water_heater.yaml
