@@ -20,7 +20,7 @@ esphome:
   board: $board
   project:
     name: "esphome-econet.esphome-econet"
-    version: 0.2.4
+    version: 0.3.0
 
 dashboard_import:
   package_import_url: github://esphome-econet/esphome-econet/econet_tankless_water_heater.yaml@main
