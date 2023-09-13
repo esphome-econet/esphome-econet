@@ -245,10 +245,7 @@ void Econet::parse_message(bool is_tx) {
       if (read_req.obj_names.size() == 1) {
         EconetDatapointType item_type = EconetDatapointType(pdata[0] & 0x7F);
         if (item_type == EconetDatapointType::RAW) {
-          std::vector<uint8_t> raw;
-          for (int i = 0; i < data_len; i++) {
-            raw.push_back(pdata[i]);
-          }
+          std::vector<uint8_t> raw(pdata, pdata + data_len);
           const std::string &datapoint_id = read_req.obj_names[0];
           this->send_datapoint(datapoint_id, EconetDatapoint{.type = item_type, .value_raw = raw});
         }
@@ -375,14 +372,8 @@ void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, const std::string &
   data.push_back(0);
   data.push_back(0);
 
-  std::vector<uint8_t> sdata(object.begin(), object.end());
-
   for (int j = 0; j < 8; j++) {
-    if (j < object.length()) {
-      data.push_back(sdata[j]);
-    } else {
-      data.push_back(0);
-    }
+    data.push_back(j < object.length() ? object[j] : 0);
   }
 
   uint32_t f_to_32 = float_to_uint32(value);
