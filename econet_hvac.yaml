@@ -187,7 +187,6 @@ sensor:
     icon: "mdi:fan"
   - platform: wifi_signal
     name: "WiFi Signal Strength"
-    update_interval: 30s
     entity_category: "diagnostic"
 
 text_sensor:
