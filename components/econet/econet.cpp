@@ -5,6 +5,23 @@ namespace econet {
 
 static const char *const TAG = "econet";
 
+static const uint32_t WIFI_MODULE = 0x340;
+static const uint32_t SMARTEC_TRANSLATOR = 0x1040;
+static const uint32_t HEAT_PUMP_WATER_HEATER = 0x1280;
+static const uint32_t CONTROL_CENTER = 0x380;
+
+static const uint8_t DST_ADR_POS = 0;
+static const uint8_t SRC_ADR_POS = 5;
+static const uint8_t LEN_POS = 10;
+static const uint8_t COMMAND_POS = 13;
+
+static const uint8_t MSG_HEADER_SIZE = 14;
+static const uint8_t MSG_CRC_SIZE = 2;
+
+static const uint8_t ACK = 6;
+static const uint8_t READ_COMMAND = 30;   // 0x1E
+static const uint8_t WRITE_COMMAND = 31;  // 0x1F
+
 uint16_t gen_crc16(const uint8_t *data, uint16_t size) {
   uint16_t out = 0;
   int bits_read = 0, bit_flag;
@@ -176,10 +193,8 @@ void Econet::parse_message(bool is_tx) {
   uint32_t src_adr = ((b[5] & 0x7f) << 24) + (b[6] << 16) + (b[7] << 8) + b[8];
   // uint8_t src_bus = b[9];
 
-  uint8_t data_len = b[10];
-
-  uint8_t command = b[13];
-
+  uint8_t data_len = b[LEN_POS];
+  uint8_t command = b[COMMAND_POS];
   const uint8_t *pdata = b + MSG_HEADER_SIZE;
 
   ESP_LOGI(TAG, "%s %s", is_tx ? ">>>" : "<<<",

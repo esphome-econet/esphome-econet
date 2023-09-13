@@ -113,26 +113,6 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<uint8_t> tx_message_;
 
   uint32_t dst_adr = 0;
-
-  uint32_t WIFI_MODULE = 0x340;
-  uint32_t SMARTEC_TRANSLATOR = 0x1040;
-  uint32_t HEAT_PUMP_WATER_HEATER = 0x1280;
-  uint32_t CONTROL_CENTER = 0x380;
-
-  uint8_t DST_ADR_POS = 0;
-  uint8_t SRC_ADR_POS = 5;
-  uint8_t SRC_BUS_POS = 9;
-  uint8_t LEN_POS = 10;
-  uint8_t COMMAND_POS = 13;
-  uint8_t DATA_START_POS = 14;
-
-  uint8_t MSG_HEADER_SIZE = 14;
-  uint8_t BYTES_BETWEEN_ADRS = 5;
-  uint8_t MSG_CRC_SIZE = 2;
-
-  uint8_t ACK = 0x06;
-  uint8_t READ_COMMAND = 0x1E;   // 30
-  uint8_t WRITE_COMMAND = 0x1F;  // 31
 };
 
 class EconetClient {
