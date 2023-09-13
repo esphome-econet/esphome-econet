@@ -279,49 +279,6 @@ void Econet::parse_message(bool is_tx) {
   } else if (command == WRITE_COMMAND) {
     // Update the address to use for subsequent requests.
     this->dst_adr = src_adr;
-
-    uint8_t type = pdata[0];
-    uint8_t prop_type = pdata[1];
-
-    ESP_LOGI(TAG, "  ClssType: %d", type);
-    ESP_LOGI(TAG, "  PropType: %d", prop_type);
-
-    if (type == 1) {
-      // WRITE DATA
-      EconetDatapointType datatype = EconetDatapointType(pdata[2]);
-
-      if (datatype == EconetDatapointType::FLOAT || datatype == EconetDatapointType::ENUM_TEXT) {
-        if (datatype == EconetDatapointType::FLOAT) {
-          ESP_LOGI(TAG, "  DataType: %d (Float)", datatype);
-        } else {
-          ESP_LOGI(TAG, "  DataType: %d (Enum Text)", datatype);
-        }
-
-        if (data_len == 18) {
-          std::string s((const char *) pdata + 6, 8);
-          float item_value = bytes_to_float(pdata + 6 + 8);
-          ESP_LOGI(TAG, "  %s: %f", s.c_str(), item_value);
-        } else {
-          ESP_LOGI(TAG, "  Unexpected Write Data Length", datatype);
-        }
-
-        // 01.01.00.07.00.00.4F.43.4F.4D.4D.41.4E.44.42.48.00.00
-        // Object - OCOMMAND
-      } else if (datatype == EconetDatapointType::RAW) {
-        ESP_LOGI(TAG, "  DataType: %d (Bytes)", datatype);
-      } else {
-        ESP_LOGI(TAG, "  DataType: %d", datatype);
-      }
-    } else if (type == 7) {
-      // TIME AND DATA
-    } else if (type == 9) {
-      // SYSTEM HANDLER - LISTING OF ADDRESSES ON BUS
-      // 09.01.00.00.03.80.00.00.03.40.00.00.05.00
-      // 00 00 03 80
-      // 00 00 03 40
-      // 00 00 05 00
-    } else {
-    }
   }
 }
 
