@@ -75,6 +75,7 @@ uint16_t gen_crc16(const uint8_t *data, uint16_t size) {
   return crc;
 }
 
+// Converts 4 bytes to float
 float bytes_to_float(const uint8_t *b) {
   uint8_t byte_array[] = {b[3], b[2], b[1], b[0]};
   float result;
@@ -87,6 +88,18 @@ uint32_t float_to_uint32(float f) {
   uint32_t fbits = 0;
   memcpy(&fbits, &f, sizeof fbits);
   return fbits;
+}
+
+// Converts 4 bytes to an address
+uint32_t bytes_to_address(const uint8_t *b) { return ((b[0] & 0x7f) << 24) + (b[1] << 16) + (b[2] << 8) + b[3]; }
+
+// Reverse of bytes_to_address
+void address_to_bytes(uint32_t adr, std::vector<uint8_t> *data) {
+  data->push_back(0x80);
+  data->push_back(adr >> 16);
+  data->push_back(adr >> 8);
+  data->push_back(adr);
+  data->push_back(0);
 }
 
 // Extracts strings in pdata separated by 0x00
@@ -109,6 +122,18 @@ void extract_obj_names(const uint8_t *pdata, uint8_t data_len, std::vector<std::
     // Skip all 0x00 bytes
     while (!*start) {
       start++;
+    }
+  }
+}
+
+// Reverse of extract_obj_names
+void join_obj_names(const std::vector<std::string> &objects, std::vector<uint8_t> *data) {
+  for (int i = 0; i < objects.size(); i++) {
+    data->push_back(0);
+    data->push_back(0);
+    const std::string &s = objects[i];
+    for (int j = 0; j < 8; j++) {
+      data->push_back(j < s.length() ? s[j] : 0);
     }
   }
 }
@@ -148,10 +173,8 @@ void Econet::make_request() {
       dst_adr = SMARTEC_TRANSLATOR;
     }
   }
-  // uint8_t dst_bus = 0x00;
 
   uint32_t src_adr = WIFI_MODULE;
-  // uint8_t src_bus = 0x00;
 
   if (!pending_writes_.empty()) {
     const auto &kv = pending_writes_.begin();
@@ -187,12 +210,8 @@ void Econet::parse_rx_message() { this->parse_message(false); }
 void Econet::parse_message(bool is_tx) {
   const uint8_t *b = is_tx ? &tx_message_[0] : &rx_message_[0];
 
-  uint32_t dst_adr = ((b[0] & 0x7f) << 24) + (b[1] << 16) + (b[2] << 8) + b[3];
-  // uint8_t dst_bus = b[4];
-
-  uint32_t src_adr = ((b[5] & 0x7f) << 24) + (b[6] << 16) + (b[7] << 8) + b[8];
-  // uint8_t src_bus = b[9];
-
+  uint32_t dst_adr = bytes_to_address(b + DST_ADR_POS);
+  uint32_t src_adr = bytes_to_address(b + SRC_ADR_POS);
   uint8_t data_len = b[LEN_POS];
   uint8_t command = b[COMMAND_POS];
   const uint8_t *pdata = b + MSG_HEADER_SIZE;
@@ -389,9 +408,7 @@ void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, const std::string &
 void Econet::request_strings(uint32_t dst_adr, uint32_t src_adr, const std::vector<std::string> &objects) {
   std::vector<uint8_t> data;
 
-  int num_of_strs = objects.size();
-
-  if (num_of_strs > 1) {
+  if (objects.size() > 1) {
     // Read Class
     data.push_back(2);
   } else {
@@ -401,45 +418,18 @@ void Econet::request_strings(uint32_t dst_adr, uint32_t src_adr, const std::vect
   // Read Property
   data.push_back(1);
 
-  for (int i = 0; i < num_of_strs; i++) {
-    data.push_back(0);
-    data.push_back(0);
+  join_obj_names(objects, &data);
 
-    const std::string &my_str = objects[i];
-
-    std::vector<uint8_t> sdata(my_str.begin(), my_str.end());
-    uint8_t *p = &sdata[0];
-
-    for (int j = 0; j < 8; j++) {
-      if (j < objects[i].length()) {
-        data.push_back(sdata[j]);
-      } else {
-        data.push_back(0);
-      }
-    }
-  }
   transmit_message(dst_adr, src_adr, READ_COMMAND, data);
 }
 
 void Econet::transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t command, const std::vector<uint8_t> &data) {
-  uint8_t dst_bus = 0;
-  uint8_t src_bus = 0;
-  uint16_t wdata_len = data.size();
   tx_message_.clear();
 
-  tx_message_.push_back(0x80);
-  tx_message_.push_back(dst_adr >> 16);
-  tx_message_.push_back(dst_adr >> 8);
-  tx_message_.push_back(dst_adr);
-  tx_message_.push_back(dst_bus);
+  address_to_bytes(dst_adr, &tx_message_);
+  address_to_bytes(src_adr, &tx_message_);
 
-  tx_message_.push_back(0x80);
-  tx_message_.push_back(src_adr >> 16);
-  tx_message_.push_back(src_adr >> 8);
-  tx_message_.push_back(src_adr);
-  tx_message_.push_back(src_bus);
-
-  tx_message_.push_back(wdata_len);
+  tx_message_.push_back(data.size());
   tx_message_.push_back(0);
   tx_message_.push_back(0);
   tx_message_.push_back(command);
