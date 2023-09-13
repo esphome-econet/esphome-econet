@@ -5,6 +5,7 @@ namespace econet {
 
 static const char *const TAG = "econet";
 
+static const uint32_t RECEIVE_TIMEOUT = 100;
 static const uint32_t REQUEST_DELAY = 100;
 
 static const uint32_t WIFI_MODULE = 0x340;
@@ -349,25 +350,22 @@ void Econet::read_buffer(int bytes_available) {
 void Econet::loop() {
   const uint32_t now = millis();
 
-  // Wait at least 10ms since last attempt to read
-  if (now - this->last_read_ <= 10) {
-    return;
+  if ((now - this->last_read_data_ > RECEIVE_TIMEOUT) && !rx_message_.empty()) {
+    ESP_LOGW(TAG, "Ignoring partially received message due to timeout");
+    rx_message_.clear();
   }
-
-  this->act_loop_time_ = now - this->last_read_;
-  this->last_read_ = now;
 
   // Read Everything that is in the buffer
   int bytes_available = this->available();
   if (bytes_available > 0) {
     this->last_read_data_ = now;
-    ESP_LOGI(TAG, "Read %d. ms=%d, lt=%d", bytes_available, now, act_loop_time_);
+    ESP_LOGI(TAG, "Read %d. ms=%d", bytes_available, now);
     this->read_buffer(bytes_available);
     return;
   }
 
-  // Wait at least 100ms since last time we read data
-  if (now - this->last_read_data_ <= 100) {
+  if (!rx_message_.empty()) {
+    ESP_LOGD(TAG, "Waiting to fully receive a partially received message");
     return;
   }
 
@@ -473,7 +471,9 @@ void Econet::set_datapoint(const std::string &datapoint_id, EconetDatapoint valu
     }
   }
   pending_writes_[datapoint_id] = value;
-  make_request();
+  if (rx_message_.empty()) {
+    make_request();
+  }
   send_datapoint(datapoint_id, value, true);
 }
 
