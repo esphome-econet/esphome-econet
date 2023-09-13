@@ -283,20 +283,13 @@ void Econet::parse_message(bool is_tx) {
 }
 
 void Econet::read_buffer(int bytes_available) {
-  if (bytes_available > 1200) {
-    ESP_LOGI(TAG, "BA=%d,LT=%d ms", bytes_available, this->act_loop_time_);
-  }
+  uint8_t bytes[bytes_available];
 
-  // Limit to Read 1200 bytes
-  int bytes_to_read = std::min(bytes_available, 1200);
-
-  uint8_t bytes[bytes_to_read];
-
-  if (!this->read_array(bytes, bytes_to_read)) {
+  if (!this->read_array(bytes, bytes_available)) {
     return;
   }
 
-  for (int i = 0; i < bytes_to_read; i++) {
+  for (int i = 0; i < bytes_available; i++) {
     uint8_t byte = bytes[i];
     buffer[pos] = byte;
     if ((pos == DST_ADR_POS || pos == SRC_ADR_POS) && byte != 0x80) {
