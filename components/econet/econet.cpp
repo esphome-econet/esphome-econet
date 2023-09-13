@@ -168,7 +168,7 @@ void Econet::parse_tx_message() { this->parse_message(true); }
 void Econet::parse_rx_message() { this->parse_message(false); }
 
 void Econet::parse_message(bool is_tx) {
-  const uint8_t *b = is_tx ? wbuffer : buffer;
+  const uint8_t *b = is_tx ? &tx_message_[0] : &rx_message_[0];
 
   uint32_t dst_adr = ((b[0] & 0x7f) << 24) + (b[1] << 16) + (b[2] << 8) + b[3];
   // uint8_t dst_bus = b[4];
@@ -298,23 +298,18 @@ void Econet::read_buffer(int bytes_available) {
 
   for (int i = 0; i < bytes_to_read; i++) {
     uint8_t byte = bytes[i];
-    buffer[pos] = byte;
+    rx_message_.push_back(byte);
+    uint32_t pos = rx_message_.size() - 1;
     if ((pos == DST_ADR_POS || pos == SRC_ADR_POS) && byte != 0x80) {
-      pos = 0;
+      rx_message_.clear();
       continue;
     }
-    if (pos == LEN_POS) {
-      data_len = byte;
-      msg_len = data_len + MSG_HEADER_SIZE + MSG_CRC_SIZE;
-    }
-    pos++;
 
-    if (pos == msg_len && msg_len != 0) {
+    if (!rx_message_.empty() && rx_message_.size() > LEN_POS &&
+        rx_message_.size() == MSG_HEADER_SIZE + rx_message_[LEN_POS] + MSG_CRC_SIZE) {
       // We have a full message
       this->parse_rx_message();
-      pos = 0;
-      msg_len = 0;
-      data_len = 0;
+      rx_message_.clear();
     }
   }
 }
@@ -424,34 +419,31 @@ void Econet::transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t comman
   uint8_t dst_bus = 0;
   uint8_t src_bus = 0;
   uint16_t wdata_len = data.size();
+  tx_message_.clear();
 
-  wbuffer[0] = 0x80;
-  wbuffer[1] = (uint8_t) (dst_adr >> 16);
-  wbuffer[2] = (uint8_t) (dst_adr >> 8);
-  wbuffer[3] = (uint8_t) dst_adr;
-  wbuffer[4] = dst_bus;
+  tx_message_.push_back(0x80);
+  tx_message_.push_back(dst_adr >> 16);
+  tx_message_.push_back(dst_adr >> 8);
+  tx_message_.push_back(dst_adr);
+  tx_message_.push_back(dst_bus);
 
-  wbuffer[5] = 0x80;
-  wbuffer[6] = (uint8_t) (src_adr >> 16);
-  wbuffer[7] = (uint8_t) (src_adr >> 8);
-  wbuffer[8] = (uint8_t) src_adr;
-  wbuffer[9] = src_bus;
+  tx_message_.push_back(0x80);
+  tx_message_.push_back(src_adr >> 16);
+  tx_message_.push_back(src_adr >> 8);
+  tx_message_.push_back(src_adr);
+  tx_message_.push_back(src_bus);
 
-  wbuffer[10] = wdata_len;
-  wbuffer[11] = 0;
-  wbuffer[12] = 0;
-  wbuffer[13] = command;
+  tx_message_.push_back(wdata_len);
+  tx_message_.push_back(0);
+  tx_message_.push_back(0);
+  tx_message_.push_back(command);
+  tx_message_.insert(tx_message_.end(), data.begin(), data.end());
 
-  for (int i = 0; i < wdata_len; i++) {
-    wbuffer[MSG_HEADER_SIZE + i] = data[i];
-  }
+  uint16_t crc = gen_crc16(&tx_message_[0], tx_message_.size());
+  tx_message_.push_back(crc);
+  tx_message_.push_back(crc >> 8);
 
-  uint16_t crc = gen_crc16(wbuffer, wdata_len + MSG_HEADER_SIZE);
-
-  wbuffer[wdata_len + MSG_HEADER_SIZE] = (uint8_t) crc;
-  wbuffer[wdata_len + MSG_HEADER_SIZE + 1] = (uint8_t) (crc >> 8);
-
-  this->write_array(wbuffer, wdata_len + MSG_HEADER_SIZE + 2);
+  this->write_array(&tx_message_[0], tx_message_.size());
   // this->flush();
 
   parse_tx_message();

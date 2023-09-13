@@ -109,14 +109,8 @@ class Econet : public Component, public uart::UARTDevice {
   uint32_t last_read_{0};
   uint32_t last_read_data_{0};
   uint32_t act_loop_time_{0};
-  uint8_t data_len = 0;
-  uint16_t msg_len = 0;
-  int pos = 0;
-  static const int max_message_size = 271;
-  uint8_t buffer[max_message_size];
-
-  uint8_t wbuffer[max_message_size];
-  uint16_t wmsg_len = 0;
+  std::vector<uint8_t> rx_message_;
+  std::vector<uint8_t> tx_message_;
 
   uint32_t dst_adr = 0;
 
