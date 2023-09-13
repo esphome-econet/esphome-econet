@@ -9,6 +9,7 @@ substitutions:
   board: esp32dev
   external_components_source: github://esphome-econet/esphome-econet@main
   logger_level: WARN
+  econet_update_interval: 30s
 
 esphome:
   name: ${name}
@@ -55,6 +56,7 @@ uart:
 econet:
   uart_id: uart_0
   model: "Heatpump"
+  update_interval: ${econet_update_interval}
 
 climate:
   - platform: econet

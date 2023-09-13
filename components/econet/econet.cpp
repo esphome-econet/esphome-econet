@@ -5,6 +5,8 @@ namespace econet {
 
 static const char *const TAG = "econet";
 
+static const uint32_t REQUEST_DELAY = 100;
+
 static const uint32_t WIFI_MODULE = 0x340;
 static const uint32_t SMARTEC_TRANSLATOR = 0x1040;
 static const uint32_t HEAT_PUMP_WATER_HEATER = 0x1280;
@@ -161,6 +163,7 @@ void Econet::dump_config() {
   }
 }
 
+// Makes one request: either the first pending write request or a new read request.
 void Econet::make_request() {
   // Use the address learned from a previous WRITE_COMMAND if possible.
   uint32_t dst_adr = this->dst_adr;
@@ -195,12 +198,10 @@ void Econet::make_request() {
     return;
   }
 
-  if (model_type_ != MODEL_TYPE_HVAC || !hvac_wifi_module_connected_) {
-    std::vector<std::string> str_ids(datapoint_ids_.begin(), datapoint_ids_.end());
-    // TODO: Better handle RAW that likely need to be requested separately.
-    str_ids.erase(std::remove(str_ids.begin(), str_ids.end(), "AIRHSTAT"), str_ids.end());
-    request_strings(dst_adr, src_adr, str_ids);
-  }
+  std::vector<std::string> str_ids(datapoint_ids_.begin(), datapoint_ids_.end());
+  // TODO: Better handle RAW that likely need to be requested separately.
+  str_ids.erase(std::remove(str_ids.begin(), str_ids.end(), "AIRHSTAT"), str_ids.end());
+  request_strings(dst_adr, src_adr, str_ids);
 }
 
 void Econet::parse_tx_message() { this->parse_message(true); }
@@ -370,14 +371,17 @@ void Econet::loop() {
     return;
   }
 
-  // Wait at least 500ms since last request
-  if (now - this->last_request_ <= 500) {
+  if (now - this->last_request_ <= REQUEST_DELAY) {
     return;
   }
 
-  ESP_LOGI(TAG, "request ms=%d", now);
-  this->last_request_ = now;
-  this->make_request();
+  // Quickly send writes but delay reads.
+  if (!pending_writes_.empty() || !pending_confirmation_writes_.empty() ||
+      (now - this->last_request_ > this->update_interval_millis_)) {
+    ESP_LOGI(TAG, "request ms=%d", now);
+    this->last_request_ = now;
+    this->make_request();
+  }
 }
 
 void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, const std::string &object, EconetDatapointType type,
