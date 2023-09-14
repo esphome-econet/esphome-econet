@@ -8,7 +8,8 @@ namespace esphome {
 namespace econet {
 
 EconetRawDatapointUpdateTrigger::EconetRawDatapointUpdateTrigger(Econet *parent, const std::string &sensor_id) {
-  parent->register_listener(sensor_id, [this](const EconetDatapoint &dp) { this->trigger(dp.value_raw); });
+  parent->register_listener(
+      sensor_id, [this](const EconetDatapoint &dp) { this->trigger(dp.value_raw); }, true);
 }
 
 }  // namespace econet
