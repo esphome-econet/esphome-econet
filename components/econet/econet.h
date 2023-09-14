@@ -76,7 +76,8 @@ class Econet : public Component, public uart::UARTDevice {
   void set_float_datapoint_value(const std::string &datapoint_id, float value);
   void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value);
 
-  void register_listener(const std::string &datapoint_id, const std::function<void(EconetDatapoint)> &func);
+  void register_listener(const std::string &datapoint_id, const std::function<void(EconetDatapoint)> &func,
+                         bool is_raw_datapoint = false);
 
  protected:
   ModelType model_type_;
