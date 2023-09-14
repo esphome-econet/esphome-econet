@@ -17,10 +17,6 @@ float celsius_to_fahrenheit(float c) { return c * 9 / 5 + 32; }
 
 }  // namespace
 
-#define SETPOINT_MIN 26.6667
-#define SETPOINT_MAX 4838889
-#define SETPOINT_STEP 1.0f
-
 static const char *const TAG = "econet.climate";
 
 void EconetClimate::dump_config() {
@@ -45,20 +41,17 @@ climate::ClimateTraits EconetClimate::traits() {
   }
   traits.set_supports_current_temperature(true);
   if (this->parent_->get_model_type() == MODEL_TYPE_HVAC) {
-    traits.set_visual_min_temperature(10);
-    traits.set_visual_max_temperature(32);
-
     traits.set_supported_custom_fan_modes({"Automatic", "Speed 1 (Low)", "Speed 2 (Medium Low)", "Speed 3 (Medium)",
                                            "Speed 4 (Medium High)", "Speed 5 (High)"});
 
     traits.set_supports_two_point_target_temperature(true);
   } else {
-    traits.set_visual_min_temperature(SETPOINT_MIN);
-    traits.set_visual_max_temperature(SETPOINT_MAX);
+    traits.set_visual_min_temperature(43.3333);
+    traits.set_visual_max_temperature(60);
 
     traits.set_supports_two_point_target_temperature(false);
   }
-  traits.set_visual_temperature_step(SETPOINT_STEP);
+  traits.set_visual_temperature_step(1.0f);
 
   return traits;
 }
