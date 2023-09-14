@@ -5,6 +5,26 @@ namespace econet {
 
 static const char *const TAG = "econet";
 
+static const uint32_t RECEIVE_TIMEOUT = 100;
+static const uint32_t REQUEST_DELAY = 100;
+
+static const uint32_t WIFI_MODULE = 0x340;
+static const uint32_t SMARTEC_TRANSLATOR = 0x1040;
+static const uint32_t HEAT_PUMP_WATER_HEATER = 0x1280;
+static const uint32_t CONTROL_CENTER = 0x380;
+
+static const uint8_t DST_ADR_POS = 0;
+static const uint8_t SRC_ADR_POS = 5;
+static const uint8_t LEN_POS = 10;
+static const uint8_t COMMAND_POS = 13;
+
+static const uint8_t MSG_HEADER_SIZE = 14;
+static const uint8_t MSG_CRC_SIZE = 2;
+
+static const uint8_t ACK = 6;
+static const uint8_t READ_COMMAND = 30;   // 0x1E
+static const uint8_t WRITE_COMMAND = 31;  // 0x1F
+
 uint16_t gen_crc16(const uint8_t *data, uint16_t size) {
   uint16_t out = 0;
   int bits_read = 0, bit_flag;
@@ -58,6 +78,7 @@ uint16_t gen_crc16(const uint8_t *data, uint16_t size) {
   return crc;
 }
 
+// Converts 4 bytes to float
 float bytes_to_float(const uint8_t *b) {
   uint8_t byte_array[] = {b[3], b[2], b[1], b[0]};
   float result;
@@ -70,6 +91,18 @@ uint32_t float_to_uint32(float f) {
   uint32_t fbits = 0;
   memcpy(&fbits, &f, sizeof fbits);
   return fbits;
+}
+
+// Converts 4 bytes to an address
+uint32_t bytes_to_address(const uint8_t *b) { return ((b[0] & 0x7f) << 24) + (b[1] << 16) + (b[2] << 8) + b[3]; }
+
+// Reverse of bytes_to_address
+void address_to_bytes(uint32_t adr, std::vector<uint8_t> *data) {
+  data->push_back(0x80);
+  data->push_back(adr >> 16);
+  data->push_back(adr >> 8);
+  data->push_back(adr);
+  data->push_back(0);
 }
 
 // Extracts strings in pdata separated by 0x00
@@ -92,6 +125,18 @@ void extract_obj_names(const uint8_t *pdata, uint8_t data_len, std::vector<std::
     // Skip all 0x00 bytes
     while (!*start) {
       start++;
+    }
+  }
+}
+
+// Reverse of extract_obj_names
+void join_obj_names(const std::vector<std::string> &objects, std::vector<uint8_t> *data) {
+  for (int i = 0; i < objects.size(); i++) {
+    data->push_back(0);
+    data->push_back(0);
+    const std::string &s = objects[i];
+    for (int j = 0; j < 8; j++) {
+      data->push_back(j < s.length() ? s[j] : 0);
     }
   }
 }
@@ -119,6 +164,7 @@ void Econet::dump_config() {
   }
 }
 
+// Makes one request: either the first pending write request or a new read request.
 void Econet::make_request() {
   // Use the address learned from a previous WRITE_COMMAND if possible.
   uint32_t dst_adr = this->dst_adr;
@@ -131,10 +177,8 @@ void Econet::make_request() {
       dst_adr = SMARTEC_TRANSLATOR;
     }
   }
-  // uint8_t dst_bus = 0x00;
 
   uint32_t src_adr = WIFI_MODULE;
-  // uint8_t src_bus = 0x00;
 
   if (!pending_writes_.empty()) {
     const auto &kv = pending_writes_.begin();
@@ -155,10 +199,8 @@ void Econet::make_request() {
     return;
   }
 
-  if (model_type_ != MODEL_TYPE_HVAC || !hvac_wifi_module_connected_) {
-    std::vector<std::string> str_ids(datapoint_ids_.begin(), datapoint_ids_.end());
-    request_strings(dst_adr, src_adr, str_ids);
-  }
+  std::vector<std::string> str_ids(datapoint_ids_.begin(), datapoint_ids_.end());
+  request_strings(dst_adr, src_adr, str_ids);
 }
 
 void Econet::parse_tx_message() { this->parse_message(true); }
@@ -166,18 +208,12 @@ void Econet::parse_tx_message() { this->parse_message(true); }
 void Econet::parse_rx_message() { this->parse_message(false); }
 
 void Econet::parse_message(bool is_tx) {
-  const uint8_t *b = is_tx ? wbuffer : buffer;
+  const uint8_t *b = is_tx ? &tx_message_[0] : &rx_message_[0];
 
-  uint32_t dst_adr = ((b[0] & 0x7f) << 24) + (b[1] << 16) + (b[2] << 8) + b[3];
-  // uint8_t dst_bus = b[4];
-
-  uint32_t src_adr = ((b[5] & 0x7f) << 24) + (b[6] << 16) + (b[7] << 8) + b[8];
-  // uint8_t src_bus = b[9];
-
-  uint8_t data_len = b[10];
-
-  uint8_t command = b[13];
-
+  uint32_t dst_adr = bytes_to_address(b + DST_ADR_POS);
+  uint32_t src_adr = bytes_to_address(b + SRC_ADR_POS);
+  uint8_t data_len = b[LEN_POS];
+  uint8_t command = b[COMMAND_POS];
   const uint8_t *pdata = b + MSG_HEADER_SIZE;
 
   ESP_LOGI(TAG, "%s %s", is_tx ? ">>>" : "<<<",
@@ -228,10 +264,7 @@ void Econet::parse_message(bool is_tx) {
       if (read_req.obj_names.size() == 1) {
         EconetDatapointType item_type = EconetDatapointType(pdata[0] & 0x7F);
         if (item_type == EconetDatapointType::RAW) {
-          std::vector<uint8_t> raw;
-          for (int i = 0; i < data_len; i++) {
-            raw.push_back(pdata[i]);
-          }
+          std::vector<uint8_t> raw(pdata, pdata + data_len);
           const std::string &datapoint_id = read_req.obj_names[0];
           this->send_datapoint(datapoint_id, EconetDatapoint{.type = item_type, .value_raw = raw});
         }
@@ -281,38 +314,26 @@ void Econet::parse_message(bool is_tx) {
 }
 
 void Econet::read_buffer(int bytes_available) {
-  if (bytes_available > 1200) {
-    ESP_LOGI(TAG, "BA=%d,LT=%d ms", bytes_available, this->act_loop_time_);
-  }
+  uint8_t bytes[bytes_available];
 
-  // Limit to Read 1200 bytes
-  int bytes_to_read = std::min(bytes_available, 1200);
-
-  uint8_t bytes[bytes_to_read];
-
-  if (!this->read_array(bytes, bytes_to_read)) {
+  if (!this->read_array(bytes, bytes_available)) {
     return;
   }
 
-  for (int i = 0; i < bytes_to_read; i++) {
+  for (int i = 0; i < bytes_available; i++) {
     uint8_t byte = bytes[i];
-    buffer[pos] = byte;
+    rx_message_.push_back(byte);
+    uint32_t pos = rx_message_.size() - 1;
     if ((pos == DST_ADR_POS || pos == SRC_ADR_POS) && byte != 0x80) {
-      pos = 0;
+      rx_message_.clear();
       continue;
     }
-    if (pos == LEN_POS) {
-      data_len = byte;
-      msg_len = data_len + MSG_HEADER_SIZE + MSG_CRC_SIZE;
-    }
-    pos++;
 
-    if (pos == msg_len && msg_len != 0) {
+    if (!rx_message_.empty() && rx_message_.size() > LEN_POS &&
+        rx_message_.size() == MSG_HEADER_SIZE + rx_message_[LEN_POS] + MSG_CRC_SIZE) {
       // We have a full message
       this->parse_rx_message();
-      pos = 0;
-      msg_len = 0;
-      data_len = 0;
+      rx_message_.clear();
     }
   }
 }
@@ -320,36 +341,36 @@ void Econet::read_buffer(int bytes_available) {
 void Econet::loop() {
   const uint32_t now = millis();
 
-  // Wait at least 10ms since last attempt to read
-  if (now - this->last_read_ <= 10) {
-    return;
+  if ((now - this->last_read_data_ > RECEIVE_TIMEOUT) && !rx_message_.empty()) {
+    ESP_LOGW(TAG, "Ignoring partially received message due to timeout");
+    rx_message_.clear();
   }
-
-  this->act_loop_time_ = now - this->last_read_;
-  this->last_read_ = now;
 
   // Read Everything that is in the buffer
   int bytes_available = this->available();
   if (bytes_available > 0) {
     this->last_read_data_ = now;
-    ESP_LOGI(TAG, "Read %d. ms=%d, lt=%d", bytes_available, now, act_loop_time_);
+    ESP_LOGI(TAG, "Read %d. ms=%d", bytes_available, now);
     this->read_buffer(bytes_available);
     return;
   }
 
-  // Wait at least 100ms since last time we read data
-  if (now - this->last_read_data_ <= 100) {
+  if (!rx_message_.empty()) {
+    ESP_LOGD(TAG, "Waiting to fully receive a partially received message");
     return;
   }
 
-  // Wait at least 500ms since last request
-  if (now - this->last_request_ <= 500) {
+  if (now - this->last_request_ <= REQUEST_DELAY) {
     return;
   }
 
-  ESP_LOGI(TAG, "request ms=%d", now);
-  this->last_request_ = now;
-  this->make_request();
+  // Quickly send writes but delay reads.
+  if (!pending_writes_.empty() || !pending_confirmation_writes_.empty() ||
+      (now - this->last_request_ > this->update_interval_millis_)) {
+    ESP_LOGI(TAG, "request ms=%d", now);
+    this->last_request_ = now;
+    this->make_request();
+  }
 }
 
 void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, const std::string &object, EconetDatapointType type,
@@ -363,14 +384,8 @@ void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, const std::string &
   data.push_back(0);
   data.push_back(0);
 
-  std::vector<uint8_t> sdata(object.begin(), object.end());
-
   for (int j = 0; j < 8; j++) {
-    if (j < object.length()) {
-      data.push_back(sdata[j]);
-    } else {
-      data.push_back(0);
-    }
+    data.push_back(j < object.length() ? object[j] : 0);
   }
 
   uint32_t f_to_32 = float_to_uint32(value);
@@ -386,9 +401,7 @@ void Econet::write_value(uint32_t dst_adr, uint32_t src_adr, const std::string &
 void Econet::request_strings(uint32_t dst_adr, uint32_t src_adr, const std::vector<std::string> &objects) {
   std::vector<uint8_t> data;
 
-  int num_of_strs = objects.size();
-
-  if (num_of_strs > 1) {
+  if (objects.size() > 1) {
     // Read Class
     data.push_back(2);
   } else {
@@ -398,58 +411,28 @@ void Econet::request_strings(uint32_t dst_adr, uint32_t src_adr, const std::vect
   // Read Property
   data.push_back(1);
 
-  for (int i = 0; i < num_of_strs; i++) {
-    data.push_back(0);
-    data.push_back(0);
+  join_obj_names(objects, &data);
 
-    const std::string &my_str = objects[i];
-
-    std::vector<uint8_t> sdata(my_str.begin(), my_str.end());
-    uint8_t *p = &sdata[0];
-
-    for (int j = 0; j < 8; j++) {
-      if (j < objects[i].length()) {
-        data.push_back(sdata[j]);
-      } else {
-        data.push_back(0);
-      }
-    }
-  }
   transmit_message(dst_adr, src_adr, READ_COMMAND, data);
 }
 
 void Econet::transmit_message(uint32_t dst_adr, uint32_t src_adr, uint8_t command, const std::vector<uint8_t> &data) {
-  uint8_t dst_bus = 0;
-  uint8_t src_bus = 0;
-  uint16_t wdata_len = data.size();
+  tx_message_.clear();
 
-  wbuffer[0] = 0x80;
-  wbuffer[1] = (uint8_t) (dst_adr >> 16);
-  wbuffer[2] = (uint8_t) (dst_adr >> 8);
-  wbuffer[3] = (uint8_t) dst_adr;
-  wbuffer[4] = dst_bus;
+  address_to_bytes(dst_adr, &tx_message_);
+  address_to_bytes(src_adr, &tx_message_);
 
-  wbuffer[5] = 0x80;
-  wbuffer[6] = (uint8_t) (src_adr >> 16);
-  wbuffer[7] = (uint8_t) (src_adr >> 8);
-  wbuffer[8] = (uint8_t) src_adr;
-  wbuffer[9] = src_bus;
+  tx_message_.push_back(data.size());
+  tx_message_.push_back(0);
+  tx_message_.push_back(0);
+  tx_message_.push_back(command);
+  tx_message_.insert(tx_message_.end(), data.begin(), data.end());
 
-  wbuffer[10] = wdata_len;
-  wbuffer[11] = 0;
-  wbuffer[12] = 0;
-  wbuffer[13] = command;
+  uint16_t crc = gen_crc16(&tx_message_[0], tx_message_.size());
+  tx_message_.push_back(crc);
+  tx_message_.push_back(crc >> 8);
 
-  for (int i = 0; i < wdata_len; i++) {
-    wbuffer[MSG_HEADER_SIZE + i] = data[i];
-  }
-
-  uint16_t crc = gen_crc16(wbuffer, wdata_len + MSG_HEADER_SIZE);
-
-  wbuffer[wdata_len + MSG_HEADER_SIZE] = (uint8_t) crc;
-  wbuffer[wdata_len + MSG_HEADER_SIZE + 1] = (uint8_t) (crc >> 8);
-
-  this->write_array(wbuffer, wdata_len + MSG_HEADER_SIZE + 2);
+  this->write_array(&tx_message_[0], tx_message_.size());
   // this->flush();
 
   parse_tx_message();
@@ -479,7 +462,9 @@ void Econet::set_datapoint(const std::string &datapoint_id, EconetDatapoint valu
     }
   }
   pending_writes_[datapoint_id] = value;
-  make_request();
+  if (rx_message_.empty()) {
+    make_request();
+  }
   send_datapoint(datapoint_id, value, true);
 }
 
