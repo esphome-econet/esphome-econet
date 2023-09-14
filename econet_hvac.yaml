@@ -9,6 +9,7 @@ substitutions:
   board: esp32dev
   external_components_source: github://esphome-econet/esphome-econet@main
   logger_level: WARN
+  econet_update_interval: 30s
 
 esphome:
   name: ${name}
@@ -19,7 +20,7 @@ esphome:
   board: $board
   project:
     name: "esphome-econet.esphome-econet"
-    version: 0.2.4
+    version: 0.3.0
 
 dashboard_import:
   package_import_url: github://esphome-econet/esphome-econet/econet_hvac.yaml@main
@@ -55,7 +56,7 @@ uart:
 econet:
   uart_id: uart_0
   model: "HVAC"
-  hvac_wifi_module_connected: false
+  update_interval: ${econet_update_interval}
   on_datapoint_update:
     - sensor_datapoint: AIRHSTAT
       datapoint_type: raw
