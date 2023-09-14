@@ -157,8 +157,6 @@ void Econet::make_request() {
 
   if (model_type_ != MODEL_TYPE_HVAC || !hvac_wifi_module_connected_) {
     std::vector<std::string> str_ids(datapoint_ids_.begin(), datapoint_ids_.end());
-    // TODO: Better handle RAW that likely need to be requested separately.
-    str_ids.erase(std::remove(str_ids.begin(), str_ids.end(), "AIRHSTAT"), str_ids.end());
     request_strings(dst_adr, src_adr, str_ids);
   }
 }
@@ -512,8 +510,13 @@ void Econet::send_datapoint(const std::string &datapoint_id, EconetDatapoint val
   }
 }
 
-void Econet::register_listener(const std::string &datapoint_id, const std::function<void(EconetDatapoint)> &func) {
-  datapoint_ids_.insert(datapoint_id);
+void Econet::register_listener(const std::string &datapoint_id, const std::function<void(EconetDatapoint)> &func,
+                               bool is_raw_datapoint) {
+  // Don't issue a READ_COMMAND in request_strings for RAW datapoints. These need to be requested separately.
+  // For now rely on other devices, e.g. thermostat, requesting them.
+  if (!is_raw_datapoint) {
+    datapoint_ids_.insert(datapoint_id);
+  }
   auto listener = EconetDatapointListener{
       .datapoint_id = datapoint_id,
       .on_datapoint = func,
