@@ -136,7 +136,7 @@ sensor:
 
 binary_sensor:
   - platform: econet
-    name: "Compressor Relay"
+    name: "Compressor"
     sensor_datapoint: COMP_RLY
     device_class: "running"
 
