@@ -10,6 +10,7 @@ substitutions:
   external_components_source: github://esphome-econet/esphome-econet@main
   logger_level: WARN
   econet_update_interval: 30s
+  sensor_power_filters_lambda: return x;
 
 esphome:
   name: ${name}
@@ -106,6 +107,8 @@ sensor:
     device_class: "power"
     state_class: "measurement"
     entity_category: "diagnostic"
+    filters:
+      - lambda: ${sensor_power_filters_lambda}
   - platform: econet
     name: "Evaporator Temperature"
     sensor_datapoint: EVAPTEMP
