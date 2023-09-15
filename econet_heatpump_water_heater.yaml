@@ -10,8 +10,6 @@ substitutions:
   external_components_source: github://esphome-econet/esphome-econet@main
   logger_level: WARN
   econet_update_interval: 30s
-  # The following has been found to give more accurate results but is likely device specific
-  # sensor_power_filters_lambda: return x * 0.91 - 20;
   sensor_power_filters_lambda: return x;
 
 esphome:
