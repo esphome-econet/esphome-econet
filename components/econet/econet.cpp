@@ -199,8 +199,6 @@ void Econet::make_request_() {
   }
 
   std::vector<std::string> str_ids(datapoint_ids_.begin(), datapoint_ids_.end());
-  // TODO: Better handle RAW that likely need to be requested separately.
-  str_ids.erase(std::remove(str_ids.begin(), str_ids.end(), "AIRHSTAT"), str_ids.end());
   request_strings_(dst_adr, src_adr, str_ids);
 }
 
