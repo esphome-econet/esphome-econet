@@ -14,8 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
-      - name: Install ESPHome
-        run: pip install --user esphome
+      - name: Install Dependencies
+        run: pip install --user -r ./requirements.txt
       - name: Compile Release Firmware
         run: |
           esphome compile \
