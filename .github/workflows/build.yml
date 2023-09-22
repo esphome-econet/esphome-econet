@@ -27,3 +27,6 @@ jobs:
           econet_heatpump_water_heater.yaml  \
           econet_hvac.yaml \
           econet_tankless_water_heater.yaml
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
