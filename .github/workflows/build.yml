@@ -10,24 +10,18 @@ on:
 jobs:
   build:
     name: Build Firmware
-
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v4
-
       - name: Install ESPHome
         run: pip install --user esphome
-
       - name: Compile Release Firmware
         run: |
           esphome compile \
           econet_heatpump_water_heater.yaml  \
           econet_hvac.yaml \
           econet_tankless_water_heater.yaml
-
     concurrency:
       group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
       cancel-in-progress: true
