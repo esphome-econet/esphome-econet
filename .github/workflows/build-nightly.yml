@@ -1,0 +1,33 @@
+---
+name: Build Firmware
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  build:
+    name: Build Firmware
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+      - name: Install Dependencies
+        run: pip install --user -r ./requirements.txt
+      - name: Compile Release Firmware
+        run: |
+          esphome compile \
+          econet_heatpump_water_heater.yaml  \
+          econet_hvac.yaml \
+          econet_tankless_water_heater.yaml
+      - name: Create Issue on Failure
+        if: failure()
+        uses: JasonEtco/create-an-issue@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_LINK: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        with:
+          filename: .github/nightly-build-failure-issue-template.md
+          update_existing: true
