@@ -8,12 +8,12 @@ Rheem Heat Pump Water Heaters, Tankless Hot Water Heaters, and HVAC Systems are 
 
 ## Suggested Hardware Setup
 
-For a simple and proven platform on which to run this package, you will need an RS485 interface, and an ESP32 board. These are available as follows:
+For a simple and proven platform on which to run this package you will need an RS485 interface and an ESP32 board. These are available as follows:
 
 - One M5Stack ATOM RS485 K045 Kit: [mouser](https://www.mouser.com/ProductDetail/M5Stack/K045?qs=81r%252BiQLm7BQ2ho0A5VkoNw%3D%3D) has them while stock is available. M5Stack has discontinued the combined K045 Package.
-- Or, the same thing, but ordered as two separate parts, the M5Stack *A131 RS485 Base* [M5Stack A131](https://shop.m5stack.com/products/atomic-rs485-base) and the M5Stack *C008 Atom Lite* [M5Stack C008](https://shop.m5stack.com/products/atom-lite-esp32-development-kit?variant=32259605200986).
+- Or, the same thing, but ordered as two separate parts: The M5Stack *A131 RS485 Base* [M5Stack A131](https://shop.m5stack.com/products/atomic-rs485-base) and the M5Stack *C008 Atom Lite* [M5Stack C008](https://shop.m5stack.com/products/atom-lite-esp32-development-kit?variant=32259605200986).
   - Both Digikey and Mouser have the Atom. The RS485 Base is not available from either vendor as of this update. 
-    - [Digikey C008](https://www.digikey.com/en/products/detail/m5stack-technology-co-ltd/C008/12088545) (Never mind the wrong image Digikey displays, see the datasheet)
+    - [Digikey C008](https://www.digikey.com/en/products/detail/m5stack-technology-co-ltd/C008/12088545) (Never mind the image Digikey displays, see the datasheet)
     - [Mouser C008](https://www.mouser.com/ProductDetail/M5Stack/C008?qs=sGAEpiMZZMuqBwn8WqcFUj1SFkunHY10TJ3jnDGC7E4NSjPubczP2Q%3D%3D)
 
 - One cable: [digikey](https://www.digikey.com/en/products/detail/assmann-wsw-components/AT-S-26-6-4-S-7-OE/1972674) or [mouser](https://www.mouser.com/ProductDetail/Bel/BC-64SS007F?qs=wnTfsH77Xs4cyAAV7TLsUQ%3D%3D), or any other similar RJ11/12 cable as long as it is 6P/6C or 6P/4C (we only need 3 wires for this but the 6 wire version is fine too)
