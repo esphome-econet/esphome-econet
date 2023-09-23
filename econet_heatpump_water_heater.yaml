@@ -68,7 +68,7 @@ climate:
       temperature_step: 1.0f
 
 sensor:
-  - platform: econet
+  - platform: econete
     name: "Hot Water"
     sensor_datapoint: HOTWATER
     unit_of_measurement: "%"
