@@ -14,11 +14,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
       - name: Install ESPHome
-        run: pip install --user esphome
+        run: pip install --upgrade esphome
       - name: Compile Release Firmware
         run: |
-          esphome compile \
+          esphome -s external_components_source components compile \
           econet_heatpump_water_heater.yaml  \
           econet_hvac.yaml \
           econet_tankless_water_heater.yaml
