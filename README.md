@@ -1,3 +1,4 @@
+[![Nightly Build](https://github.com/esphome-econet/esphome-econet/actions/workflows/build-nightly.yml/badge.svg)](https://github.com/esphome-econet/esphome-econet/actions/workflows/build-nightly.yml)
 # esphome-econet
 
 This ESPHome package creates a local network connection to econet-based device, like a Rheem Heat Pump Water Heater (HPWH), and creates entities in Home Assistant to control and monitor these devices.  This package provides more detailed and reliable sensors than Rheem's cloud-based [econet integration](https://www.home-assistant.io/integrations/econet/) available in Home Assistant.  This package and the Rheem econet integration can, however, coexist if desired.
