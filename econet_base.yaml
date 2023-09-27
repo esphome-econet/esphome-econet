@@ -57,10 +57,3 @@ sensor:
   - platform: wifi_signal
     name: "WiFi Signal Strength"
     entity_category: "diagnostic"
-
-text_sensor:
-  - platform: version
-    name: "ESPHome Version"
-    hide_timestamp: true
-    icon: "mdi:package"
-    entity_category: "diagnostic"
