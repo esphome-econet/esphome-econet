@@ -53,12 +53,6 @@ econet:
   uart_id: uart_0
   update_interval: ${econet_update_interval}
 
-binary_sensor:
-  - platform: econet
-    name: "Active Alerts"
-    sensor_datapoint: ALRMALRT
-    device_class: "problem"
-
 sensor:
   - platform: wifi_signal
     name: "WiFi Signal Strength"
