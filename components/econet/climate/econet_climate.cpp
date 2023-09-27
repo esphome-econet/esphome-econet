@@ -76,11 +76,12 @@ void EconetClimate::setup() {
       this->target_temperature = fahrenheit_to_celsius(datapoint.value_float);
       this->publish_state();
     });
-    this->parent_->register_listener(model_type == MODEL_TYPE_HEATPUMP ? "UPHTRTMP" : "TEMP_OUT",
-                                     [this](const EconetDatapoint &datapoint) {
-                                       this->current_temperature = fahrenheit_to_celsius(datapoint.value_float);
-                                       this->publish_state();
-                                     });
+    this->parent_->register_listener(
+        (model_type == MODEL_TYPE_HEATPUMP || model_type == MODEL_TYPE_ELECTRIC_TANK) ? "UPHTRTMP" : "TEMP_OUT",
+        [this](const EconetDatapoint &datapoint) {
+          this->current_temperature = fahrenheit_to_celsius(datapoint.value_float);
+          this->publish_state();
+        });
   }
   if (model_type == MODEL_TYPE_HVAC) {
     this->parent_->register_listener("STATMODE", [this](const EconetDatapoint &datapoint) {

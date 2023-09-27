@@ -11,6 +11,7 @@ static const uint32_t REQUEST_DELAY = 100;
 static const uint32_t WIFI_MODULE = 0x340;
 static const uint32_t SMARTEC_TRANSLATOR = 0x1040;
 static const uint32_t HEAT_PUMP_WATER_HEATER = 0x1280;
+static const uint32_t ELECTRIC_TANK_WATER_HEATER = 0x1200;
 static const uint32_t CONTROL_CENTER = 0x380;
 
 static const uint8_t DST_ADR_POS = 0;
@@ -170,6 +171,8 @@ void Econet::make_request_() {
   if (!dst_adr) {
     if (model_type_ == MODEL_TYPE_HEATPUMP) {
       dst_adr = HEAT_PUMP_WATER_HEATER;
+    } else if (model_type_ == MODEL_TYPE_ELECTRIC_TANK) {
+      dst_adr = ELECTRIC_TANK_WATER_HEATER;
     } else if (model_type_ == MODEL_TYPE_HVAC) {
       dst_adr = CONTROL_CENTER;
     } else {
