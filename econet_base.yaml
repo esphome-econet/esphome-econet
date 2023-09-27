@@ -1,0 +1,72 @@
+---
+substitutions:
+  name: "econet"
+  friendly_name: "Econet Device"
+  device_description: "Rheem Device"
+  tx_pin: GPIO19
+  rx_pin: GPIO22
+  platform: esp32
+  board: esp32dev
+  external_components_source: github://esphome-econet/esphome-econet@main
+  logger_level: WARN
+  econet_update_interval: 30s
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  comment: ${device_description}
+  min_version: "2023.2.0"
+  platform: $platform
+  board: $board
+  project:
+    name: "esphome-econet.esphome-econet"
+    version: 0.3.0
+
+preferences:
+  flash_write_interval: "24h"
+
+wifi:
+  ap:
+
+captive_portal:
+
+api:
+
+ota:
+
+logger:
+  baud_rate: 0  # Make sure logging is not using the serial port
+  level: ${logger_level}
+  tx_buffer_size: 2000
+
+external_components:
+  - source: ${external_components_source}
+
+uart:
+  id: uart_0
+  baud_rate: 38400
+  rx_buffer_size: 1500
+  tx_pin: ${tx_pin}
+  rx_pin: ${rx_pin}
+
+econet:
+  uart_id: uart_0
+  update_interval: ${econet_update_interval}
+
+binary_sensor:
+  - platform: econet
+    name: "Active Alerts"
+    sensor_datapoint: ALRMALRT
+    device_class: "problem"
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal Strength"
+    entity_category: "diagnostic"
+
+text_sensor:
+  - platform: version
+    name: "ESPHome Version"
+    hide_timestamp: true
+    icon: "mdi:package"
+    entity_category: "diagnostic"
