@@ -3,61 +3,17 @@ substitutions:
   name: "econet-hpwh"
   friendly_name: "Water Heater"
   device_description: "Rheem Heat Pump Water Heater"
-  tx_pin: GPIO19
-  rx_pin: GPIO22
-  platform: esp32
-  board: esp32dev
-  external_components_source: github://esphome-econet/esphome-econet@main
-  logger_level: WARN
-  econet_update_interval: 30s
   sensor_power_filters_lambda: return x;
 
-esphome:
-  name: ${name}
-  friendly_name: ${friendly_name}
-  comment: ${device_description}
-  min_version: "2023.2.0"
-  platform: $platform
-  board: $board
-  project:
-    name: "esphome-econet.esphome-econet"
-    version: 0.3.0
+packages:
+  econet: !include econet_base.yaml
 
 dashboard_import:
   package_import_url: github://esphome-econet/esphome-econet/econet_heatpump_water_heater.yaml@main
   import_full_config: false
 
-preferences:
-  flash_write_interval: "24h"
-
-wifi:
-  ap:
-
-captive_portal:
-
-api:
-
-ota:
-
-logger:
-  baud_rate: 0  # Make sure logging is not using the serial port
-  level: ${logger_level}
-  tx_buffer_size: 2000
-
-external_components:
-  - source: ${external_components_source}
-
-uart:
-  id: uart_0
-  baud_rate: 38400
-  rx_buffer_size: 1500
-  tx_pin: ${tx_pin}
-  rx_pin: ${rx_pin}
-
 econet:
-  uart_id: uart_0
   model: "Heatpump"
-  update_interval: ${econet_update_interval}
 
 climate:
   - platform: econet
@@ -132,9 +88,6 @@ sensor:
     accuracy_decimals: 1
     device_class: "temperature"
     state_class: "measurement"
-    entity_category: "diagnostic"
-  - platform: wifi_signal
-    name: "WiFi Signal Strength"
     entity_category: "diagnostic"
 
 binary_sensor:
