@@ -20,7 +20,7 @@ esphome:
   board: $board
   project:
     name: "esphome-econet.esphome-econet"
-    version: 0.3.0
+    version: 1.0.0
 
 preferences:
   flash_write_interval: "24h"
@@ -54,6 +54,12 @@ econet:
   update_interval: ${econet_update_interval}
 
 sensor:
+  - platform: econet
+    name: "Active Alerts"
+    sensor_datapoint: ALRMALRT
+    accuracy_decimals: 0
+    icon: "mdi:water-boiler-alert"
+    state_class: "measurement"
   - platform: wifi_signal
     name: "WiFi Signal Strength"
     entity_category: "diagnostic"
