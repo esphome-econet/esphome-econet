@@ -21,6 +21,7 @@ jobs:
       - name: Compile Release Firmware
         run: |
           esphome -s external_components_source components compile \
+          econet_electric_tank_water_heater.yaml \
           econet_heatpump_water_heater.yaml  \
           econet_hvac.yaml \
           econet_tankless_water_heater.yaml
