@@ -60,7 +60,6 @@ sensor:
     accuracy_decimals: 0
     icon: "mdi:water-boiler-alert"
     state_class: "measurement"
-    entity_category: "diagnostic"
   - platform: wifi_signal
     name: "WiFi Signal Strength"
     entity_category: "diagnostic"
