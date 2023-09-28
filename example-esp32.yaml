@@ -11,6 +11,9 @@ packages:
     ref: main
     # Change this file to the correct one for your device
     file: econet_heatpump_water_heater.yaml
+    # file: econet_hvac.yaml
+    # file: econet_tankless_water_heater.yaml
+    # file: econet_electric_tank_water_heater.yaml
 
 wifi:
   ssid: !secret wifi_ssid
