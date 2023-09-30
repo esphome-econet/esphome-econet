@@ -3,7 +3,6 @@ substitutions:
   name: "econet-etwh"
   friendly_name: "Water Heater"
   device_description: "Rheem Electric Tank Water Heater"
-  sensor_power_filters_lambda: return x;
 
 packages:
   econet: !include econet_base.yaml
@@ -25,13 +24,6 @@ climate:
 
 sensor:
   - platform: econet
-    name: "Hot Water"
-    sensor_datapoint: HOTWATER
-    unit_of_measurement: "%"
-    accuracy_decimals: 0
-    device_class: "moisture"
-    state_class: "measurement"
-  - platform: econet
     name: "Lower Tank Temperature"
     sensor_datapoint: LOHTRTMP
     unit_of_measurement: "°F"
@@ -47,19 +39,13 @@ sensor:
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
-  - platform: econet
-    name: "Power"
-    sensor_datapoint: POWRWATT
-    unit_of_measurement: "W"
-    accuracy_decimals: 3
-    device_class: "power"
-    state_class: "measurement"
-    entity_category: "diagnostic"
-    filters:
-      - lambda: ${sensor_power_filters_lambda}
 
 text_sensor:
   - platform: econet
     name: "Heating Element State"
     sensor_datapoint: HEATCTRL
     icon: "mdi:heating-coil"
+  - platform: econet
+    name: "Mode"
+    sensor_datapoint: WHTRMODE
+    entity_category: "diagnostic"

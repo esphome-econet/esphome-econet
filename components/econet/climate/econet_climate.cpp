@@ -25,22 +25,25 @@ void EconetClimate::dump_config() {
 }
 
 climate::ClimateTraits EconetClimate::traits() {
+  ModelType model_type = this->parent_->get_model_type();
   auto traits = climate::ClimateTraits();
 
   traits.set_supports_action(false);
 
-  if (this->parent_->get_model_type() == MODEL_TYPE_HVAC) {
+  if (model_type == MODEL_TYPE_HVAC) {
     traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_COOL, climate::CLIMATE_MODE_HEAT,
                                 climate::CLIMATE_MODE_HEAT_COOL, climate::CLIMATE_MODE_FAN_ONLY});
   } else {
     traits.set_supported_modes({climate::CLIMATE_MODE_OFF, climate::CLIMATE_MODE_AUTO});
   }
 
-  if (this->parent_->get_model_type() == MODEL_TYPE_HEATPUMP) {
+  if (model_type == MODEL_TYPE_HEATPUMP) {
     traits.set_supported_custom_presets({"Off", "Eco Mode", "Heat Pump", "High Demand", "Electric", "Vacation"});
+  } else if (model_type == MODEL_TYPE_ELECTRIC_TANK) {
+    traits.set_supported_custom_presets({"Energy Saver", "Performance"});
   }
   traits.set_supports_current_temperature(true);
-  if (this->parent_->get_model_type() == MODEL_TYPE_HVAC) {
+  if (model_type == MODEL_TYPE_HVAC) {
     traits.set_supported_custom_fan_modes({"Automatic", "Speed 1 (Low)", "Speed 2 (Medium Low)", "Speed 3 (Medium)",
                                            "Speed 4 (Medium High)", "Speed 5 (High)"});
 
@@ -158,8 +161,18 @@ void EconetClimate::setup() {
         case 5:
           this->set_custom_preset_("Vacation");
           break;
-        default:
-          this->set_custom_preset_("Off");
+      }
+      this->publish_state();
+    });
+  } else if (model_type == MODEL_TYPE_ELECTRIC_TANK) {
+    this->parent_->register_listener("WHTRCNFG", [this](const EconetDatapoint &datapoint) {
+      switch (datapoint.value_enum) {
+        case 0:
+          this->set_custom_preset_("Energy Saver");
+          break;
+        case 1:
+          this->set_custom_preset_("Performance");
+          break;
       }
       this->publish_state();
     });
@@ -167,6 +180,7 @@ void EconetClimate::setup() {
 }
 
 void EconetClimate::control(const climate::ClimateCall &call) {
+  ModelType model_type = this->parent_->get_model_type();
   if (call.get_target_temperature_low().has_value()) {
     this->parent_->set_float_datapoint_value("HEATSETP",
                                              celsius_to_fahrenheit(call.get_target_temperature_low().value()));
@@ -183,7 +197,7 @@ void EconetClimate::control(const climate::ClimateCall &call) {
 
   if (call.get_mode().has_value()) {
     climate::ClimateMode climate_mode = call.get_mode().value();
-    if (this->parent_->get_model_type() == MODEL_TYPE_HVAC) {
+    if (model_type == MODEL_TYPE_HVAC) {
       uint8_t new_mode = 0;
 
       switch (climate_mode) {
@@ -242,18 +256,26 @@ void EconetClimate::control(const climate::ClimateCall &call) {
 
     int8_t new_mode = -1;
 
-    if (preset == "Off") {
-      new_mode = 0;
-    } else if (preset == "Eco Mode") {
-      new_mode = 1;
-    } else if (preset == "Heat Pump") {
-      new_mode = 2;
-    } else if (preset == "High Demand") {
-      new_mode = 3;
-    } else if (preset == "Electric") {
-      new_mode = 4;
-    } else if (preset == "Vacation") {
-      new_mode = 5;
+    if (model_type == MODEL_TYPE_HEATPUMP) {
+      if (preset == "Off") {
+        new_mode = 0;
+      } else if (preset == "Eco Mode") {
+        new_mode = 1;
+      } else if (preset == "Heat Pump") {
+        new_mode = 2;
+      } else if (preset == "High Demand") {
+        new_mode = 3;
+      } else if (preset == "Electric") {
+        new_mode = 4;
+      } else if (preset == "Vacation") {
+        new_mode = 5;
+      }
+    } else if (model_type == MODEL_TYPE_ELECTRIC_TANK) {
+      if (preset == "Energy Saver") {
+        new_mode = 0;
+      } else if (preset == "Performance") {
+        new_mode = 1;
+      }
     }
 
     if (new_mode != -1) {
