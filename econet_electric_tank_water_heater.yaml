@@ -3,7 +3,6 @@ substitutions:
   name: "econet-etwh"
   friendly_name: "Water Heater"
   device_description: "Rheem Electric Tank Water Heater"
-  sensor_power_filters_lambda: return x;
 
 packages:
   econet: !include econet_base.yaml
@@ -40,16 +39,6 @@ sensor:
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
-  - platform: econet
-    name: "Power"
-    sensor_datapoint: POWRWATT
-    unit_of_measurement: "W"
-    accuracy_decimals: 3
-    device_class: "power"
-    state_class: "measurement"
-    entity_category: "diagnostic"
-    filters:
-      - lambda: ${sensor_power_filters_lambda}
 
 text_sensor:
   - platform: econet
