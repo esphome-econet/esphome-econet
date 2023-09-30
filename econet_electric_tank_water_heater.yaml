@@ -56,3 +56,7 @@ text_sensor:
     name: "Heating Element State"
     sensor_datapoint: HEATCTRL
     icon: "mdi:heating-coil"
+  - platform: econet
+    name: "Mode"
+    sensor_datapoint: WHTRMODE
+    entity_category: "diagnostic"
