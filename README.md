@@ -4,7 +4,7 @@ This [ESPHome](https://esphome.io) package creates a local network connection to
 
 ## Supported Rheem Hardware
 
-Rheem Heat Pump Water Heaters, Tankless Hot Water Heaters, and HVAC Systems are supported. Electric Water Heater support is currently under development.
+Rheem Heat Pump Water Heaters, Tankless Water Heaters, Electric Tank Water Heaters, and HVAC Systems are supported.
 
 ## Suggested Hardware Setup
 
@@ -68,6 +68,7 @@ You will also need to update the `packages -> econet -> file` entry with the nam
 
 * **Heatpump Water Heaters**: `econet_heatpump_water_heater.yaml`
 * **Tankless Water Heaters**: `econet_tankless_water_heater.yaml`
+* **Electric Tank Water Heaters**: `econet_electric_tank_water_heater.yaml`
 * **HVAC Systems**: `econet_hvac.yaml`
 
 If you are using hardware other than the kit recommended above, you may also need to update the GPIO Pin fields. See the individual device configuration files for more customizeable options.
