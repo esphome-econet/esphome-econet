@@ -4,12 +4,11 @@ substitutions:
   rx_pin: GPIO22
   platform: esp32
   board: esp32dev
-  github_ref: main
 
 packages:
   econet:
     url: https://github.com/esphome-econet/esphome-econet
-    ref: ${github_ref}
+    ref: main
     # Change this file to the correct one for your device
     file: econet_heatpump_water_heater.yaml
     # file: econet_hvac.yaml

@@ -8,7 +8,7 @@ substitutions:
   platform: esp32
   board: esp32dev
   github_ref: main
-  external_components_source: github:/esphome-econet/esphome-econet@${github_ref}
+  external_components_source: github://esphome-econet/esphome-econet@${github_ref}
   logger_level: WARN
   econet_update_interval: 30s
 
