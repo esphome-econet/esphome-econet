@@ -108,7 +108,7 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<uint8_t> rx_message_;
   std::vector<uint8_t> tx_message_;
 
-  uint32_t dst_adr_ = 0;
+  uint32_t dst_adr_{0};
 };
 
 class EconetClient {
@@ -118,7 +118,7 @@ class EconetClient {
 
  protected:
   Econet *parent_;
-  bool listen_only_ = false;
+  bool listen_only_{false};
 };
 
 }  // namespace econet
