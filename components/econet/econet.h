@@ -102,7 +102,6 @@ class Econet : public Component, public uart::UARTDevice {
   uint8_t request_mods_{1};
   std::map<std::string, EconetDatapoint> datapoints_;
   std::map<std::string, EconetDatapoint> pending_writes_;
-  std::map<std::string, EconetDatapoint> pending_confirmation_writes_;
 
   uint32_t read_requests_{0};
   uint32_t last_request_{0};

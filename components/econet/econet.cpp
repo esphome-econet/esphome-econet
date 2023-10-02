@@ -205,7 +205,6 @@ void Econet::make_request_() {
         ESP_LOGW(TAG, "Unexpected pending write: datapoint %s", kv->first.c_str());
         break;
     }
-    pending_confirmation_writes_[kv->first] = kv->second;
     pending_writes_.erase(kv->first);
     return;
   }
@@ -372,8 +371,7 @@ void Econet::loop() {
   }
 
   // Quickly send writes but delay reads.
-  if (!pending_writes_.empty() || !pending_confirmation_writes_.empty() ||
-      (now - this->last_request_ > this->update_interval_millis_ / request_mods_)) {
+  if (!pending_writes_.empty() || (now - this->last_request_ > this->update_interval_millis_ / request_mods_)) {
     ESP_LOGI(TAG, "request ms=%d", now);
     this->last_request_ = now;
     this->make_request_();
@@ -482,15 +480,6 @@ void Econet::set_datapoint_(const std::string &datapoint_id, const EconetDatapoi
 
 void Econet::send_datapoint_(const std::string &datapoint_id, const EconetDatapoint &value, bool skip_update_state) {
   if (!skip_update_state) {
-    if (pending_confirmation_writes_.count(datapoint_id) == 1) {
-      if (value == pending_confirmation_writes_[datapoint_id]) {
-        ESP_LOGV(TAG, "Confirmed write for datapoint %s", datapoint_id.c_str());
-      } else {
-        ESP_LOGW(TAG, "Retrying write for datapoint %s", datapoint_id.c_str());
-        pending_writes_[datapoint_id] = pending_confirmation_writes_[datapoint_id];
-      }
-      pending_confirmation_writes_.erase(datapoint_id);
-    }
     if (datapoints_.count(datapoint_id) == 1) {
       EconetDatapoint old_value = datapoints_[datapoint_id];
       if (old_value == value) {
