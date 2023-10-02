@@ -98,7 +98,7 @@ class Econet : public Component, public uart::UARTDevice {
   void write_value_(uint32_t dst_adr, uint32_t src_adr, const std::string &object, EconetDatapointType type,
                     float value);
 
-  std::vector<std::vector<std::string>> request_datapoint_ids_ = std::vector<std::vector<std::string>>(8);
+  std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(8);
   uint8_t request_mods_{1};
   std::map<std::string, EconetDatapoint> datapoints_;
   std::map<std::string, EconetDatapoint> pending_writes_;

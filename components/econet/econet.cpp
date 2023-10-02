@@ -405,7 +405,8 @@ void Econet::write_value_(uint32_t dst_adr, uint32_t src_adr, const std::string 
 
 void Econet::request_strings_(uint32_t dst_adr, uint32_t src_adr) {
   uint8_t request_mod = read_requests_++ % request_mods_;
-  const std::vector<std::string> &objects = request_datapoint_ids_[request_mod];
+  std::vector<std::string> objects(request_datapoint_ids_[request_mod].begin(),
+                                   request_datapoint_ids_[request_mod].end());
 
   std::vector<uint8_t> data;
 
@@ -499,10 +500,7 @@ void Econet::send_datapoint_(const std::string &datapoint_id, const EconetDatapo
 void Econet::register_listener(const std::string &datapoint_id, int8_t request_mod,
                                const std::function<void(EconetDatapoint)> &func) {
   if (request_mod >= 0 && request_mod < request_datapoint_ids_.size()) {
-    auto dids = &request_datapoint_ids_[request_mod];
-    if (std::find(dids->begin(), dids->end(), datapoint_id) == dids->end()) {
-      dids->push_back(datapoint_id);
-    }
+    request_datapoint_ids_[request_mod].insert(datapoint_id);
     request_mods_ = std::max(request_mods_, (uint8_t) (request_mod + 1));
   }
   auto listener = EconetDatapointListener{
