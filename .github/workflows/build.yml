@@ -18,6 +18,10 @@ jobs:
           python-version: "3.x"
       - name: Install ESPHome
         run: pip install --upgrade esphome
+      - name: Create Stub Secrets File
+        run: |
+          echo 'wifi_ssid: "STUB_SSID"' >> secrets.yaml
+          echo 'wifi_password: "STUB_PASSWORD"' >> secrets.yaml
       - name: Verify All Configurations
         run: |
           esphome -s external_components_source components config \
