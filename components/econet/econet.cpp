@@ -503,11 +503,9 @@ void Econet::send_datapoint_(const std::string &datapoint_id, const EconetDatapo
   }
 }
 
-void Econet::register_listener(const std::string &datapoint_id, const std::function<void(EconetDatapoint)> &func,
-                               bool is_raw_datapoint) {
-  // Don't issue a READ_COMMAND in request_strings_ for RAW datapoints. These need to be requested separately.
-  // For now rely on other devices, e.g. thermostat, requesting them.
-  if (!is_raw_datapoint) {
+void Econet::register_listener(const std::string &datapoint_id, bool listen_only,
+                               const std::function<void(EconetDatapoint)> &func) {
+  if (!listen_only) {
     datapoint_ids_.insert(datapoint_id);
   }
   auto listener = EconetDatapointListener{
