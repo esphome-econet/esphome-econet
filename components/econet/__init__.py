@@ -9,7 +9,6 @@ DEPENDENCIES = ["uart"]
 CONF_ON_DATAPOINT_UPDATE = "on_datapoint_update"
 CONF_DATAPOINT_TYPE = "datapoint_type"
 CONF_REQUEST_MOD = "request_mod"
-MAX_REQUEST_MOD = 7
 
 econet_ns = cg.esphome_ns.namespace("econet")
 Econet = econet_ns.class_("Econet", cg.Component, uart.UARTDevice)
@@ -49,7 +48,7 @@ MODEL_TYPES = {
 def request_mod(value):
     if isinstance(value, str) and value.lower() == "none":
         return -1
-    return cv.int_range(min=-1, max=MAX_REQUEST_MOD)(value)
+    return cv.int_range(min=0, max=7)(value)
 
 
 CONFIG_SCHEMA = (
