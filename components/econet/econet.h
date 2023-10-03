@@ -92,6 +92,7 @@ class Econet : public Component, public uart::UARTDevice {
   void parse_message_(bool is_tx);
   void parse_rx_message_();
   void parse_tx_message_();
+  void handle_response_(const std::string &datapoint_id, EconetDatapointType item_type, const uint8_t *p, uint8_t len);
 
   void transmit_message_(uint32_t dst_adr, uint32_t src_adr, uint8_t command, const std::vector<uint8_t> &data);
   void request_strings_(uint32_t dst_adr, uint32_t src_adr);
