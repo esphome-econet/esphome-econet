@@ -58,6 +58,7 @@ sensor:
   - platform: econet
     name: "Active Alerts"
     sensor_datapoint: ALRMALRT
+    request_mod: 1
     accuracy_decimals: 0
     icon: "mdi:water-boiler-alert"
     state_class: "measurement"
