@@ -20,8 +20,9 @@ class ReadRequest {
   uint32_t src_adr;
   uint8_t src_bus;
 
-  bool awaiting_res = false;
+  bool awaiting_res;
 
+  uint8_t type;
   std::vector<std::string> obj_names;
 };
 
@@ -77,7 +78,7 @@ class Econet : public Component, public uart::UARTDevice {
   void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value);
 
   void register_listener(const std::string &datapoint_id, int8_t request_mod,
-                         const std::function<void(EconetDatapoint)> &func);
+                         const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false);
 
  protected:
   ModelType model_type_;
@@ -100,6 +101,7 @@ class Econet : public Component, public uart::UARTDevice {
 
   std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(8);
   uint8_t request_mods_{1};
+  std::set<std::string> raw_datapoint_ids_;
   std::map<std::string, EconetDatapoint> datapoints_;
   std::map<std::string, EconetDatapoint> pending_writes_;
 
