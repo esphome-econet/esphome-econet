@@ -9,7 +9,13 @@ from esphome.const import (
     CONF_STEP,
 )
 
-from .. import CONF_ECONET_ID, ECONET_CLIENT_SCHEMA, EconetClient, econet_ns
+from .. import (
+    CONF_ECONET_ID,
+    CONF_REQUEST_MOD,
+    ECONET_CLIENT_SCHEMA,
+    EconetClient,
+    econet_ns,
+)
 
 DEPENDENCIES = ["econet"]
 
@@ -53,5 +59,5 @@ async def to_code(config):
 
     paren = await cg.get_variable(config[CONF_ECONET_ID])
     cg.add(var.set_econet_parent(paren))
-
+    cg.add(var.set_request_mod(config[CONF_REQUEST_MOD]))
     cg.add(var.set_number_id(config[CONF_NUMBER_DATAPOINT]))
