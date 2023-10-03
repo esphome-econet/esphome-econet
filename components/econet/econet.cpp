@@ -282,31 +282,15 @@ void Econet::parse_message_(bool is_tx) {
         uint8_t item_num = 0;
 
         while (tpos < data_len && item_num < read_req_.obj_names.size()) {
-          uint8_t item_len = pdata[tpos];
-          EconetDatapointType item_type = EconetDatapointType(pdata[tpos + 1] & 0x7F);
           const std::string &datapoint_id = read_req_.obj_names[item_num];
-
-          if (item_type == EconetDatapointType::FLOAT && tpos + 7 < data_len) {
-            float item_value = bytes_to_float(pdata + tpos + 4);
-            ESP_LOGI(TAG, "  %s : %f", datapoint_id.c_str(), item_value);
-            this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type, .value_float = item_value});
-          } else if (item_type == EconetDatapointType::TEXT && tpos + 4 < data_len) {
-            uint8_t item_text_len = item_len - 4;
-            if (item_text_len > 0 && tpos + 4 + item_text_len < data_len) {
-              std::string s = trim_trailing_whitespace((const char *) pdata + tpos + 4, item_text_len);
-              ESP_LOGI(TAG, "  %s : (%s)", datapoint_id.c_str(), s.c_str());
-              this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type, .value_string = s});
-            }
-          } else if (item_type == EconetDatapointType::ENUM_TEXT && tpos + 5 < data_len) {
-            uint8_t item_value = pdata[tpos + 4];
-            uint8_t item_text_len = pdata[tpos + 5];
-            if (item_text_len > 0 && tpos + 6 + item_text_len < data_len) {
-              std::string s = trim_trailing_whitespace((const char *) pdata + tpos + 6, item_text_len);
-              ESP_LOGI(TAG, "  %s : %d (%s)", datapoint_id.c_str(), item_value, s.c_str());
-              this->send_datapoint_(datapoint_id,
-                                    EconetDatapoint{.type = item_type, .value_enum = item_value, .value_string = s});
-            }
+          uint8_t item_len = pdata[tpos];
+          if (item_len <= 4 && tpos + item_len >= data_len) {
+            ESP_LOGE(TAG, "Unexpected length of %d for %s", item_len, datapoint_id.c_str());
+            break;
           }
+          EconetDatapointType item_type = EconetDatapointType(pdata[tpos + 1] & 0x7F);
+
+          handle_response_(datapoint_id, item_type, pdata + tpos + 4, item_len - 4 + 1);
           tpos += item_len + 1;
           item_num++;
         }
@@ -316,6 +300,38 @@ void Econet::parse_message_(bool is_tx) {
   } else if (command == WRITE_COMMAND) {
     // Update the address to use for subsequent requests.
     this->dst_adr_ = src_adr;
+  }
+}
+
+void Econet::handle_response_(const std::string &datapoint_id, EconetDatapointType item_type, const uint8_t *p,
+                              uint8_t len) {
+  if (item_type == EconetDatapointType::FLOAT) {
+    if (len != 4) {
+      ESP_LOGE(TAG, "Expected len of 4 but was %d for %s", len, datapoint_id.c_str());
+      return;
+    }
+    float item_value = bytes_to_float(p);
+    ESP_LOGI(TAG, "  %s : %f", datapoint_id.c_str(), item_value);
+    this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type, .value_float = item_value});
+  } else if (item_type == EconetDatapointType::TEXT) {
+    std::string s = trim_trailing_whitespace((const char *) p, len);
+    ESP_LOGI(TAG, "  %s : (%s)", datapoint_id.c_str(), s.c_str());
+    this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type, .value_string = s});
+  } else if (item_type == EconetDatapointType::ENUM_TEXT) {
+    if (len < 2) {
+      ESP_LOGE(TAG, "Expected len of at least 2 but was %d for %s", len, datapoint_id.c_str());
+      return;
+    }
+    uint8_t item_value = p[0];
+    uint8_t item_text_len = p[1];
+    if (item_text_len != len - 2) {
+      ESP_LOGE(TAG, "Expected text len of %d but was %d for %s", len - 2, item_text_len, datapoint_id.c_str());
+      return;
+    }
+    std::string s = trim_trailing_whitespace((const char *) p + 2, item_text_len);
+    ESP_LOGI(TAG, "  %s : %d (%s)", datapoint_id.c_str(), item_value, s.c_str());
+    this->send_datapoint_(datapoint_id,
+                          EconetDatapoint{.type = item_type, .value_enum = item_value, .value_string = s});
   }
 }
 
