@@ -60,7 +60,7 @@ sensor:
     sensor_datapoint: ALRMALRT
     request_mod: 1
     accuracy_decimals: 0
-    icon: "mdi:water-boiler-alert"
+    icon: "mdi:alert"
     state_class: "measurement"
   - platform: wifi_signal
     name: "WiFi Signal Strength"
@@ -71,23 +71,23 @@ text_sensor:
     name: "Alarm 1"
     sensor_datapoint: ALARM_01
     request_mod: 1
-    icon: "mdi:water-boiler-alert"
+    icon: "mdi:alert"
     entity_category: "diagnostic"
   - platform: econet
     name: "Alarm 2"
     sensor_datapoint: ALARM_02
     request_mod: 1
-    icon: "mdi:water-boiler-alert"
+    icon: "mdi:alert"
     entity_category: "diagnostic"
   - platform: econet
     name: "Alarm 3"
     sensor_datapoint: ALARM_03
     request_mod: 1
-    icon: "mdi:water-boiler-alert"
+    icon: "mdi:alert"
     entity_category: "diagnostic"
   - platform: econet
     name: "Alarm 4"
     sensor_datapoint: ALARM_04
     request_mod: 1
-    icon: "mdi:water-boiler-alert"
+    icon: "mdi:alert"
     entity_category: "diagnostic"
