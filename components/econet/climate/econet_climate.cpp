@@ -62,120 +62,129 @@ climate::ClimateTraits EconetClimate::traits() {
 void EconetClimate::setup() {
   ModelType model_type = this->parent_->get_model_type();
   if (model_type == MODEL_TYPE_HVAC) {
-    this->parent_->register_listener("HEATSETP", this->request_mod_, [this](const EconetDatapoint &datapoint) {
-      this->target_temperature_low = fahrenheit_to_celsius(datapoint.value_float);
-      this->publish_state();
-    });
-    this->parent_->register_listener("COOLSETP", this->request_mod_, [this](const EconetDatapoint &datapoint) {
-      this->target_temperature_high = fahrenheit_to_celsius(datapoint.value_float);
-      this->publish_state();
-    });
-    this->parent_->register_listener("SPT_STAT", this->request_mod_, [this](const EconetDatapoint &datapoint) {
-      this->current_temperature = fahrenheit_to_celsius(datapoint.value_float);
-      this->publish_state();
-    });
+    this->parent_->register_listener("HEATSETP", this->request_mod_, this->request_once_,
+                                     [this](const EconetDatapoint &datapoint) {
+                                       this->target_temperature_low = fahrenheit_to_celsius(datapoint.value_float);
+                                       this->publish_state();
+                                     });
+    this->parent_->register_listener("COOLSETP", this->request_mod_, this->request_once_,
+                                     [this](const EconetDatapoint &datapoint) {
+                                       this->target_temperature_high = fahrenheit_to_celsius(datapoint.value_float);
+                                       this->publish_state();
+                                     });
+    this->parent_->register_listener("SPT_STAT", this->request_mod_, this->request_once_,
+                                     [this](const EconetDatapoint &datapoint) {
+                                       this->current_temperature = fahrenheit_to_celsius(datapoint.value_float);
+                                       this->publish_state();
+                                     });
   } else {
-    this->parent_->register_listener("WHTRSETP", this->request_mod_, [this](const EconetDatapoint &datapoint) {
-      this->target_temperature = fahrenheit_to_celsius(datapoint.value_float);
-      this->publish_state();
-    });
+    this->parent_->register_listener("WHTRSETP", this->request_mod_, this->request_once_,
+                                     [this](const EconetDatapoint &datapoint) {
+                                       this->target_temperature = fahrenheit_to_celsius(datapoint.value_float);
+                                       this->publish_state();
+                                     });
     this->parent_->register_listener(
         (model_type == MODEL_TYPE_HEATPUMP || model_type == MODEL_TYPE_ELECTRIC_TANK) ? "UPHTRTMP" : "TEMP_OUT",
-        this->request_mod_, [this](const EconetDatapoint &datapoint) {
+        this->request_mod_, this->request_once_, [this](const EconetDatapoint &datapoint) {
           this->current_temperature = fahrenheit_to_celsius(datapoint.value_float);
           this->publish_state();
         });
   }
   if (model_type == MODEL_TYPE_HVAC) {
-    this->parent_->register_listener("STATMODE", this->request_mod_, [this](const EconetDatapoint &datapoint) {
-      switch (datapoint.value_enum) {
-        case 0:
-          this->mode = climate::CLIMATE_MODE_HEAT;
-          break;
-        case 1:
-          this->mode = climate::CLIMATE_MODE_COOL;
-          break;
-        case 2:
-          this->mode = climate::CLIMATE_MODE_HEAT_COOL;
-          break;
-        case 3:
-          this->mode = climate::CLIMATE_MODE_FAN_ONLY;
-          break;
-        case 4:
-          this->mode = climate::CLIMATE_MODE_OFF;
-          break;
-      }
-      this->publish_state();
-    });
-    this->parent_->register_listener("STATNFAN", this->request_mod_, [this](const EconetDatapoint &datapoint) {
-      switch (datapoint.value_enum) {
-        case 0:
-          this->set_custom_fan_mode_("Automatic");
-          break;
-        case 1:
-          this->set_custom_fan_mode_("Speed 1 (Low)");
-          break;
-        case 2:
-          this->set_custom_fan_mode_("Speed 2 (Medium Low)");
-          break;
-        case 3:
-          this->set_custom_fan_mode_("Speed 3 (Medium)");
-          break;
-        case 4:
-          this->set_custom_fan_mode_("Speed 4 (Medium High)");
-          break;
-        case 5:
-          this->set_custom_fan_mode_("Speed 5 (High)");
-          break;
-      }
-      this->publish_state();
-    });
+    this->parent_->register_listener("STATMODE", this->request_mod_, this->request_once_,
+                                     [this](const EconetDatapoint &datapoint) {
+                                       switch (datapoint.value_enum) {
+                                         case 0:
+                                           this->mode = climate::CLIMATE_MODE_HEAT;
+                                           break;
+                                         case 1:
+                                           this->mode = climate::CLIMATE_MODE_COOL;
+                                           break;
+                                         case 2:
+                                           this->mode = climate::CLIMATE_MODE_HEAT_COOL;
+                                           break;
+                                         case 3:
+                                           this->mode = climate::CLIMATE_MODE_FAN_ONLY;
+                                           break;
+                                         case 4:
+                                           this->mode = climate::CLIMATE_MODE_OFF;
+                                           break;
+                                       }
+                                       this->publish_state();
+                                     });
+    this->parent_->register_listener("STATNFAN", this->request_mod_, this->request_once_,
+                                     [this](const EconetDatapoint &datapoint) {
+                                       switch (datapoint.value_enum) {
+                                         case 0:
+                                           this->set_custom_fan_mode_("Automatic");
+                                           break;
+                                         case 1:
+                                           this->set_custom_fan_mode_("Speed 1 (Low)");
+                                           break;
+                                         case 2:
+                                           this->set_custom_fan_mode_("Speed 2 (Medium Low)");
+                                           break;
+                                         case 3:
+                                           this->set_custom_fan_mode_("Speed 3 (Medium)");
+                                           break;
+                                         case 4:
+                                           this->set_custom_fan_mode_("Speed 4 (Medium High)");
+                                           break;
+                                         case 5:
+                                           this->set_custom_fan_mode_("Speed 5 (High)");
+                                           break;
+                                       }
+                                       this->publish_state();
+                                     });
   } else {
-    this->parent_->register_listener("WHTRENAB", this->request_mod_, [this](const EconetDatapoint &datapoint) {
-      if (datapoint.value_enum == 1) {
-        this->mode = climate::CLIMATE_MODE_AUTO;
-      } else {
-        this->mode = climate::CLIMATE_MODE_OFF;
-      }
-      this->publish_state();
-    });
+    this->parent_->register_listener("WHTRENAB", this->request_mod_, this->request_once_,
+                                     [this](const EconetDatapoint &datapoint) {
+                                       if (datapoint.value_enum == 1) {
+                                         this->mode = climate::CLIMATE_MODE_AUTO;
+                                       } else {
+                                         this->mode = climate::CLIMATE_MODE_OFF;
+                                       }
+                                       this->publish_state();
+                                     });
   }
   if (model_type == MODEL_TYPE_HEATPUMP) {
-    this->parent_->register_listener("WHTRCNFG", this->request_mod_, [this](const EconetDatapoint &datapoint) {
-      switch (datapoint.value_enum) {
-        case 0:
-          this->set_custom_preset_("Off");
-          break;
-        case 1:
-          this->set_custom_preset_("Eco Mode");
-          break;
-        case 2:
-          this->set_custom_preset_("Heat Pump");
-          break;
-        case 3:
-          this->set_custom_preset_("High Demand");
-          break;
-        case 4:
-          this->set_custom_preset_("Electric");
-          break;
-        case 5:
-          this->set_custom_preset_("Vacation");
-          break;
-      }
-      this->publish_state();
-    });
+    this->parent_->register_listener("WHTRCNFG", this->request_mod_, this->request_once_,
+                                     [this](const EconetDatapoint &datapoint) {
+                                       switch (datapoint.value_enum) {
+                                         case 0:
+                                           this->set_custom_preset_("Off");
+                                           break;
+                                         case 1:
+                                           this->set_custom_preset_("Eco Mode");
+                                           break;
+                                         case 2:
+                                           this->set_custom_preset_("Heat Pump");
+                                           break;
+                                         case 3:
+                                           this->set_custom_preset_("High Demand");
+                                           break;
+                                         case 4:
+                                           this->set_custom_preset_("Electric");
+                                           break;
+                                         case 5:
+                                           this->set_custom_preset_("Vacation");
+                                           break;
+                                       }
+                                       this->publish_state();
+                                     });
   } else if (model_type == MODEL_TYPE_ELECTRIC_TANK) {
-    this->parent_->register_listener("WHTRCNFG", this->request_mod_, [this](const EconetDatapoint &datapoint) {
-      switch (datapoint.value_enum) {
-        case 0:
-          this->set_custom_preset_("Energy Saver");
-          break;
-        case 1:
-          this->set_custom_preset_("Performance");
-          break;
-      }
-      this->publish_state();
-    });
+    this->parent_->register_listener("WHTRCNFG", this->request_mod_, this->request_once_,
+                                     [this](const EconetDatapoint &datapoint) {
+                                       switch (datapoint.value_enum) {
+                                         case 0:
+                                           this->set_custom_preset_("Energy Saver");
+                                           break;
+                                         case 1:
+                                           this->set_custom_preset_("Performance");
+                                           break;
+                                       }
+                                       this->publish_state();
+                                     });
   }
 }
 
