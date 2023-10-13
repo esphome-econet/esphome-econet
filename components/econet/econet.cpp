@@ -301,7 +301,9 @@ void Econet::parse_message_(bool is_tx) {
     // Update the address to use for subsequent requests.
     this->dst_adr_ = src_adr;
 
-    if (pdata[0] == 1 && pdata[1] == 1) {
+    uint8_t type = pdata[0];
+    ESP_LOGI(TAG, "  ClssType: %d", type);
+    if (type == 1 && pdata[1] == 1) {
       EconetDatapointType datatype = EconetDatapointType(pdata[2]);
       if (datatype == EconetDatapointType::FLOAT || datatype == EconetDatapointType::ENUM_TEXT) {
         if (data_len == 18) {
