@@ -290,7 +290,6 @@ void Econet::parse_message_(bool is_tx) {
             break;
           }
           EconetDatapointType item_type = EconetDatapointType(pdata[tpos + 1] & 0x7F);
-
           handle_response_(datapoint_id, item_type, pdata + tpos + 4, item_len - 4 + 1);
           tpos += item_len + 1;
           item_num++;
@@ -301,6 +300,19 @@ void Econet::parse_message_(bool is_tx) {
   } else if (command == WRITE_COMMAND) {
     // Update the address to use for subsequent requests.
     this->dst_adr_ = src_adr;
+
+    if (pdata[0] == 1 && pdata[1] == 1) {
+      EconetDatapointType datatype = EconetDatapointType(pdata[2]);
+      if (datatype == EconetDatapointType::FLOAT || datatype == EconetDatapointType::ENUM_TEXT) {
+        if (data_len == 18) {
+          std::string s((const char *) pdata + 6, 8);
+          float item_value = bytes_to_float(pdata + 6 + 8);
+          ESP_LOGI(TAG, "  %s: %f", s.c_str(), item_value);
+        } else {
+          ESP_LOGI(TAG, "  Unexpected Write Data Length", datatype);
+        }
+      }
+    }
   }
 }
 
