@@ -91,3 +91,10 @@ text_sensor:
     request_mod: 1
     icon: "mdi:alert"
     entity_category: "diagnostic"
+  - platform: econet
+    name: "Software Version Number"
+    sensor_datapoint: SW_VERSN
+    request_mod: 2
+    request_once: true
+    icon: "mdi:information-box"
+    entity_category: "diagnostic"
