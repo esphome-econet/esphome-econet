@@ -441,6 +441,14 @@ void Econet::request_strings_(uint32_t dst_adr, uint32_t src_adr) {
   uint8_t request_mod = read_requests_++ % request_mods_;
   std::vector<std::string> objects(request_datapoint_ids_[request_mod].begin(),
                                    request_datapoint_ids_[request_mod].end());
+  std::vector<std::string>::iterator iter;
+  for (iter = objects.begin(); iter != objects.end();) {
+    if (request_once_datapoint_ids_.count(*iter) == 1 && datapoints_.count(*iter) == 1) {
+      iter = objects.erase(iter);
+    } else {
+      ++iter;
+    }
+  }
   if (objects.empty()) {
     return;
   }
@@ -527,11 +535,14 @@ void Econet::send_datapoint_(const std::string &datapoint_id, const EconetDatapo
   }
 }
 
-void Econet::register_listener(const std::string &datapoint_id, int8_t request_mod,
+void Econet::register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
                                const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint) {
   if (request_mod >= 0 && request_mod < request_datapoint_ids_.size()) {
     request_datapoint_ids_[request_mod].insert(datapoint_id);
     request_mods_ = std::max(request_mods_, (uint8_t) (request_mod + 1));
+    if (request_once) {
+      request_once_datapoint_ids_.insert(datapoint_id);
+    }
   }
   if (is_raw_datapoint) {
     raw_datapoint_ids_.insert(datapoint_id);

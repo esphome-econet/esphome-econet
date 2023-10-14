@@ -108,10 +108,14 @@ text_sensor:
   - platform: econet
     name: "Model Number"
     sensor_datapoint: PRODMODN
+    request_mod: 2
+    request_once: true
     icon: "mdi:information-box"
     entity_category: "diagnostic"
   - platform: econet
     name: "Serial Number"
     sensor_datapoint: PRODSERN
+    request_mod: 2
+    request_once: true
     icon: "mdi:information-box"
     entity_category: "diagnostic"

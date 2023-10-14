@@ -77,7 +77,7 @@ class Econet : public Component, public uart::UARTDevice {
   void set_float_datapoint_value(const std::string &datapoint_id, float value);
   void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value);
 
-  void register_listener(const std::string &datapoint_id, int8_t request_mod,
+  void register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
                          const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false);
 
  protected:
@@ -103,6 +103,7 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(8);
   uint8_t request_mods_{1};
   std::set<std::string> raw_datapoint_ids_;
+  std::set<std::string> request_once_datapoint_ids_;
   std::map<std::string, EconetDatapoint> datapoints_;
   std::map<std::string, EconetDatapoint> pending_writes_;
 
@@ -119,10 +120,12 @@ class EconetClient {
  public:
   void set_econet_parent(Econet *parent) { this->parent_ = parent; }
   void set_request_mod(int8_t request_mod) { this->request_mod_ = request_mod; }
+  void set_request_once(bool request_once) { this->request_once_ = request_once; }
 
  protected:
   Econet *parent_;
   int8_t request_mod_{0};
+  bool request_once_{false};
 };
 
 }  // namespace econet

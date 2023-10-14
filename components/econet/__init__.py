@@ -9,6 +9,7 @@ DEPENDENCIES = ["uart"]
 CONF_ON_DATAPOINT_UPDATE = "on_datapoint_update"
 CONF_DATAPOINT_TYPE = "datapoint_type"
 CONF_REQUEST_MOD = "request_mod"
+CONF_REQUEST_ONCE = "request_once"
 
 econet_ns = cg.esphome_ns.namespace("econet")
 Econet = econet_ns.class_("Econet", cg.Component, uart.UARTDevice)
@@ -80,6 +81,7 @@ ECONET_CLIENT_SCHEMA = cv.Schema(
     {
         cv.GenerateID(CONF_ECONET_ID): cv.use_id(Econet),
         cv.Optional(CONF_REQUEST_MOD, default=0): request_mod,
+        cv.Optional(CONF_REQUEST_ONCE, default=False): cv.boolean,
     }
 )
 
