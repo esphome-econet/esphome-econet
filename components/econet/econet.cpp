@@ -491,23 +491,18 @@ void Econet::set_datapoint_(const std::string &datapoint_id, const EconetDatapoi
     }
   }
   pending_writes_[datapoint_id] = value;
-  if (rx_message_.empty()) {
-    make_request_();
-  }
-  send_datapoint_(datapoint_id, value, true);
+  send_datapoint_(datapoint_id, value);
 }
 
-void Econet::send_datapoint_(const std::string &datapoint_id, const EconetDatapoint &value, bool skip_update_state) {
-  if (!skip_update_state) {
-    if (datapoints_.count(datapoint_id) == 1) {
-      EconetDatapoint old_value = datapoints_[datapoint_id];
-      if (old_value == value) {
-        ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", datapoint_id.c_str());
-        return;
-      }
+void Econet::send_datapoint_(const std::string &datapoint_id, const EconetDatapoint &value) {
+  if (datapoints_.count(datapoint_id) == 1) {
+    EconetDatapoint old_value = datapoints_[datapoint_id];
+    if (old_value == value) {
+      ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", datapoint_id.c_str());
+      return;
     }
-    datapoints_[datapoint_id] = value;
   }
+  datapoints_[datapoint_id] = value;
   for (auto &listener : this->listeners_) {
     if (listener.datapoint_id == datapoint_id) {
       listener.on_datapoint(value);
