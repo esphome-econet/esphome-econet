@@ -290,7 +290,6 @@ void Econet::parse_message_(bool is_tx) {
             break;
           }
           EconetDatapointType item_type = EconetDatapointType(pdata[tpos + 1] & 0x7F);
-
           handle_response_(datapoint_id, item_type, pdata + tpos + 4, item_len - 4 + 1);
           tpos += item_len + 1;
           item_num++;
@@ -301,6 +300,24 @@ void Econet::parse_message_(bool is_tx) {
   } else if (command == WRITE_COMMAND) {
     // Update the address to use for subsequent requests.
     this->dst_adr_ = src_adr;
+
+    uint8_t type = pdata[0];
+    ESP_LOGI(TAG, "  ClssType: %d", type);
+    if (type == 1 && pdata[1] == 1) {
+      EconetDatapointType datatype = EconetDatapointType(pdata[2]);
+      if (datatype == EconetDatapointType::FLOAT || datatype == EconetDatapointType::ENUM_TEXT) {
+        if (data_len == 18) {
+          std::string s((const char *) pdata + 6, 8);
+          float item_value = bytes_to_float(pdata + 6 + 8);
+          ESP_LOGI(TAG, "  %s: %f", s.c_str(), item_value);
+        } else {
+          ESP_LOGI(TAG, "  Unexpected Write Data Length", datatype);
+        }
+      }
+    } else if (type == 7) {
+      ESP_LOGI(TAG, "  DateTime: %04d/%02d/%02d %02d:%02d:%02d.%02d\n", pdata[9] | pdata[8] << 8, pdata[7], pdata[6],
+               pdata[5], pdata[4], pdata[3], pdata[2]);
+    }
   }
 }
 
@@ -499,23 +516,18 @@ void Econet::set_datapoint_(const std::string &datapoint_id, const EconetDatapoi
     }
   }
   pending_writes_[datapoint_id] = value;
-  if (rx_message_.empty()) {
-    make_request_();
-  }
-  send_datapoint_(datapoint_id, value, true);
+  send_datapoint_(datapoint_id, value);
 }
 
-void Econet::send_datapoint_(const std::string &datapoint_id, const EconetDatapoint &value, bool skip_update_state) {
-  if (!skip_update_state) {
-    if (datapoints_.count(datapoint_id) == 1) {
-      EconetDatapoint old_value = datapoints_[datapoint_id];
-      if (old_value == value) {
-        ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", datapoint_id.c_str());
-        return;
-      }
+void Econet::send_datapoint_(const std::string &datapoint_id, const EconetDatapoint &value) {
+  if (datapoints_.count(datapoint_id) == 1) {
+    EconetDatapoint old_value = datapoints_[datapoint_id];
+    if (old_value == value) {
+      ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", datapoint_id.c_str());
+      return;
     }
-    datapoints_[datapoint_id] = value;
   }
+  datapoints_[datapoint_id] = value;
   for (auto &listener : this->listeners_) {
     if (listener.datapoint_id == datapoint_id) {
       listener.on_datapoint(value);
