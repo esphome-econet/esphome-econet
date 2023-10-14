@@ -91,3 +91,37 @@ text_sensor:
     request_mod: 1
     icon: "mdi:alert"
     entity_category: "diagnostic"
+
+switch:
+  - platform: econet
+    id: resetdev
+    switch_datapoint: RESETDEV
+    request_mod: none
+    internal: true
+  - platform: econet
+    id: alreset
+    switch_datapoint: ALRESET
+    request_mod: none
+    internal: true
+
+button:
+  - platform: restart
+    name: "Restart ESP"
+    icon: "mdi:restart"
+    entity_category: "config"
+  - platform: template
+    name: "Restart Microcontroller"
+    icon: "mdi:restart"
+    entity_category: "config"
+    on_press:
+      - switch.turn_on: resetdev
+      - delay: 1s
+      - switch.turn_off: resetdev
+  - platform: template
+    name: "Alarm Reset"
+    icon: "mdi:restart-alert"
+    entity_category: "config"
+    on_press:
+      - switch.turn_on: alreset
+      - delay: 1s
+      - switch.turn_off: alreset
