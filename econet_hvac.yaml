@@ -12,7 +12,7 @@ dashboard_import:
   import_full_config: false
 
 econet:
-  model: "HVAC"
+  dst_address: 0x380
   on_datapoint_update:
     - sensor_datapoint: AIRHSTAT
       datapoint_type: raw
@@ -31,6 +31,24 @@ climate:
       min_temperature: "10"
       max_temperature: "32.2222"
       temperature_step: 1.0f
+    current_temperature_datapoint: SPT_STAT
+    target_temperature_low_datapoint: HEATSETP
+    target_temperature_high_datapoint: COOLSETP
+    mode_datapoint: STATMODE
+    modes:
+      0: "HEAT"
+      1: "COOL"
+      2: "HEAT_COOL"
+      3: "FAN_ONLY"
+      4: "OFF"
+    custom_fan_mode_datapoint: STATNFAN
+    custom_fan_modes:
+      0: "Automatic"
+      1: "Speed 1 (Low)"
+      2: "Speed 2 (Medium Low)"
+      3: "Speed 3 (Medium)"
+      4: "Speed 4 (Medium High)"
+      5: "Speed 5 (High)"
 
 sensor:
   - platform: econet

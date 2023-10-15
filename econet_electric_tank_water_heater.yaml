@@ -12,7 +12,7 @@ dashboard_import:
   import_full_config: false
 
 econet:
-  model: "Electric Tank"
+  dst_address: 0x1200
 
 climate:
   - platform: econet
@@ -21,6 +21,16 @@ climate:
       min_temperature: "43.3333"
       max_temperature: "60"
       temperature_step: 1.0f
+    current_temperature_datapoint: UPHTRTMP
+    target_temperature_datapoint: WHTRSETP
+    mode_datapoint: WHTRENAB
+    modes:
+      0: "OFF"
+      1: "AUTO"
+    custom_preset_datapoint: WHTRCNFG
+    custom_presets:
+      0: "Energy Saver"
+      1: "Performance"
 
 sensor:
   - platform: econet

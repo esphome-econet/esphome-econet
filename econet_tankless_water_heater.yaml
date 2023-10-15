@@ -12,7 +12,7 @@ dashboard_import:
   import_full_config: false
 
 econet:
-  model: "Tankless"
+  dst_address: 0x1040
 
 climate:
   - platform: econet
@@ -21,6 +21,12 @@ climate:
       min_temperature: "43.3333"
       max_temperature: "60"
       temperature_step: 1.0f
+    current_temperature_datapoint: TEMP_OUT
+    target_temperature_datapoint: WHTRSETP
+    mode_datapoint: WHTRENAB
+    modes:
+      0: "OFF"
+      1: "AUTO"
 
 sensor:
   - platform: econet

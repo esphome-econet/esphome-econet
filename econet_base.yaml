@@ -53,6 +53,7 @@ uart:
 econet:
   uart_id: uart_0
   update_interval: ${econet_update_interval}
+  src_address: 0x340
 
 sensor:
   - platform: econet
