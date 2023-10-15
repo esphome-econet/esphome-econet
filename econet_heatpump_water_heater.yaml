@@ -76,7 +76,6 @@ sensor:
     accuracy_decimals: 3
     device_class: "power"
     state_class: "measurement"
-    entity_category: "diagnostic"
     filters:
       - lambda: ${sensor_power_filters_lambda}
   - platform: econet
