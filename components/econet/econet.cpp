@@ -302,6 +302,7 @@ void Econet::parse_message_(bool is_tx) {
     this->dst_adr_ = src_adr;
 
     uint8_t type = pdata[0];
+    ready_ = type == 9;
     ESP_LOGI(TAG, "  ClssType: %d", type);
     if (type == 1 && pdata[1] == 1) {
       EconetDatapointType datatype = EconetDatapointType(pdata[2]);
@@ -401,6 +402,11 @@ void Econet::loop() {
   }
 
   if (now - this->last_request_ <= REQUEST_DELAY) {
+    return;
+  }
+
+  if (!ready_) {
+    ESP_LOGD(TAG, "Waiting to be ready after a write command");
     return;
   }
 

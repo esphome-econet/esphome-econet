@@ -114,6 +114,7 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<uint8_t> tx_message_;
 
   uint32_t dst_adr_{0};
+  bool ready_{true};
 };
 
 class EconetClient {
