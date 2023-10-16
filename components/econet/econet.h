@@ -10,8 +10,6 @@
 namespace esphome {
 namespace econet {
 
-enum ModelType { MODEL_TYPE_TANKLESS = 0, MODEL_TYPE_HEATPUMP = 1, MODEL_TYPE_HVAC = 2, MODEL_TYPE_ELECTRIC_TANK = 3 };
-
 class ReadRequest {
  public:
   uint32_t dst_adr;
@@ -68,9 +66,8 @@ class Econet : public Component, public uart::UARTDevice {
  public:
   void loop() override;
   void dump_config() override;
-
-  void set_model_type(ModelType model_type) { model_type_ = model_type; }
-  ModelType get_model_type() { return model_type_; }
+  void set_src_address(uint32_t address) { src_adr_ = address; }
+  void set_dst_address(uint32_t address) { dst_adr_ = address; }
 
   void set_update_interval(uint32_t interval_millis) { update_interval_millis_ = interval_millis; }
 
@@ -81,7 +78,6 @@ class Econet : public Component, public uart::UARTDevice {
                          const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false);
 
  protected:
-  ModelType model_type_;
   uint32_t update_interval_millis_{30000};
   std::vector<EconetDatapointListener> listeners_;
   ReadRequest read_req_;
@@ -95,10 +91,9 @@ class Econet : public Component, public uart::UARTDevice {
   void parse_tx_message_();
   void handle_response_(const std::string &datapoint_id, EconetDatapointType item_type, const uint8_t *p, uint8_t len);
 
-  void transmit_message_(uint32_t dst_adr, uint32_t src_adr, uint8_t command, const std::vector<uint8_t> &data);
-  void request_strings_(uint32_t dst_adr, uint32_t src_adr);
-  void write_value_(uint32_t dst_adr, uint32_t src_adr, const std::string &object, EconetDatapointType type,
-                    float value);
+  void transmit_message_(uint8_t command, const std::vector<uint8_t> &data);
+  void request_strings_();
+  void write_value_(const std::string &object, EconetDatapointType type, float value);
 
   std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(8);
   uint8_t request_mods_{1};
@@ -113,6 +108,7 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<uint8_t> rx_message_;
   std::vector<uint8_t> tx_message_;
 
+  uint32_t src_adr_{0};
   uint32_t dst_adr_{0};
   bool ready_{true};
 };
