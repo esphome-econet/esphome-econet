@@ -26,59 +26,6 @@ static const uint8_t ACK = 6;
 static const uint8_t READ_COMMAND = 30;   // 0x1E
 static const uint8_t WRITE_COMMAND = 31;  // 0x1F
 
-uint16_t gen_crc16(const uint8_t *data, uint16_t size) {
-  uint16_t out = 0;
-  int bits_read = 0, bit_flag;
-
-  /* Sanity check: */
-  if (data == nullptr) {
-    return 0;
-  }
-
-  while (size > 0) {
-    bit_flag = out >> 15;
-
-    /* Get next bit: */
-    out <<= 1;
-    out |= (*data >> bits_read) & 1;  // item a) work from the least significant bits
-
-    /* Increment bit counter: */
-    bits_read++;
-    if (bits_read > 7) {
-      bits_read = 0;
-      data++;
-      size--;
-    }
-
-    /* Cycle check: */
-    if (bit_flag) {
-      out ^= 0x8005;
-    }
-  }
-
-  // item b) "push out" the last 16 bits
-  int i;
-  for (i = 0; i < 16; ++i) {
-    bit_flag = out >> 15;
-    out <<= 1;
-    if (bit_flag) {
-      out ^= 0x8005;
-    }
-  }
-
-  // item c) reverse the bits
-  uint16_t crc = 0;
-  i = 0x8000;
-  int j = 0x0001;
-  for (; i != 0; i >>= 1, j <<= 1) {
-    if (i & out) {
-      crc |= j;
-    }
-  }
-
-  return crc;
-}
-
 // Converts 4 bytes to float
 float bytes_to_float(const uint8_t *b) {
   uint8_t byte_array[] = {b[3], b[2], b[1], b[0]};
@@ -233,7 +180,7 @@ void Econet::parse_message_(bool is_tx) {
   ESP_LOGI(TAG, "  Data    : %s", format_hex_pretty(pdata, data_len).c_str());
 
   uint16_t crc = (b[MSG_HEADER_SIZE + data_len]) + (b[MSG_HEADER_SIZE + data_len + 1] << 8);
-  uint16_t crc_check = gen_crc16(b, MSG_HEADER_SIZE + data_len);
+  uint16_t crc_check = crc16(b, MSG_HEADER_SIZE + data_len, 0);
   if (crc != crc_check) {
     ESP_LOGW(TAG, "Ignoring message with incorrect crc");
     return;
@@ -482,7 +429,7 @@ void Econet::transmit_message_(uint32_t dst_adr, uint32_t src_adr, uint8_t comma
   tx_message_.push_back(command);
   tx_message_.insert(tx_message_.end(), data.begin(), data.end());
 
-  uint16_t crc = gen_crc16(&tx_message_[0], tx_message_.size());
+  uint16_t crc = crc16(&tx_message_[0], tx_message_.size(), 0);
   tx_message_.push_back(crc);
   tx_message_.push_back(crc >> 8);
 
