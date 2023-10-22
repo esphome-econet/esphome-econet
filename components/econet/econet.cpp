@@ -222,11 +222,7 @@ void Econet::parse_message_(bool is_tx) {
       read_req_.awaiting_res = false;
     }
   } else if (command == WRITE_COMMAND) {
-    // Update the address to use for subsequent requests.
-    this->dst_adr_ = src_adr;
-
     uint8_t type = pdata[0];
-    ready_ = type == 9;
     ESP_LOGI(TAG, "  ClssType: %d", type);
     if (type == 1 && pdata[1] == 1) {
       EconetDatapointType datatype = EconetDatapointType(pdata[2]);
@@ -242,6 +238,8 @@ void Econet::parse_message_(bool is_tx) {
     } else if (type == 7) {
       ESP_LOGI(TAG, "  DateTime: %04d/%02d/%02d %02d:%02d:%02d.%02d\n", pdata[9] | pdata[8] << 8, pdata[7], pdata[6],
                pdata[5], pdata[4], pdata[3], pdata[2]);
+    } else if (type == 9) {
+      this->dst_adr_ = src_adr;
     }
   }
 }
@@ -326,11 +324,6 @@ void Econet::loop() {
   }
 
   if (now - this->last_request_ <= REQUEST_DELAY) {
-    return;
-  }
-
-  if (!ready_) {
-    ESP_LOGD(TAG, "Waiting to be ready after a write command");
     return;
   }
 

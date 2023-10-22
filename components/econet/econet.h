@@ -110,7 +110,6 @@ class Econet : public Component, public uart::UARTDevice {
 
   uint32_t src_adr_{0};
   uint32_t dst_adr_{0};
-  bool ready_{true};
 };
 
 class EconetClient {
