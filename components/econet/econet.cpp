@@ -245,7 +245,7 @@ void Econet::parse_message_(bool is_tx) {
             break;
           case EconetDatapointType::RAW:
             ESP_LOGI(TAG, "  %s: %s", item_name.c_str(),
-                    format_hex_pretty(pdata + WRITE_DATA_POS, data_len - WRITE_DATA_POS).c_str());
+                     format_hex_pretty(pdata + WRITE_DATA_POS, data_len - WRITE_DATA_POS).c_str());
             break;
           case EconetDatapointType::TEXT:
             ESP_LOGW(TAG, "(Please file an issue with the following line to add support for TEXT)");
