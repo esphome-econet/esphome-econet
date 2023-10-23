@@ -15,6 +15,7 @@ static const uint8_t COMMAND_POS = 13;
 
 static const uint8_t OBJ_NAME_POS = 6;
 static const uint8_t OBJ_NAME_SIZE = 8;
+static const uint8_t WRITE_DATA_POS = OBJ_NAME_POS + OBJ_NAME_SIZE;
 static const uint8_t FLOAT_SIZE = 4;
 
 static const uint8_t MSG_HEADER_SIZE = 14;
@@ -230,13 +231,13 @@ void Econet::parse_message_(bool is_tx) {
     ESP_LOGI(TAG, "  ClssType: %d", type);
     if (type == 1 && pdata[1] == 1) {
       EconetDatapointType datatype = EconetDatapointType(pdata[2]);
-      if (data_len >= OBJ_NAME_POS + OBJ_NAME_SIZE) {
+      if (data_len >= WRITE_DATA_POS) {
         std::string item_name((const char *) pdata + OBJ_NAME_POS, OBJ_NAME_SIZE);
         switch (EconetDatapointType(pdata[2])) {
           case EconetDatapointType::FLOAT:
           case EconetDatapointType::ENUM_TEXT:
-            if (data_len == OBJ_NAME_POS + OBJ_NAME_SIZE + FLOAT_SIZE) {
-              float item_value = bytes_to_float(pdata + OBJ_NAME_POS + OBJ_NAME_SIZE);
+            if (data_len == WRITE_DATA_POS + FLOAT_SIZE) {
+              float item_value = bytes_to_float(pdata + WRITE_DATA_POS);
               ESP_LOGI(TAG, "  %s: %f", item_name.c_str(), item_value);
             } else {
               ESP_LOGI(TAG, "  Unexpected Write Data Length");
@@ -244,8 +245,7 @@ void Econet::parse_message_(bool is_tx) {
             break;
           case EconetDatapointType::RAW:
             ESP_LOGI(TAG, "  %s: %s", item_name.c_str(),
-                    format_hex_pretty(pdata + OBJ_NAME_POS + OBJ_NAME_SIZE, data_len - OBJ_NAME_POS - OBJ_NAME_SIZE)
-                        .c_str());
+                    format_hex_pretty(pdata + WRITE_DATA_POS, data_len - WRITE_DATA_POS).c_str());
             break;
           case EconetDatapointType::TEXT:
             ESP_LOGW(TAG, "(Please file an issue with the following line to add support for TEXT)");
