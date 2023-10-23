@@ -13,6 +13,11 @@ static const uint8_t SRC_ADR_POS = 5;
 static const uint8_t LEN_POS = 10;
 static const uint8_t COMMAND_POS = 13;
 
+static const uint8_t OBJ_NAME_POS = 6;
+static const uint8_t OBJ_NAME_SIZE = 8;
+static const uint8_t WRITE_DATA_POS = OBJ_NAME_POS + OBJ_NAME_SIZE;
+static const uint8_t FLOAT_SIZE = sizeof(float);
+
 static const uint8_t MSG_HEADER_SIZE = 14;
 static const uint8_t MSG_CRC_SIZE = 2;
 
@@ -20,7 +25,7 @@ static const uint8_t ACK = 6;
 static const uint8_t READ_COMMAND = 30;   // 0x1E
 static const uint8_t WRITE_COMMAND = 31;  // 0x1F
 
-// Converts 4 bytes to float
+// Converts 4 bytes (FLOAT_SIZE) to float
 float bytes_to_float(const uint8_t *b) {
   uint8_t byte_array[] = {b[3], b[2], b[1], b[0]};
   float result;
@@ -76,7 +81,7 @@ void join_obj_names(const std::vector<std::string> &objects, std::vector<uint8_t
   for (const auto &s : objects) {
     data->push_back(0);
     data->push_back(0);
-    for (int j = 0; j < 8; j++) {
+    for (int j = 0; j < OBJ_NAME_SIZE; j++) {
       data->push_back(j < s.length() ? s[j] : 0);
     }
   }
@@ -224,16 +229,27 @@ void Econet::parse_message_(bool is_tx) {
   } else if (command == WRITE_COMMAND) {
     uint8_t type = pdata[0];
     ESP_LOGI(TAG, "  ClssType: %d", type);
-    if (type == 1 && pdata[1] == 1) {
+    if (type == 1 && pdata[1] == 1 && data_len >= WRITE_DATA_POS) {
       EconetDatapointType datatype = EconetDatapointType(pdata[2]);
-      if (datatype == EconetDatapointType::FLOAT || datatype == EconetDatapointType::ENUM_TEXT) {
-        if (data_len == 18) {
-          std::string s((const char *) pdata + 6, 8);
-          float item_value = bytes_to_float(pdata + 6 + 8);
-          ESP_LOGI(TAG, "  %s: %f", s.c_str(), item_value);
-        } else {
-          ESP_LOGI(TAG, "  Unexpected Write Data Length");
-        }
+      std::string item_name((const char *) pdata + OBJ_NAME_POS, OBJ_NAME_SIZE);
+      switch (EconetDatapointType(pdata[2])) {
+        case EconetDatapointType::FLOAT:
+        case EconetDatapointType::ENUM_TEXT:
+          if (data_len == WRITE_DATA_POS + FLOAT_SIZE) {
+            float item_value = bytes_to_float(pdata + WRITE_DATA_POS);
+            ESP_LOGI(TAG, "  %s: %f", item_name.c_str(), item_value);
+          } else {
+            ESP_LOGI(TAG, "  Unexpected Write Data Length");
+          }
+          break;
+        case EconetDatapointType::RAW:
+          ESP_LOGI(TAG, "  %s: %s", item_name.c_str(),
+                   format_hex_pretty(pdata + WRITE_DATA_POS, data_len - WRITE_DATA_POS).c_str());
+          break;
+        case EconetDatapointType::TEXT:
+          ESP_LOGW(TAG, "(Please file an issue with the following line to add support for TEXT)");
+          ESP_LOGW(TAG, "  %s: %s", item_name.c_str(), format_hex_pretty(pdata, data_len).c_str());
+          break;
       }
     } else if (type == 7) {
       ESP_LOGI(TAG, "  DateTime: %04d/%02d/%02d %02d:%02d:%02d.%02d\n", pdata[9] | pdata[8] << 8, pdata[7], pdata[6],
@@ -247,8 +263,8 @@ void Econet::parse_message_(bool is_tx) {
 void Econet::handle_response_(const std::string &datapoint_id, EconetDatapointType item_type, const uint8_t *p,
                               uint8_t len) {
   if (item_type == EconetDatapointType::FLOAT) {
-    if (len != 4) {
-      ESP_LOGE(TAG, "Expected len of 4 but was %d for %s", len, datapoint_id.c_str());
+    if (len != FLOAT_SIZE) {
+      ESP_LOGE(TAG, "Expected len of %d but was %d for %s", FLOAT_SIZE, len, datapoint_id.c_str());
       return;
     }
     float item_value = bytes_to_float(p);
@@ -345,7 +361,7 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
   data.push_back(0);
   data.push_back(0);
 
-  for (int j = 0; j < 8; j++) {
+  for (int j = 0; j < OBJ_NAME_SIZE; j++) {
     data.push_back(j < object.length() ? object[j] : 0);
   }
 
