@@ -229,29 +229,27 @@ void Econet::parse_message_(bool is_tx) {
   } else if (command == WRITE_COMMAND) {
     uint8_t type = pdata[0];
     ESP_LOGI(TAG, "  ClssType: %d", type);
-    if (type == 1 && pdata[1] == 1) {
+    if (type == 1 && pdata[1] == 1 && data_len >= WRITE_DATA_POS) {
       EconetDatapointType datatype = EconetDatapointType(pdata[2]);
-      if (data_len >= WRITE_DATA_POS) {
-        std::string item_name((const char *) pdata + OBJ_NAME_POS, OBJ_NAME_SIZE);
-        switch (EconetDatapointType(pdata[2])) {
-          case EconetDatapointType::FLOAT:
-          case EconetDatapointType::ENUM_TEXT:
-            if (data_len == WRITE_DATA_POS + FLOAT_SIZE) {
-              float item_value = bytes_to_float(pdata + WRITE_DATA_POS);
-              ESP_LOGI(TAG, "  %s: %f", item_name.c_str(), item_value);
-            } else {
-              ESP_LOGI(TAG, "  Unexpected Write Data Length");
-            }
-            break;
-          case EconetDatapointType::RAW:
-            ESP_LOGI(TAG, "  %s: %s", item_name.c_str(),
-                     format_hex_pretty(pdata + WRITE_DATA_POS, data_len - WRITE_DATA_POS).c_str());
-            break;
-          case EconetDatapointType::TEXT:
-            ESP_LOGW(TAG, "(Please file an issue with the following line to add support for TEXT)");
-            ESP_LOGW(TAG, "  %s: %s", item_name.c_str(), format_hex_pretty(pdata, data_len).c_str());
-            break;
-        }
+      std::string item_name((const char *) pdata + OBJ_NAME_POS, OBJ_NAME_SIZE);
+      switch (EconetDatapointType(pdata[2])) {
+        case EconetDatapointType::FLOAT:
+        case EconetDatapointType::ENUM_TEXT:
+          if (data_len == WRITE_DATA_POS + FLOAT_SIZE) {
+            float item_value = bytes_to_float(pdata + WRITE_DATA_POS);
+            ESP_LOGI(TAG, "  %s: %f", item_name.c_str(), item_value);
+          } else {
+            ESP_LOGI(TAG, "  Unexpected Write Data Length");
+          }
+          break;
+        case EconetDatapointType::RAW:
+          ESP_LOGI(TAG, "  %s: %s", item_name.c_str(),
+                   format_hex_pretty(pdata + WRITE_DATA_POS, data_len - WRITE_DATA_POS).c_str());
+          break;
+        case EconetDatapointType::TEXT:
+          ESP_LOGW(TAG, "(Please file an issue with the following line to add support for TEXT)");
+          ESP_LOGW(TAG, "  %s: %s", item_name.c_str(), format_hex_pretty(pdata, data_len).c_str());
+          break;
       }
     } else if (type == 7) {
       ESP_LOGI(TAG, "  DateTime: %04d/%02d/%02d %02d:%02d:%02d.%02d\n", pdata[9] | pdata[8] << 8, pdata[7], pdata[6],
