@@ -16,7 +16,7 @@ static const uint8_t COMMAND_POS = 13;
 static const uint8_t OBJ_NAME_POS = 6;
 static const uint8_t OBJ_NAME_SIZE = 8;
 static const uint8_t WRITE_DATA_POS = OBJ_NAME_POS + OBJ_NAME_SIZE;
-static const uint8_t FLOAT_SIZE = 4;
+static const uint8_t FLOAT_SIZE = sizeof(float);
 
 static const uint8_t MSG_HEADER_SIZE = 14;
 static const uint8_t MSG_CRC_SIZE = 2;
