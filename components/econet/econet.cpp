@@ -226,13 +226,25 @@ void Econet::parse_message_(bool is_tx) {
     ESP_LOGI(TAG, "  ClssType: %d", type);
     if (type == 1 && pdata[1] == 1) {
       EconetDatapointType datatype = EconetDatapointType(pdata[2]);
-      if (datatype == EconetDatapointType::FLOAT || datatype == EconetDatapointType::ENUM_TEXT) {
-        if (data_len == 18) {
-          std::string s((const char *) pdata + 6, 8);
-          float item_value = bytes_to_float(pdata + 6 + 8);
-          ESP_LOGI(TAG, "  %s: %f", s.c_str(), item_value);
-        } else {
-          ESP_LOGI(TAG, "  Unexpected Write Data Length");
+      if (data_len >= 14) {
+        std::string item_name((const char *) pdata + 6, 8);
+        switch (EconetDatapointType(pdata[2])) {
+          case EconetDatapointType::FLOAT:
+          case EconetDatapointType::ENUM_TEXT:
+            if (data_len == 18) {
+              float item_value = bytes_to_float(pdata + 6 + 8);
+              ESP_LOGI(TAG, "  %s: %f", item_name.c_str(), item_value);
+            } else {
+              ESP_LOGI(TAG, "  Unexpected Write Data Length");
+            }
+            break;
+          case EconetDatapointType::RAW:
+            ESP_LOGI(TAG, "  %s: %s", item_name.c_str(), format_hex_pretty(pdata + 14, data_len - 14).c_str());
+            break;
+          case EconetDatapointType::TEXT:
+            ESP_LOGW(TAG, "(Please file an issue with the following line to add support for TEXT)");
+            ESP_LOGW(TAG, "  %s: %s", item_name.c_str(), format_hex_pretty(pdata, data_len).c_str());
+            break;
         }
       }
     } else if (type == 7) {
