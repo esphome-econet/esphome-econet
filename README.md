@@ -26,7 +26,7 @@ Three wires from a RJ11/12 cable attach via screw terminals to the RS485 interfa
 
 ### Hardware Installation
 
-Cut the connector off one one end of the RJ11/12 cable, then strip and connect the Red, Green, and Yellow cable wires to the RS485 device's screw terminals, Red to B, Green to A, and Yellow to G.  A and B are for data communication, and G is ground. 12V is left empty.
+Cut the connector off one one end of the RJ11/12 cable, then strip and connect the wires to the RS485 device's screw terminals. Pin 3 to B, Pin 4 to A, and Pin 5 to GND.  A and B are for data communication, and G is ground. 12V is left empty.
 
 *NOTE: Wire colors can vary from cable to cable. Ensure you are matching the pins as shown in the diagram below regardless of cable color, i.e. Pin 3 to B, Pin 4 to A, Pin 5 to G.*
 
@@ -36,12 +36,15 @@ Cut the connector off one one end of the RJ11/12 cable, then strip and connect t
                +---------+
             1  ---       |
             2  ---       +--+      
-Red     B   3  ---          |     
-Green   A   4  ---          |        
-Yellow  GND 5  ---       +--+
+        B   3  ---          |     
+        A   4  ---          |        
+       GND 5  ---       +--+
             6  ---       |
                +---------+
 ```
+
+This picture shows a correctly wired setup. While wire colors can vary, this images shows the most common color layour reported by users (Green -> B, Red -> A, Black -> GND):
+<img src="https://github.com/esphome-econet/econet-docs/blob/main/photos/Correctly-Wired-K045.jpeg?raw=true" alt="A correctly wired K045 unit." width=50%>
 
 ## Software Installation
 
