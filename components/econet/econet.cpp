@@ -96,8 +96,15 @@ std::string trim_trailing_whitespace(const char *p, uint8_t len) {
   return s;
 }
 
+void Econet::setup() {
+  if (flow_control_pin_ != nullptr) {
+    flow_control_pin_->setup();
+  }
+}
+
 void Econet::dump_config() {
   ESP_LOGCONFIG(TAG, "Econet:");
+  LOG_PIN("  Flow Control Pin: ", this->flow_control_pin_);
   for (auto &kv : this->datapoints_) {
     switch (kv.second.type) {
       case EconetDatapointType::FLOAT:
@@ -424,8 +431,16 @@ void Econet::transmit_message_(uint8_t command, const std::vector<uint8_t> &data
   tx_message_.push_back(crc);
   tx_message_.push_back(crc >> 8);
 
+  if (this->flow_control_pin_ != nullptr) {
+    this->flow_control_pin_->digital_write(true);
+  }
+
   this->write_array(&tx_message_[0], tx_message_.size());
-  // this->flush();
+  this->flush();
+
+  if (this->flow_control_pin_ != nullptr) {
+    this->flow_control_pin_->digital_write(false);
+  }
 
   parse_tx_message_();
 }
