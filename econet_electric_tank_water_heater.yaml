@@ -35,6 +35,7 @@ climate:
 sensor:
   - platform: econet
     name: "Lower Tank Temperature"
+    id: lower_tank_temp
     sensor_datapoint: LOHTRTMP
     unit_of_measurement: "°F"
     accuracy_decimals: 1
@@ -43,6 +44,7 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "Upper Tank Temperature"
+    id: upper_tank_temp
     sensor_datapoint: UPHTRTMP
     unit_of_measurement: "°F"
     accuracy_decimals: 1
@@ -53,9 +55,11 @@ sensor:
 text_sensor:
   - platform: econet
     name: "Heating Element State"
+    id: heating_element
     sensor_datapoint: HEATCTRL
     icon: "mdi:heating-coil"
   - platform: econet
     name: "Mode"
+    id: mode
     sensor_datapoint: WHTRMODE
     entity_category: "diagnostic"
