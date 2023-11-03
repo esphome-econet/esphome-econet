@@ -59,6 +59,7 @@ econet:
 sensor:
   - platform: econet
     name: "Active Alerts"
+    id: alarm_count
     sensor_datapoint: ALRMALRT
     request_mod: 1
     accuracy_decimals: 0
@@ -66,35 +67,41 @@ sensor:
     state_class: "measurement"
   - platform: wifi_signal
     name: "WiFi Signal Strength"
+    id: wifi_signal_sensor
     entity_category: "diagnostic"
 
 text_sensor:
   - platform: econet
     name: "Alarm 1"
+    id: alarm_1
     sensor_datapoint: ALARM_01
     request_mod: 1
     icon: "mdi:alert"
     entity_category: "diagnostic"
   - platform: econet
     name: "Alarm 2"
+    id: alarm_2
     sensor_datapoint: ALARM_02
     request_mod: 1
     icon: "mdi:alert"
     entity_category: "diagnostic"
   - platform: econet
     name: "Alarm 3"
+    id: alarm_3
     sensor_datapoint: ALARM_03
     request_mod: 1
     icon: "mdi:alert"
     entity_category: "diagnostic"
   - platform: econet
     name: "Alarm 4"
+    id: alarm_4
     sensor_datapoint: ALARM_04
     request_mod: 1
     icon: "mdi:alert"
     entity_category: "diagnostic"
   - platform: econet
     name: "Software Version Number"
+    id: sw_version
     sensor_datapoint: SW_VERSN
     request_mod: 2
     request_once: true
@@ -104,18 +111,21 @@ text_sensor:
 switch:
   - platform: econet
     name: "Beep On Alarm"
+    id: alarm_beep
     switch_datapoint: ALRMBEEP
     request_mod: 2
     icon: "mdi:alarm-note"
     entity_category: "config"
   - platform: econet
     name: "Screen Adjustment Lock"
+    id: screen_lock
     switch_datapoint: SCRNLOCK
     request_mod: 2
     icon: "mdi:gesture-tap-button"
     entity_category: "config"
   - platform: econet
     name: "Screen Unit in °C"
+    id: display_unit
     switch_datapoint: DISPUNIT
     request_mod: 2
     icon: "mdi:temperature-celsius"
@@ -134,10 +144,12 @@ switch:
 button:
   - platform: restart
     name: "Restart ESP"
+    id: restart_esp
     icon: "mdi:restart"
     entity_category: "config"
   - platform: template
     name: "Restart Microcontroller"
+    id: restart_mcu
     icon: "mdi:restart"
     entity_category: "config"
     on_press:
@@ -146,6 +158,7 @@ button:
       - switch.turn_off: resetdev
   - platform: template
     name: "Alarm Reset"
+    id: alarm_reset
     icon: "mdi:restart-alert"
     entity_category: "config"
     on_press:

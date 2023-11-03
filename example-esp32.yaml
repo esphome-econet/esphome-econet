@@ -18,3 +18,13 @@ packages:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+
+# If you have an RS485-TTL module with flow control pin, such as MAX485,
+# wire DE and RE to GPIO0 and uncomment the following 2 lines:
+# econet:
+#   flow_control_pin: GPIO0
+
+# If you don't want to expose specific sensors to Home Assistant:
+# text_sensor:
+#   - id: !extend sw_version
+#     internal: true

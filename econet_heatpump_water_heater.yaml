@@ -40,6 +40,7 @@ climate:
 sensor:
   - platform: econet
     name: "Hot Water"
+    id: hot_water
     sensor_datapoint: HOTWATER
     unit_of_measurement: "%"
     accuracy_decimals: 0
@@ -47,6 +48,7 @@ sensor:
     state_class: "measurement"
   - platform: econet
     name: "Ambient Temperature"
+    id: ambient_temp
     sensor_datapoint: AMBIENTT
     unit_of_measurement: "°F"
     accuracy_decimals: 1
@@ -55,6 +57,7 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "Lower Tank Temperature"
+    id: lower_tank_temp
     sensor_datapoint: LOHTRTMP
     unit_of_measurement: "°F"
     accuracy_decimals: 1
@@ -63,6 +66,7 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "Upper Tank Temperature"
+    id: upper_tank_temp
     sensor_datapoint: UPHTRTMP
     unit_of_measurement: "°F"
     accuracy_decimals: 1
@@ -71,6 +75,7 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "Power"
+    id: power
     sensor_datapoint: POWRWATT
     unit_of_measurement: "W"
     accuracy_decimals: 3
@@ -80,6 +85,7 @@ sensor:
       - lambda: ${sensor_power_filters_lambda}
   - platform: econet
     name: "Evaporator Temperature"
+    id: evaporator_temp
     sensor_datapoint: EVAPTEMP
     unit_of_measurement: "°F"
     accuracy_decimals: 1
@@ -88,6 +94,7 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "Suction Temperature"
+    id: suction_temp
     sensor_datapoint: SUCTIONT
     unit_of_measurement: "°F"
     accuracy_decimals: 1
@@ -96,6 +103,7 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "Discharge Temperature"
+    id: discharge_temp
     sensor_datapoint: DISCTEMP
     unit_of_measurement: "°F"
     accuracy_decimals: 1
@@ -106,20 +114,24 @@ sensor:
 binary_sensor:
   - platform: econet
     name: "Compressor"
+    id: compressor
     sensor_datapoint: COMP_RLY
     device_class: "running"
 
 text_sensor:
   - platform: econet
     name: "Fan Speed"
+    id: fan_speed
     sensor_datapoint: FAN_CTRL
     icon: "mdi:fan"
   - platform: econet
     name: "Heating Element State"
+    id: heating_element
     sensor_datapoint: HEATCTRL
     icon: "mdi:heating-coil"
   - platform: econet
     name: "Model Number"
+    id: model_number
     sensor_datapoint: PRODMODN
     request_mod: 2
     request_once: true
@@ -127,6 +139,7 @@ text_sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "Serial Number"
+    id: serial_number
     sensor_datapoint: PRODSERN
     request_mod: 2
     request_once: true
