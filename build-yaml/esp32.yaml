@@ -1,0 +1,9 @@
+---
+substitutions:
+  tx_pin: GPIO19
+  rx_pin: GPIO22
+  platform: esp32
+  board: esp32dev
+
+wifi:
+  ap:
