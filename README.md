@@ -43,7 +43,7 @@ Cut the connector off one one end of the RJ11/12 cable, then strip and connect t
                +---------+
 ```
 
-This picture shows a correctly wired setup. While wire colors can vary, this images shows the most common color layour reported by users (Green -> B, Red -> A, Black -> GND):
+This picture shows a correctly wired setup. While wire colors can vary, this images shows the most common color layout reported by users (Green -> B, Red -> A, Black -> GND):
 <img src="https://github.com/esphome-econet/econet-docs/blob/main/photos/Correctly-Wired-K045.jpeg?raw=true" alt="A correctly wired K045 unit." width=50%>
 
 ## Software Installation
@@ -53,7 +53,7 @@ Setup can be done from the command line using the esphome docker image, or via a
 Installation is a three-step process:
 
 1. Customize the basic configuration yaml for your device and environment
-2. Deploy to the device via command line or ESPHome Dashbaord
+2. Deploy to the device via command line or ESPHome Dashboard
 3. Add your device to Home Assistant
 
 ### Step 1: Customizing the esphome-econet yaml for Your Device
@@ -74,11 +74,11 @@ You will also need to update the `packages -> econet -> file` entry with the nam
 - **Electric Tank Water Heaters**: `econet_electric_tank_water_heater.yaml`
 - **HVAC Systems**: `econet_hvac.yaml`
 
-If you are using hardware other than the kit recommended above, you may also need to update the GPIO Pin fields. See the individual device configuration files for more customizeable options.
+If you are using hardware other than the kit recommended above, you may also need to update the GPIO Pin fields. See the individual device configuration files for more customizable options.
 
 ### Step 2: Compiling and Uploading esphome-econet to Your Device
 
-Once you've customzied your YAML you can install it either by copying your yaml file (and `secrets.yaml` file) to the config directory of your esphome-dashboard installation and running the install command, or by using the ESPHome command line via Docker.
+Once you've customized your YAML you can install it either by copying your yaml file (and `secrets.yaml` file) to the config directory of your esphome-dashboard installation and running the install command, or by using the ESPHome command line via Docker.
 
 #### Installing via ESPHome in a Docker Container
 
@@ -96,4 +96,4 @@ Once uploaded, unplug the USB cable from the computer and move the device to the
 
 ### Step 3: Adding New Device to Home Assistant
 
-Open Home Assistant and add a new [ESPHome Integration](https://my.home-assistant.io/redirect/config_flow_start?domain=esphome), inputing the hostname of your device (e.g. "econet-hpwh.local" by default for Heat Pump Water Heaters).  The device may be discovered automatically, in which case just accept the new device and wait a few moments.  Once added, you can visit the device's details page (via `Settings -> Devices & Services`) to see all of the provided sensors are working.
+Open Home Assistant and add a new [ESPHome Integration](https://my.home-assistant.io/redirect/config_flow_start?domain=esphome), inputting the hostname of your device (e.g. "econet-hpwh.local" by default for Heat Pump Water Heaters).  The device may be discovered automatically, in which case just accept the new device and wait a few moments.  Once added, you can visit the device's details page (via `Settings -> Devices & Services`) to see all of the provided sensors are working.
