@@ -1,11 +1,8 @@
 ---
 name: Build and Publish
 
-# Based on https://github.com/esphome/firmware/blob/main/.github/workflows/build.yml
-
 on:
   workflow_dispatch:
-  push: # TODO: Remove after testing
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -82,7 +79,7 @@ jobs:
           mkdir output
       - name: Consolidate manifests
         run: |-
-          jq -s '{"name": "esphome-econet", "new_install_improv_wait_time": 15, "new_install_prompt_erase": true, "version": "", "home_assistant_domain": "esphome", "new_install_skip_erase": false, "builds":.}' firmwares/*/econet-${{ matrix.appliance.shorthand }}-*/manifest.json > output/econet-${{ matrix.appliance.shorthand }}.json
+          jq -s '{"name": "esphome-econet", "new_install_improv_wait_time": 15, "new_install_prompt_erase": false, "version": "", "home_assistant_domain": "esphome", "new_install_skip_erase": false, "builds":.}' firmwares/*/econet-${{ matrix.appliance.shorthand }}-*/manifest.json > output/econet-${{ matrix.appliance.shorthand }}.json
       - name: Upload artifact
         uses: actions/upload-artifact@v3.1.3
         with:
