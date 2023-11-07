@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -50,7 +50,6 @@ jobs:
           retention-days: 7
 
   consolidate-manifests:
-    # if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     name: Consolidate ${{ matrix.appliance.shorthand }} manifests
     runs-on: ubuntu-latest
     needs: build
@@ -88,7 +87,6 @@ jobs:
           retention-days: 7
 
   consolidate:
-    # if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     name: Consolidate firmwares
     runs-on: ubuntu-latest
     needs: consolidate-manifests
@@ -113,7 +111,6 @@ jobs:
           path: output
 
   deploy:
-    # if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
     needs: consolidate
