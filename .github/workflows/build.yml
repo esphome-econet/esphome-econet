@@ -12,6 +12,43 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  configure:
+    name: Verify ${{ matrix.appliance.name }} Configuration with ${{ matrix.config_file }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        appliance:
+          - name: electric_tank_water_heater
+            shorthand: etwh
+          - name: heatpump_water_heater
+            shorthand: hpwh
+          - name: hvac
+            shorthand: hvac
+          - name: tankless_water_heater
+            shorthand: tlwh
+        config_file: [example-esp32.yaml, example-esp8266.yaml, example-local.yaml]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4.1.1
+      - uses: actions/setup-python@v4.7.1
+        with:
+          python-version: "3.x"
+      - name: Install ESPHome
+        run: pip install esphome
+      - name: Update manifest
+        uses: mikefarah/yq@v4.35.2
+        with:
+          cmd: >
+            yq -P -i '.packages.econet = "econet_${{ matrix.appliance.name }}.yaml"
+            | .packages.econet tag = "!include"
+            | .wifi.ssid = "STUB_SSID"
+            | .wifi.ssid tag = ""
+            | .wifi.password = "STUB_PASSWORD"
+            | .wifi.password tag = ""'
+            ./${{ matrix.config_file }}
+      - name: Validate configuration
+        run: esphome -s external_components_source components config ./${{ matrix.config_file }}
+
   build:
     name: Build ${{ matrix.appliance.name }} Firmware
     runs-on: ubuntu-latest
@@ -29,9 +66,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4.1.1
-      - uses: actions/setup-python@v4.7.1
-        with:
-          python-version: "3.x"
       - name: Build firmware
         uses: esphome/build-action@v1.8.0
         id: esphome-build
