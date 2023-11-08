@@ -36,7 +36,7 @@ jobs:
       - name: Install ESPHome
         run: pip install esphome
       - name: Update manifest
-        uses: mikefarah/yq@v4.35.2
+        uses: mikefarah/yq@v4.40.1
         with:
           cmd: >
             yq -P -i '.packages.econet = "econet_${{ matrix.appliance.name }}.yaml"
