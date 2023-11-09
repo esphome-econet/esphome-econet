@@ -261,7 +261,10 @@ void Econet::parse_message_(bool is_tx) {
       ESP_LOGI(TAG, "  DateTime: %04d/%02d/%02d %02d:%02d:%02d.%02d\n", pdata[9] | pdata[8] << 8, pdata[7], pdata[6],
                pdata[5], pdata[4], pdata[3], pdata[2]);
     } else if (type == 9) {
-      this->dst_adr_ = src_adr;
+      if (this->dst_adr_ != src_adr) {
+        ESP_LOGW(TAG, "Using 0x%x as dst_address from now on. File an issue if you see this more than once.", src_adr);
+        this->dst_adr_ = src_adr;
+      }
     }
   }
 }
