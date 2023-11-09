@@ -4,6 +4,15 @@ substitutions:
   rx_pin: GPIO22
   platform: esp32
   board: esp32dev
+  uart_id: uart_1
 
 wifi:
   ap:
+
+logger:
+  baud_rate: 115200  # Make sure logging is not using the serial port
+  level: ${logger_level}
+  tx_buffer_size: 512
+  hardware_uart: UART0
+
+improv_serial:
