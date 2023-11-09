@@ -4,7 +4,6 @@ substitutions:
   rx_pin: GPIO5
   platform: esp8266
   board: d1_mini
-  uart_id: uart_1  # Need to free up UART_0 for the logger to enable improv_serial
 
 wifi:
   ap:
@@ -12,7 +11,6 @@ wifi:
 logger:
   baud_rate: 115200
   level: ${logger_level}
-  tx_buffer_size: 512
   hardware_uart: UART0
 
 improv_serial:

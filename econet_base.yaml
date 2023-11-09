@@ -11,7 +11,6 @@ substitutions:
   external_components_source: github://esphome-econet/esphome-econet@${github_ref}
   logger_level: WARN
   econet_update_interval: 30s
-  uart_id: uart_0
 
 esphome:
   name: ${name}
@@ -39,20 +38,19 @@ ota:
 logger:
   baud_rate: 0  # Make sure logging is not using the serial port
   level: ${logger_level}
-  tx_buffer_size: 2000
 
 external_components:
   - source: ${external_components_source}
 
 uart:
-  id: ${uart_id}
+  id: econet_uart
   baud_rate: 38400
   rx_buffer_size: 1500
   tx_pin: ${tx_pin}
   rx_pin: ${rx_pin}
 
 econet:
-  uart_id: ${uart_id}
+  uart_id: econet_uart
   update_interval: ${econet_update_interval}
   src_address: 0x340
 
