@@ -10,11 +10,11 @@ static const uint32_t REQUEST_DELAY = 100;
 
 static const uint8_t DST_ADR_POS = 0;
 static const uint8_t SRC_ADR_POS = 5;
-static const uint8_t LEN_POS = 8;
+static const uint8_t LEN_POS = 10;
 static const uint8_t COMMAND_POS = 13;
 
 static const uint8_t OBJ_NAME_POS = 6;
-static const uint8_t OBJ_NAME_SIZE = 10;
+static const uint8_t OBJ_NAME_SIZE = 8;
 static const uint8_t WRITE_DATA_POS = OBJ_NAME_POS + OBJ_NAME_SIZE;
 static const uint8_t FLOAT_SIZE = sizeof(float);
 
