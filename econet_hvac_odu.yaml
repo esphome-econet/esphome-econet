@@ -1,7 +1,7 @@
 ---
 sensor:
   - platform: econet
-    name: "HVAC ODU Outside Air Temperature "
+    name: "HVAC ODU Outside Air Temperature"
     sensor_datapoint: TEMP_OAT
     unit_of_measurement: "°F"
     accuracy_decimals: 1
@@ -9,7 +9,7 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
-    name: "HVAC ODU Evaporator Temperature "
+    name: "HVAC ODU Evaporator Temperature"
     sensor_datapoint: TEMP_EVP
     unit_of_measurement: "°F"
     accuracy_decimals: 1
