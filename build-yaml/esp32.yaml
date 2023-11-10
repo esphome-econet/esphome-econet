@@ -7,3 +7,10 @@ substitutions:
 
 wifi:
   ap:
+
+logger:
+  baud_rate: 115200
+  level: ${logger_level}
+  hardware_uart: UART0
+
+improv_serial:
