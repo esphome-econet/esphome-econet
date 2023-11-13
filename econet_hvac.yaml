@@ -100,7 +100,7 @@ text_sensor:
     name: "HVAC Auto Mode"
     id: hvac_auto_mode
     sensor_datapoint: AUTOMODE
-    
+
 number:
   - platform: econet
     name: "HVAC Dehumidification Setting Control"
