@@ -12,48 +12,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  configure:
-    name: Verify ${{ matrix.appliance.name }} Configuration with ${{ matrix.config_file }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        appliance:
-          - name: electric_tank_water_heater
-            shorthand: etwh
-          - name: heatpump_water_heater
-            shorthand: hpwh
-          - name: hvac
-            shorthand: hvac
-          - name: tankless_water_heater
-            shorthand: tlwh
-        config_file: [example-esp32.yaml, example-esp8266.yaml, example-local.yaml]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4.1.1
-      - uses: actions/setup-python@v4.7.1
-        with:
-          python-version: "3.x"
-      - name: Install ESPHome
-        run: pip install esphome
-      - name: Update manifest
-        uses: mikefarah/yq@v4.40.1
-        with:
-          cmd: >
-            yq -P -i '.packages.econet = "econet_${{ matrix.appliance.name }}.yaml"
-            | .packages.econet tag = "!include"
-            | .wifi.ssid = "STUB_SSID"
-            | .wifi.ssid tag = ""
-            | .wifi.password = "STUB_PASSWORD"
-            | .wifi.password tag = ""'
-            ./${{ matrix.config_file }}
-      - name: Validate configuration
-        run: esphome -s external_components_source components config ./${{ matrix.config_file }}
-
   build:
-    name: Build ${{ matrix.appliance.name }} Firmware
+    name: Build ${{ matrix.appliance.shorthand }}-${{ matrix.platform }} Firmware
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        platform: [esp32, esp8266]
         appliance:
           - name: electric_tank_water_heater
             shorthand: etwh
@@ -63,12 +27,14 @@ jobs:
             shorthand: hvac
           - name: tankless_water_heater
             shorthand: tlwh
-      fail-fast: false
+      fail-fast: true
     steps:
       - uses: actions/checkout@v4.1.1
-      - name: Build firmware
-        uses: esphome/build-action@v1.8.0
-        id: esphome-build
+      - name: Force Manifest to Build Local Code
+        uses: mikefarah/yq@v4.35.2
         with:
-          yaml_file: econet_${{ matrix.appliance.name }}.yaml
-          version: latest
+          cmd: yq -P -i '.substitutions.external_components_source = "components"'' build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
+      - name: Build Firmware
+        uses: esphome/build-action@v1.8.0
+        with:
+          yaml_file: build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
