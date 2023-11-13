@@ -2,7 +2,9 @@
 sensor:
   - platform: econet
     name: "HVAC ODU Outside Air Temperature"
+    id: hvac_odu_outside_air_temperature
     sensor_datapoint: TEMP_OAT
+    request_mod: none
     unit_of_measurement: "°F"
     accuracy_decimals: 1
     device_class: "temperature"
@@ -10,7 +12,9 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "HVAC ODU Evaporator Temperature"
+    id: hvac_odu_evaporator_temperature
     sensor_datapoint: TEMP_EVP
+    request_mod: none
     unit_of_measurement: "°F"
     accuracy_decimals: 1
     device_class: "temperature"
@@ -18,14 +22,16 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "HVAC ODU Inverter Crank Speed"
+    id: hvac_odu_inverter_crank_speed
     sensor_datapoint: ISCSPEED
-    unit_of_measurement: ""
+    request_mod: none
     accuracy_decimals: 1
     entity_category: "diagnostic"
-    icon: "mdi:speedometer"
   - platform: econet
     name: "HVAC ODU Crankcase Heater Temperature"
+    id: hvac_odu_crankcase_heater_temperature
     sensor_datapoint: TEMP_CPT
+    request_mod: none
     unit_of_measurement: "°F"
     accuracy_decimals: 1
     device_class: "temperature"
@@ -33,14 +39,16 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "HVAC ODU Expansion Valve Current Position"
+    id: hvac_odu_expansion_valve_current_position
     sensor_datapoint: EXACTUAL
-    unit_of_measurement: ""
+    request_mod: none
     accuracy_decimals: 1
     entity_category: "diagnostic"
-    icon: "mdi:valve"
   - platform: econet
     name: "HVAC ODU Expansion Valve Super Heat"
+    id: hvac_odu_expansion_valve_super_heat
     sensor_datapoint: EXVSUPER
+    request_mod: none
     unit_of_measurement: "°F"
     accuracy_decimals: 1
     device_class: "temperature"
@@ -48,7 +56,19 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "HVAC ODU Suction Line Temp"
+    id: hvac_odu_suction_line_temp
     sensor_datapoint: TEMP_OST
+    request_mod: none
+    unit_of_measurement: "°F"
+    accuracy_decimals: 1
+    device_class: "temperature"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Saturated Suction Line Temp"
+    id: hvac_odu_saturated_suction_line_temp
+    sensor_datapoint: TEMP_SST
+    request_mod: none
     unit_of_measurement: "°F"
     accuracy_decimals: 1
     device_class: "temperature"
@@ -56,9 +76,152 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "HVAC ODU Pressure Suction"
+    id: hvac_odu_pressure_suction
     sensor_datapoint: PRES_SUC
+    request_mod: none
     unit_of_measurement: "PSI"
     accuracy_decimals: 1
     device_class: "pressure"
     state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Defrost"
+    id: hvac_odu_defrost
+    sensor_datapoint: ODU_DEFR
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Low Cool Two Week Hours"
+    id: hvac_odu_low_cool_two_week_hours
+    sensor_datapoint: ODURCS1H
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU High Cool Two Week Hours"
+    id: hvac_odu_high_cool_two_week_hours
+    sensor_datapoint: ODURCS2H
+    unit_of_measurement: ""
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Low Heat Two Week Hours"
+    id: hvac_odu_low_heat_two_week_hours
+    sensor_datapoint: ODURHS1H
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU High Heat Two Week Hours"
+    id: hvac_odu_high_heat_two_week_hours
+    sensor_datapoint: ODURHS2H
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Low Cool Two Week Cycles"
+    id: hvac_odu_low_cool_two_week_cycles
+    sensor_datapoint: ODURCS1C
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU High Cool Two Week Cycles"
+    id: hvac_odu_high_cool_two_week_cycles
+    sensor_datapoint: ODURCS2C
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Low Heat Two Week Cycles"
+    id: hvac_odu_low_heat_two_week_cycles
+    sensor_datapoint: ODURHS1C
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU High Heat Two Week Cycles"
+    id: hvac_odu_high_heat_two_week_cycles
+    sensor_datapoint: ODURHS2C
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Low Cool Lifetime Hours"
+    id: hvac_odu_low_cool_lifetime_hours
+    sensor_datapoint: ODULCS1H
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU High Cool Lifetime Hours"
+    id: hvac_odu_high_cool_lifetime_hours
+    sensor_datapoint: ODULCS2H
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Low Heat Lifetime Hours"
+    id: hvac_odu_low_heat_lifetime_hours
+    sensor_datapoint: ODULHS1H
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU High Heat Lifetime Hours"
+    id: hvac_odu_high_heat_lifetime_hours
+    sensor_datapoint: ODULHS2H
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Low Cool Lifetime Cycles"
+    id: hvac_odu_low_cool_lifetime_cycles
+    sensor_datapoint: ODULCS1C
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU High Cool Lifetime Cycles"
+    id: hvac_odu_high_cool_lifetime_cycles
+    sensor_datapoint: ODULCS2C
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Low Heat Lifetime Cycles"
+    id: hvac_odu_low_heat_lifetime_cycles
+    sensor_datapoint: ODULHS1C
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU High Heat Lifetime Cycles"
+    id: hvac_odu_high_heat_lifetime_cycles
+    sensor_datapoint: ODULHS2C
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Defrost Cycles Two Week Hours"
+    id: hvac_odu_defrost_cycles_two_week_hours
+    sensor_datapoint: ODURDEFC
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Defrost Cycles Lifetime Hours"
+    id: hvac_odu_defrost_cycles_lifetime_hours
+    sensor_datapoint: ODULDEFC
+    request_mod: none
+    accuracy_decimals: 1
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "HVAC ODU Days"
+    id: hvac_odu_days
+    sensor_datapoint: ODU_DAYS
+    request_mod: none
+    accuracy_decimals: 1
     entity_category: "diagnostic"
