@@ -1,0 +1,15 @@
+---
+substitutions:
+  tx_pin: GPIO4
+  rx_pin: GPIO5
+  platform: esp8266
+  board: d1_mini
+
+packages:
+  econet-hvac: !include ../econet_hvac.yaml
+  # Uncomment if you have an communicationg Outdoor Unit
+  # econet-hvac-odu: !include ../econet_hvac_odu.yaml
+
+dashboard_import:
+  package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${platform}.yaml@${github_ref}
+  import_full_config: false

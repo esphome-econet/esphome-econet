@@ -1,0 +1,15 @@
+---
+substitutions:
+  tx_pin: GPIO19
+  rx_pin: GPIO22
+  platform: esp32
+  board: esp32dev
+
+packages:
+  econet-hvac: !include ../econet_hvac.yaml
+  # Uncomment if you have an communicationg Outdoor Unit
+  # econet-hvac-odu: !include ../econet_hvac_odu.yaml
+
+dashboard_import:
+  package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${platform}.yaml@${github_ref}
+  import_full_config: false

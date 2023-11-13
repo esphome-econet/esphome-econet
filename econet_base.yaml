@@ -36,8 +36,11 @@ api:
 ota:
 
 logger:
-  baud_rate: 0  # Make sure logging is not using the serial port
+  baud_rate: 115200
   level: ${logger_level}
+  hardware_uart: UART0
+
+improv_serial:
 
 external_components:
   - source: ${external_components_source}
