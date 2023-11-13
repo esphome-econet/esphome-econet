@@ -30,15 +30,11 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4.1.1
-      - name: Build manifest
-        uses: mikefarah/yq@v4.40.1
-        with:
-          cmd: yq -P '.packages.econet = "econet_${{ matrix.appliance.name }}.yaml" | .packages.econet   tag = "!include"' ./build-yaml/${{ matrix.platform }}.yaml > econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Build firmware
         uses: esphome/build-action@v1.8.0
         id: esphome-build
         with:
-          yaml_file: econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
+          yaml_file: build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
           version: latest
       - name: Copy firmware and manifest
         run: |

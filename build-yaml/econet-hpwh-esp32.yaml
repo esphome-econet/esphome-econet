@@ -1,0 +1,13 @@
+---
+substitutions:
+  tx_pin: GPIO19
+  rx_pin: GPIO22
+  platform: esp32
+  board: esp32dev
+
+packages:
+  econet-hwpw: !include ../econet_heatpump_water_heater.yaml
+
+dashboard_import:
+  package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${platform}.yaml@${github_ref}
+  import_full_config: false

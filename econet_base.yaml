@@ -21,7 +21,7 @@ esphome:
   board: $board
   project:
     name: "esphome-econet.esphome-econet"
-    version: 1.2.1
+    version: 1.3.0
 
 preferences:
   flash_write_interval: "24h"
@@ -36,8 +36,9 @@ api:
 ota:
 
 logger:
-  baud_rate: 0  # Make sure logging is not using the serial port
   level: ${logger_level}
+
+improv_serial:
 
 external_components:
   - source: ${external_components_source}
