@@ -7,10 +7,6 @@ substitutions:
 packages:
   econet: !include econet_base.yaml
 
-dashboard_import:
-  package_import_url: github://esphome-econet/esphome-econet/econet_hvac.yaml@${github_ref}
-  import_full_config: false
-
 econet:
   dst_address: 0x380
   on_datapoint_update:
