@@ -58,21 +58,19 @@ Installation is a three-step process:
 
 ### Step 1: Customizing the esphome-econet yaml for Your Device
 
-Before installing, you will need to create a customized yaml for your device/environment. Start with either the [example-esp32.yaml](https://github.com/stockmopar/esphome-econet/blob/main/example-esp32.yaml) or [example-esp8266.yaml](https://github.com/stockmopar/esphome-econet/blob/main/example-esp8266.yaml) files as a template, depending on your chosen hardware.
+Before installing, you will need to create a customized yaml for your device/environment. Start with one of the starter yaml's in in the [build-yaml directory](https://github.com/esphome-econet/esphome-econet/tree/main/build-yaml) of the repo, choosing the appropriate file for your appliance and ESP hardware (choose ESP32 for the standard ATOM Lite hardware described above):
 
-At a minimum, you will need to either [put in your own WiFi network details](https://esphome.io/components/wifi) or provide a `secrets.yaml` file with the `wifi_ssid` and `wifi_password` fields configured. An example `secret.yaml` would look like:
+- **Heatpump Water Heaters**: `econet-hpwh-*.yaml`
+- **Tankless Water Heaters**: `econet_tlwh-*.yaml`
+- **Electric Tank Water Heaters**: `econet-etwh-*.yaml`
+- **HVAC Systems**: `econet_hvac-*.yaml`
+
+At a minimum, you will want to either [put in your own WiFi network details](https://esphome.io/components/wifi) or provide a `secrets.yaml` file with the `wifi_ssid` and `wifi_password` fields configured. An example `secret.yaml` would look like:
 
 ```yaml
 wifi_ssid: "your ssid"
 wifi_password: "your password"
 ```
-
-You will also need to update the `packages -> econet -> file` entry with the name of the configuration file that corresponds to your device:
-
-- **Heatpump Water Heaters**: `econet_heatpump_water_heater.yaml`
-- **Tankless Water Heaters**: `econet_tankless_water_heater.yaml`
-- **Electric Tank Water Heaters**: `econet_electric_tank_water_heater.yaml`
-- **HVAC Systems**: `econet_hvac.yaml`
 
 If you are using hardware other than the kit recommended above, you may also need to update the GPIO Pin fields. See the individual device configuration files for more customizable options.
 

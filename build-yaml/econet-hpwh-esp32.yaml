@@ -6,8 +6,16 @@ substitutions:
   board: esp32dev
 
 packages:
-  econet-hwpw: !include ../econet_heatpump_water_heater.yaml
+  econet:
+    url: https://github.com/esphome-econet/esphome-econet
+    ref: main
+    file: econet_heatpump_water_heater.yaml
 
 dashboard_import:
   package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${platform}.yaml@${github_ref}
   import_full_config: false
+
+# Uncomment the below to use Wi-Fi settings from your secrets.yaml file
+# wifi:
+#   ssid: !secret wifi_ssid
+#   password: !secret wifi_password
