@@ -13,6 +13,14 @@ dashboard_import:
 
 econet:
   dst_address: 0x380
+  #on_datapoint_update:
+    #- sensor_datapoint: AIRHSTAT
+      #datapoint_type: raw
+      #then:
+        #- lambda: |-
+            #ESP_LOGD("main", "on_datapoint_update %s", format_hex_pretty(x).c_str());
+            #id(airhandler_cfm).publish_state((x[16] << 8) + x[17]);
+            
 
 climate:
   - platform: econet
@@ -42,32 +50,32 @@ climate:
 
 sensor:
   - platform: econet
-    name: "HVAC Airhandler CFM"
-    id: hvac_airhandler_cfm
+    name: "Airhandler CFM"
+    id: airhandler_cfm
     sensor_datapoint: F_ACTCFM
     entity_category: "diagnostic"
   - platform: econet
-    name: "HVAC Airhandler RPM"
-    id: hvac_airhandler_rpm
+    name: "Airhandler RPM"
+    id: airhandler_rpm
     sensor_datapoint: F_ACTRPM
     entity_category: "diagnostic"
   - platform: econet
-    name: "HVAC Static Pressure"
-    id: hvac_static_pressure
+    name: "Static Pressure"
+    id: static_pressure
     sensor_datapoint: STATIC_P
     unit_of_measurement: "in"
     entity_category: "diagnostic"
   - platform: econet
-    name: "HVAC Register Air Temperature"
-    id: hvac_register_air_temperature
+    name: "Register Air Temperature"
+    id: register_air_temperature
     sensor_datapoint: TEMP_LAT
     device_class: "temperature"
     unit_of_measurement: "°F"
     state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
-    name: "HVAC Return Air Temperature"
-    id: hvac_return_air_temperature
+    name: "Return Air Temperature"
+    id: return_air_temperature
     sensor_datapoint: TEMP_RAT
     device_class: "temperature"
     unit_of_measurement: "°F"
@@ -81,30 +89,21 @@ sensor:
     accuracy_decimals: 1
     device_class: "humidity"
     state_class: "measurement"
-  - platform: econet
-    name: "HVAC Active Alerts"
-    id: hvac_active_alerts
-    sensor_datapoint: ALRMALRT
-    request_mod: 1
-    accuracy_decimals: 0
-    icon: "mdi:alert"
-    state_class: "measurement"
-    entity_category: "diagnostic"
 
 text_sensor:
   - platform: econet
-    name: "HVAC Operating Mode"
-    id: hvac_operating_mode
+    name: "Operating Mode"
+    id: operating_mode
     sensor_datapoint: HVACMODE
   - platform: econet
-    name: "HVAC Auto Mode"
-    id: hvac_auto_mode
+    name: "Auto Mode"
+    id: auto_mode
     sensor_datapoint: AUTOMODE
 
 number:
   - platform: econet
-    name: "HVAC Dehumidification Setting Control"
-    id: hvac_dehumidification_setting_control
+    name: "Dehumidification Setting Control"
+    id: dehumidification_setting_control
     number_datapoint: DHUMSETP
     min_value: 10
     max_value: 80
@@ -114,22 +113,22 @@ number:
 
 switch:
   - platform: econet
-    name: "HVAC Dehumidification Enable State"
-    id: hvac_dehumidification_enable_state
+    name: "Dehumidification Enable State"
+    id: dehumidification_enable_state
     switch_datapoint: DHUMENAB
     icon: "mdi:air-humidifier-off"
 
 binary_sensor:
   - platform: econet
-    name: "HVAC Electric Heat Relay 1"
-    id: hvac_electric_heat_relay_1
+    name: "Electric Heat Relay 1"
+    id: electric_heat_relay_1
     sensor_datapoint: HT1_RELY
     icon: "mdi:heating-coil"
     entity_category: "diagnostic"
     disabled_by_default: true
   - platform: econet
-    name: "HVAC Electric Heat Relay 2"
-    id: hvac_electric_heat_relay_2
+    name: "Electric Heat Relay 2"
+    id: electric_heat_relay_2
     sensor_datapoint: HT2_RELY
     icon: "mdi:heating-coil"
     entity_category: "diagnostic"

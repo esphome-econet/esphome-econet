@@ -166,6 +166,11 @@ switch:
     switch_datapoint: ALRESET
     request_mod: none
     internal: true
+  - platform: econet
+    id: alhisclr
+    switch_datapoint: ALHISCLR
+    request_mod: none
+    internal: true
 
 button:
   - platform: restart
@@ -191,3 +196,12 @@ button:
       - switch.turn_on: alreset
       - delay: 1s
       - switch.turn_off: alreset
+  - platform: template
+    name: "Alarm History Reset"
+    id: alarm_history_reset
+    icon: "mdi:restart-alert"
+    entity_category: "config"
+    on_press:
+      - switch.turn_on: alhisclr
+      - delay: 1s
+      - switch.turn_off: alhisclr
