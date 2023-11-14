@@ -34,8 +34,8 @@ jobs:
           cmd: >
             yq -P -i
             '
-              .substitutions.external_components_source = "components" |
-              .packages.econet = "econet_${{ matrix.appliance.name }}.yaml" |
+              .substitutions.external_components_source = "../components" |
+              .packages.econet = "../econet_${{ matrix.appliance.name }}.yaml" |
               .packages.econet   tag = "!include"
             '
             build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
