@@ -17,10 +17,11 @@ econet:
     #- sensor_datapoint: AIRHSTAT
       #datapoint_type: raw
       #then:
+        # yamllint disable rule:line-length
         #- lambda: |-
             #ESP_LOGD("main", "on_datapoint_update %s", format_hex_pretty(x).c_str());
             #id(airhandler_cfm).publish_state((x[16] << 8) + x[17]);
-            
+        # yamllint disable rule:line-length
 
 climate:
   - platform: econet
