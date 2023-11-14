@@ -58,7 +58,7 @@ Installation is a three-step process:
 
 ### Step 1: Customizing the esphome-econet yaml for Your Device
 
-Before installing, you will need to create a customized yaml for your device/environment. Start with one of the starter yaml's in in the [build-yaml directory](https://github.com/esphome-econet/esphome-econet/tree/main/build-yaml) of the repo, choosing the appropriate file for your appliance and ESP hardware (choose ESP32 for the standard ATOM Lite hareware described above):
+Before installing, you will need to create a customized yaml for your device/environment. Start with one of the starter yaml's in in the [build-yaml directory](https://github.com/esphome-econet/esphome-econet/tree/main/build-yaml) of the repo, choosing the appropriate file for your appliance and ESP hardware (choose ESP32 for the standard ATOM Lite hardware described above):
 
 - **Heatpump Water Heaters**: `econet-hpwh-*.yaml`
 - **Tankless Water Heaters**: `econet_tlwh-*.yaml`
