@@ -28,14 +28,15 @@ jobs:
             shorthand: tlwh
       fail-fast: false
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v4.1.1
+      - name: Force Manifest to Build Local Code
+        uses: mikefarah/yq@v4.35.2
+        with:
+          cmd: yq -P -i '.substitutions.external_components_source = "components"'' build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Build firmware
         uses: esphome/build-action@v1.8.0
-        id: esphome-build
         with:
           yaml_file: build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
-          version: latest
       - name: Copy firmware and manifest
         run: |
           mkdir output
