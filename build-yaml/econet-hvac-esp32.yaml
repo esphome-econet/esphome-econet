@@ -6,7 +6,10 @@ substitutions:
   board: esp32dev
 
 packages:
-  econet-hvac: !include ../econet_hvac.yaml
+  econet:
+    url: https://github.com/esphome-econet/esphome-econet
+    ref: main
+    file: econet_hvac.yaml
   # Uncomment if you have an communicationg Outdoor Unit
   # econet-hvac-odu: !include ../econet_hvac_odu.yaml
 

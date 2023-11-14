@@ -6,7 +6,10 @@ substitutions:
   board: esp32dev
 
 packages:
-  econet-etwh: !include ../econet_electric_tank_water_heater.yaml
+  econet:
+    url: https://github.com/esphome-econet/esphome-econet
+    ref: main
+    file: econet_electric_tank_water_heater.yaml
 
 dashboard_import:
   package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${platform}.yaml@${github_ref}

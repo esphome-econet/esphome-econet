@@ -34,7 +34,14 @@ jobs:
       - name: Force Manifest to Build Local Code
         uses: mikefarah/yq@v4.35.2
         with:
-          cmd: yq -P -i '.substitutions.external_components_source = "components"'' build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
+          cmd: >
+            yq -P -i
+            '
+              .substitutions.external_components_source = "components" |
+              .packages.econet = "econet_${{ matrix.appliance.name }}.yaml" |
+              .packages.econet   tag = "!include"
+            '
+            build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Build Firmware
         uses: esphome/build-action@v1.8.0
         with:
