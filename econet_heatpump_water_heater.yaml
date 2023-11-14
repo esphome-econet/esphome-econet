@@ -129,7 +129,7 @@ text_sensor:
     name: "Model Number"
     id: model_number
     sensor_datapoint: PRODMODN
-    request_mod: 2
+    request_mod: 4
     request_once: true
     icon: "mdi:information-box"
     entity_category: "diagnostic"
@@ -137,7 +137,7 @@ text_sensor:
     name: "Serial Number"
     id: serial_number
     sensor_datapoint: PRODSERN
-    request_mod: 2
+    request_mod: 4
     request_once: true
     icon: "mdi:information-box"
     entity_category: "diagnostic"
