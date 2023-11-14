@@ -105,7 +105,7 @@ text_sensor:
     icon: "mdi:alert"
     entity_category: "diagnostic"
   - platform: econet
-    name: "HVAC Alarm History 2"
+    name: "Alarm History 2"
     id: alarm_history_2
     sensor_datapoint: ALARMH02
     request_mod: 2
