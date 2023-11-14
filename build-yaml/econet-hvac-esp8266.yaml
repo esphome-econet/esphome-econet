@@ -11,7 +11,10 @@ packages:
     ref: main
     file: econet_hvac.yaml
   # Uncomment if you have an communicationg Outdoor Unit
-  # econet-hvac-odu: !include ../econet_hvac_odu.yaml
+  # econet-hvac-odu:
+  #   url: https://github.com/esphome-econet/esphome-econet
+  #   ref: main
+  #   file: econet_hvac_odu.yaml
 
 dashboard_import:
   package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${platform}.yaml@${github_ref}
