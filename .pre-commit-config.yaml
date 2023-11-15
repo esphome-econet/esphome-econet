@@ -9,15 +9,13 @@ repos:
         args:
           - --safe
           - --quiet
-        files: ^((components|esphome|script|tests)/.+)?[^/]+\.py$
   - repo: https://github.com/PyCQA/flake8
     rev: 6.1.0
     hooks:
       - id: flake8
         additional_dependencies:
-          - flake8-docstrings==1.5.0
-          - pydocstyle==5.1.1
-        files: ^(components|esphome|tests)/.+\.py$
+          - flake8-docstrings==1.7.0
+          - pydocstyle==6.3.0
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.15.0
     hooks:
@@ -48,4 +46,5 @@ repos:
 
 # Configuration per https://pre-commit.ci/#configuration
 ci:
+  autoupdate_schedule: monthly
   skip: [no-commit-to-branch]
