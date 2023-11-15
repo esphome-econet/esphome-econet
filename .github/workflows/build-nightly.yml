@@ -4,47 +4,25 @@ name: Nightly Build
 on:
   schedule:
     - cron: "0 0 * * *"
+  workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build ${{ matrix.appliance.shorthand }}-${{ matrix.platform }} Firmware
+  call-build:
+    uses: ./.github/workflows/build.yml
+  create-issue-on-failure:
+    name: Create Issue on Failure
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        platform: [esp32, esp8266]
-        appliance:
-          - name: electric_tank_water_heater
-            shorthand: etwh
-          - name: heatpump_water_heater
-            shorthand: hpwh
-          - name: hvac
-            shorthand: hvac
-          - name: tankless_water_heater
-            shorthand: tlwh
-      fail-fast: true
+    permissions:
+      issues: write
+    needs: call-build
+    if: failure()
     steps:
       - uses: actions/checkout@v4.1.1
-      - name: Force Manifest to Build Local Code
-        uses: mikefarah/yq@v4.40.1
-        with:
-          cmd: >
-            yq -P -i
-            '
-              .substitutions.external_components_source = "../components" |
-              .packages.econet = "../econet_${{ matrix.appliance.name }}.yaml" |
-              .packages.econet   tag = "!include"
-            '
-            build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
-      - name: Build Firmware
-        uses: esphome/build-action@v1.8.0
-        with:
-          yaml_file: build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Create Issue on Failure
-        if: failure()
         uses: JasonEtco/create-an-issue@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
