@@ -39,3 +39,13 @@ repos:
     rev: v2.2.6
     hooks:
       - id: codespell
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: no-commit-to-branch
+        args:
+          - --branch=main
+
+# Configuration per https://pre-commit.ci/#configuration
+ci:
+  skip: [no-commit-to-branch]
