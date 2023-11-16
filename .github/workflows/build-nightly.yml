@@ -11,14 +11,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  call-build:
+  build:
     uses: ./.github/workflows/build.yml
   create-issue-on-failure:
     name: Create Issue on Failure
     runs-on: ubuntu-latest
     permissions:
       issues: write
-    needs: call-build
+    needs: build
     if: failure()
     steps:
       - uses: actions/checkout@v4.1.1

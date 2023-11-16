@@ -7,54 +7,14 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Build econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        platform: [esp32, esp8266]
-        appliance:
-          - name: electric_tank_water_heater
-            shorthand: etwh
-          - name: heatpump_water_heater
-            shorthand: hpwh
-          - name: hvac
-            shorthand: hvac
-          - name: tankless_water_heater
-            shorthand: tlwh
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4.1.1
-      - name: Force Manifest to Build Local Code
-        uses: mikefarah/yq@v4.40.1
-        with:
-          cmd: >
-            yq -P -i
-            '
-              .substitutions.external_components_source = "../components" |
-              .packages.econet = "../econet_${{ matrix.appliance.name }}.yaml" |
-              .packages.econet   tag = "!include"
-            '
-            build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
-      - name: Build firmware
-        uses: esphome/build-action@v1.8.0
-        id: esphome-build
-        with:
-          yaml_file: build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
-      - name: Copy firmware and manifest
-        run: |
-          mkdir output
-          mv ${{ steps.esphome-build.outputs.name }} output/
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3.1.3
-        with:
-          name: econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}
-          path: output
-          retention-days: 7
+    uses: ./.github/workflows/build.yml
+    with:
+      upload-artifacts: true
 
   consolidate-manifests:
     name: Consolidate ${{ matrix.appliance.shorthand }} manifests
