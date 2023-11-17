@@ -63,3 +63,12 @@ jobs:
           name: econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}
           path: output
           retention-days: 7
+  build-status: # Needed to provide an overall status on this job rather than just the various matrix jobs
+    name: Compile Build Status
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      - name: Check build matrix status
+        if: ${{ needs.build.result != 'success' }}
+        run: exit 1
