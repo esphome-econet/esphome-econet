@@ -51,6 +51,7 @@ sensor:
     name: "Static Pressure"
     id: static_pressure
     sensor_datapoint: STATIC_P
+    accuracy_decimals: 6
     unit_of_measurement: "in"
     entity_category: "diagnostic"
   - platform: econet

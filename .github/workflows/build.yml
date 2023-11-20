@@ -4,6 +4,12 @@ name: Build Firmware
 on:
   pull_request:
   workflow_call:
+    inputs:
+      upload-artifacts:
+        type: boolean
+        required: false
+        default: false
+        description: "Set to true to have this workflow upload resulting firmware artifacts."
   workflow_dispatch:
 
 concurrency:
@@ -30,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4.1.1
       - name: Force Manifest to Build Local Code
-        uses: mikefarah/yq@v4.40.1
+        uses: mikefarah/yq@v4.40.2
         with:
           cmd: >
             yq -P -i
@@ -41,6 +47,28 @@ jobs:
             '
             build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Build Firmware
+        id: esphome-build
         uses: esphome/build-action@v1.8.0
         with:
           yaml_file: build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
+      - name: Copy firmware and manifest
+        if: ${{ inputs.upload-artifacts }}
+        run: |
+          mkdir output
+          mv ${{ steps.esphome-build.outputs.name }} output/
+      - name: Upload artifact
+        if: ${{ inputs.upload-artifacts }}
+        uses: actions/upload-artifact@v3.1.3
+        with:
+          name: econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}
+          path: output
+          retention-days: 7
+  build-status: # Needed to provide an overall status on this job rather than just the various matrix jobs
+    name: Compile Build Status
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      - name: Check build matrix status
+        if: ${{ needs.build.result != 'success' }}
+        run: exit 1
