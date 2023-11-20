@@ -31,7 +31,8 @@ climate:
       2: "Heat Pump"
       3: "High Demand"
       4: "Electric"
-      5: "Vacation"
+      # Vacation preset deosn't seem to have any effect
+      # 5: "Vacation"
 
 sensor:
   - platform: econet
@@ -141,3 +142,47 @@ text_sensor:
     request_once: true
     icon: "mdi:information-box"
     entity_category: "diagnostic"
+
+number:
+  # Used to set the vacation state: 0) Off, 1) Timed (for Duration set by VACATIME), 2) Permanent
+  - platform: econet
+    name: "Vacation Mode Setting"
+    id: vaca_net
+    number_datapoint: VACA_NET
+    step: 1
+    min_value: 0
+    max_value: 2
+    mode: slider
+    icon: "mdi:bag-suitcase"
+    internal: true
+  - platform: econet
+    name: "Vacation Timer"
+    number_datapoint: VACATIME
+    unit_of_measurement: "h"
+    step: 1
+    min_value: 1
+    max_value: 10000
+    mode: box
+    icon: "mdi:briefcase-clock"
+    entity_category: "config"
+    disabled_by_default: true
+
+switch:
+  - platform: template
+    name: "Vacation Mode"
+    id: vacation_mode
+    restore_mode: DISABLED
+    lambda: |-
+      if (id(vaca_net).state == 0) {
+        return false;
+      } else {
+        return true;
+      }
+    turn_on_action:
+      - number.set:
+          id: vaca_net
+          value: 2
+    turn_off_action:
+      - number.set:
+          id: vaca_net
+          value: 0
