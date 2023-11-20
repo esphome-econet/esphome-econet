@@ -26,6 +26,29 @@ For a video overview of how to setup the recommended hardware and deploy ESPHome
 
 [![Water Heater - Home Assistant - ESP-Home EcoNET](https://img.youtube.com/vi/4IVNuJEpytA/0.jpg)](https://www.youtube.com/watch?v=4IVNuJEpytA)
 
+## Contributing to ESPHome Econet
+
+Contributions to the ESPHome-econet are welcome and encouraged! If you're looking to help out, please check out [the list of open issues](https://github.com/esphome-econet/esphome-econet/issues) if you need inspiration.
+
+Contributors will want to install esphome and pre-commit, then install pre-commit hooks for your forked repo:
+
+```bash
+pip install esphome pre-commit
+cd esphome-econet
+pre-commit install
+```
+
+### Testing Local Changes
+
+The esphome CLI can be used to compile and install changes to YAML and/or code via the `esphome compile` and `esphome run` commands. If you've made code changes, you can force your compilation to use local source code from the `components` directory by either setting `external_components_source: components` as a substitution in your YAML or via a command line flag to esphome, like `esphome run -s external_components_source components`.
+
+If you've made updates to the base or device-specific ESPHome configuration YAML's, you'll need to update your YAML `packages:` command to use the local files by replacing any remote reference with a local reference, such as:
+
+```yaml
+packages:
+  econet: !include ./econet_electric_tank_water_heater.yaml
+```
+
 ## Need More Help?
 
 If you have further questions or ideas for how to improve ESPHome-econet, please [come visit us on our Discord](https://discord.gg/cRpxtjkQQ3).
