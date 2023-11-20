@@ -130,6 +130,24 @@ sensor:
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
+  - platform: econet
+    name: "Lower Heater Runtime"
+    id: hours_lower_heater
+    sensor_datapoint: HRSLOHTR
+    unit_of_measurement: "h"
+    accuracy_decimals: 6
+    device_class: "duration"
+    state_class: "total_increasing"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Upper Heating Element Runtime"
+    id: hours_upper_heater
+    sensor_datapoint: HRSUPHTR
+    unit_of_measurement: "h"
+    accuracy_decimals: 6
+    device_class: "duration"
+    state_class: "total_increasing"
+    entity_category: "diagnostic"
 
 binary_sensor:
   - platform: econet
