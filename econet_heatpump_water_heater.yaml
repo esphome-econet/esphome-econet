@@ -36,7 +36,7 @@ climate:
 
 select:
   - platform: "econet"
-    name: "Vacation Mode Setting"
+    name: "Vacation"
     id: vaca_net
     enum_datapoint: VACA_NET
     options:
