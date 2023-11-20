@@ -44,24 +44,6 @@ select:
       1: "Timed"
       2: "Permanent"
     icon: "mdi:bag-suitcase"
-    disabled_by_default: true
-
-switch:
-  - platform: template
-    name: "Vacation Mode"
-    id: vacation_mode
-    restore_mode: DISABLED
-    lambda: |-
-      return id(vaca_net).state != "Off";
-    turn_on_action:
-      - select.set:
-          id: vaca_net
-          option: "Permanent"
-    turn_off_action:
-      - select.set:
-          id: vaca_net
-          option: "Off"
-    icon: "mdi:bag-suitcase"
 
 number:
   - platform: econet
@@ -74,7 +56,6 @@ number:
     mode: box
     icon: "mdi:briefcase-clock"
     entity_category: "config"
-    disabled_by_default: true
 
 sensor:
   - platform: econet
