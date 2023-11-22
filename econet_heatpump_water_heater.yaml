@@ -3,28 +3,15 @@ substitutions:
   name: "econet-hpwh"
   friendly_name: "Water Heater"
   device_description: "Rheem Heat Pump Water Heater"
-  sensor_power_filters_lambda: return x;
 
 packages:
-  econet: !include econet_base.yaml
+  econet: !include econet_electric_tank_water_heater.yaml
 
 econet:
   dst_address: 0x1280
 
 climate:
-  - platform: econet
-    name: None
-    visual:
-      min_temperature: "43.3333"
-      max_temperature: "60"
-      temperature_step: 1.0f
-    current_temperature_datapoint: UPHTRTMP
-    target_temperature_datapoint: WHTRSETP
-    mode_datapoint: WHTRENAB
-    modes:
-      0: "OFF"
-      1: "AUTO"
-    custom_preset_datapoint: WHTRCNFG
+  - id: !extend econet_climate
     custom_presets:
       0: "Off"
       1: "Eco Mode"
@@ -34,38 +21,7 @@ climate:
       # Vacation preset doesn't seem to have any effect
       # 5: "Vacation"
 
-select:
-  - platform: "econet"
-    name: "Vacation"
-    id: vaca_net
-    enum_datapoint: VACA_NET
-    options:
-      0: "Off"
-      1: "Timed"
-      2: "Permanent"
-    icon: "mdi:bag-suitcase"
-
-number:
-  - platform: econet
-    name: "Vacation Timer"
-    number_datapoint: VACATIME
-    unit_of_measurement: "h"
-    step: 1
-    min_value: 1
-    max_value: 10000
-    mode: box
-    icon: "mdi:briefcase-clock"
-    entity_category: "config"
-
 sensor:
-  - platform: econet
-    name: "Hot Water"
-    id: hot_water
-    sensor_datapoint: HOTWATER
-    unit_of_measurement: "%"
-    accuracy_decimals: 0
-    device_class: "moisture"
-    state_class: "measurement"
   - platform: econet
     name: "Ambient Temperature"
     id: ambient_temp
@@ -75,34 +31,6 @@ sensor:
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
-  - platform: econet
-    name: "Lower Tank Temperature"
-    id: lower_tank_temp
-    sensor_datapoint: LOHTRTMP
-    unit_of_measurement: "°F"
-    accuracy_decimals: 1
-    device_class: "temperature"
-    state_class: "measurement"
-    entity_category: "diagnostic"
-  - platform: econet
-    name: "Upper Tank Temperature"
-    id: upper_tank_temp
-    sensor_datapoint: UPHTRTMP
-    unit_of_measurement: "°F"
-    accuracy_decimals: 1
-    device_class: "temperature"
-    state_class: "measurement"
-    entity_category: "diagnostic"
-  - platform: econet
-    name: "Power"
-    id: power
-    sensor_datapoint: POWRWATT
-    unit_of_measurement: "W"
-    accuracy_decimals: 3
-    device_class: "power"
-    state_class: "measurement"
-    filters:
-      - lambda: ${sensor_power_filters_lambda}
   - platform: econet
     name: "Evaporator Temperature"
     id: evaporator_temp
@@ -130,24 +58,6 @@ sensor:
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
-  - platform: econet
-    name: "Lower Heating Element Runtime"
-    id: hours_lower_heater
-    sensor_datapoint: HRSLOHTR
-    unit_of_measurement: "h"
-    accuracy_decimals: 6
-    device_class: "duration"
-    state_class: "total_increasing"
-    entity_category: "diagnostic"
-  - platform: econet
-    name: "Upper Heating Element Runtime"
-    id: hours_upper_heater
-    sensor_datapoint: HRSUPHTR
-    unit_of_measurement: "h"
-    accuracy_decimals: 6
-    device_class: "duration"
-    state_class: "total_increasing"
-    entity_category: "diagnostic"
 
 binary_sensor:
   - platform: econet
@@ -162,24 +72,3 @@ text_sensor:
     id: fan_speed
     sensor_datapoint: FAN_CTRL
     icon: "mdi:fan"
-  - platform: econet
-    name: "Heating Element State"
-    id: heating_element
-    sensor_datapoint: HEATCTRL
-    icon: "mdi:heating-coil"
-  - platform: econet
-    name: "Model Number"
-    id: model_number
-    sensor_datapoint: PRODMODN
-    request_mod: 4
-    request_once: true
-    icon: "mdi:information-box"
-    entity_category: "diagnostic"
-  - platform: econet
-    name: "Serial Number"
-    id: serial_number
-    sensor_datapoint: PRODSERN
-    request_mod: 4
-    request_once: true
-    icon: "mdi:information-box"
-    entity_category: "diagnostic"
