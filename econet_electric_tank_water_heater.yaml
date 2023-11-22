@@ -58,6 +58,32 @@ sensor:
     state_class: "measurement"
     filters:
       - lambda: ${sensor_power_filters_lambda}
+  - platform: econet
+    name: "Lower Heater Runtime"
+    id: hours_lower_heater
+    sensor_datapoint: HRSLOHTR
+    unit_of_measurement: "h"
+    accuracy_decimals: 6
+    device_class: "duration"
+    state_class: "total_increasing"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Upper Heating Element Runtime"
+    id: hours_upper_heater
+    sensor_datapoint: HRSUPHTR
+    unit_of_measurement: "h"
+    accuracy_decimals: 6
+    device_class: "duration"
+    state_class: "total_increasing"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Hot Water"
+    id: hot_water
+    sensor_datapoint: HOTWATER
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    device_class: "moisture"
+    state_class: "measurement"
 
 text_sensor:
   - platform: econet
@@ -69,4 +95,20 @@ text_sensor:
     name: "Mode"
     id: mode
     sensor_datapoint: WHTRMODE
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Model Number"
+    id: model_number
+    sensor_datapoint: PRODMODN
+    request_mod: 4
+    request_once: true
+    icon: "mdi:information-box"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Serial Number"
+    id: serial_number
+    sensor_datapoint: PRODSERN
+    request_mod: 4
+    request_once: true
+    icon: "mdi:information-box"
     entity_category: "diagnostic"
