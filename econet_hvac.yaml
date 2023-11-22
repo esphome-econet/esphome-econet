@@ -12,6 +12,7 @@ econet:
 
 climate:
   - platform: econet
+    id: econet_climate
     name: "HVAC"
     visual:
       min_temperature: "10"
