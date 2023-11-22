@@ -13,6 +13,7 @@ econet:
 
 climate:
   - platform: econet
+    id: econet_climate
     name: None
     visual:
       min_temperature: "43.3333"
