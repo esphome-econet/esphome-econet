@@ -59,7 +59,7 @@ sensor:
     filters:
       - lambda: ${sensor_power_filters_lambda}
   - platform: econet
-    name: "Lower Heater Runtime"
+    name: "Lower Heating Element Runtime"
     id: hours_lower_heater
     sensor_datapoint: HRSLOHTR
     unit_of_measurement: "h"
