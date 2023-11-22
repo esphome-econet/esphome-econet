@@ -3,6 +3,7 @@ substitutions:
   name: "econet-tlwh"
   friendly_name: "Tankless Water Heater"
   device_description: "Rheem Tankless Water Heater"
+  econet_update_interval: 5s
 
 packages:
   econet: !include econet_base.yaml
