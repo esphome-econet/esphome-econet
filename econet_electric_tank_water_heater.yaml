@@ -54,7 +54,7 @@ sensor:
     id: power
     sensor_datapoint: POWRWATT
     unit_of_measurement: "W"
-    accuracy_decimals: 3
+    accuracy_decimals: 1
     device_class: "power"
     state_class: "measurement"
     filters:
