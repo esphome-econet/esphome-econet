@@ -131,7 +131,7 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
-    name: "Lower Heater Runtime"
+    name: "Lower Heating Element Runtime"
     id: hours_lower_heater
     sensor_datapoint: HRSLOHTR
     unit_of_measurement: "h"
