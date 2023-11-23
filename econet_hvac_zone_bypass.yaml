@@ -1,0 +1,30 @@
+---
+# packages:
+#   econet: !include econet_hvac_furnace.yaml
+
+text_sensor:
+  - platform: econet
+    name: z${zoneid}name
+    sensor_datapoint: Z${zoneid}__NAME
+    request_mod: ${requestmod}
+    request_once: true
+
+sensor:
+  - platform: econet
+    name: Zone ${zoneid} CFM
+    sensor_datapoint: Z${zoneid}CFMDSP
+    request_mod: ${requestmod}
+    accuracy_decimals: 1
+    state_class: "measurement"
+    entity_category: "diagnostic"
+    unit_of_measurement: "cfm"
+
+binary_sensor:
+  - platform: econet
+    name: zone {zoneid} enabled
+    sensor_datapoint: ZON${zoneid}ENAB
+    icon: "mdi:heating-coil"
+    entity_category: "diagnostic"
+    disabled_by_default: true
+    request_mod: ${requestmod}
+    request_once: true

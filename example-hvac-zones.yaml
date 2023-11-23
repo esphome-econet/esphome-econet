@@ -1,0 +1,43 @@
+---
+substitutions:
+  external_components_source: components  # Build with local code instead of pulling from Github
+
+packages:
+  econet: !include
+    file: econet_hvac_base.yaml
+
+  # for zones - include the econet hvac package above and the appropriate zones below
+  # if additional zones are needed, the thermostat address for each thermostat will need to be determined.
+  zone1: !include
+    file: econet_hvac_zone_template.yaml
+    vars:
+      zoneid: "1"
+      zonename: "Zone1"
+      requestmod: 4
+      thermostat_address: 0x380
+  zone2: !include
+    file: econet_hvac_zone_template.yaml
+    vars:
+      zoneid: "2"
+      zonename: "Zone2"
+      requestmod: 5
+      thermostat_address: 0x680
+  zone3: !include
+    file: econet_hvac_zone_template.yaml
+    vars:
+      zoneid: "3"
+      zonename: "Zone3"
+      requestmod: 6
+      thermostat_address: 0x681
+  # This configuration does not include a thermostat, just a damper.
+  bypasszone: !include
+    file: econet_hvac_zone_bypass.yaml
+    vars:
+      zoneid: "6"
+      zonename: "Zone6"
+      requestmod: 6
+
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password

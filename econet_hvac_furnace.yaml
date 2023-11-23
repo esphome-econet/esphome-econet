@@ -7,7 +7,7 @@ substitutions:
   furnace_kbtus_per_m3: "35.300" # Natural Gas = approx 35.300, Propane = approx 88.852
 
 packages:
-  econet: !include econet_hvac.yaml
+  econet: !include econet_hvac_base.yaml
 
 econet:
   request_mod_addresses:

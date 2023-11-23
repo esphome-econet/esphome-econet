@@ -6,7 +6,8 @@ packages:  # Change this file to the correct one(s) for your device
   econet-hpwh: !include econet_heatpump_water_heater.yaml
   # econet-hvac-furnace: !include econet_hvac_furnace.yaml
   # econet-hvac-air-handler: !include econet_hvac_air_handler.yaml
-  # econet-hvac-odu: !include econet_hvac_odu.yaml  # Depends on econet_hvac_[furance or air_handler].yaml
+  # econet-hvac-single-zone-climate: !include econet_hvac_single_zone_climate.yaml # Depends on econet_hvac_[furnace or air_handler].yaml
+  # econet-hvac-odu: !include econet_hvac_odu.yaml  # Depends on econet_hvac_[furnace or air_handler].yaml
   # econet-tlwh: !include econet_tankless_water_heater.yaml
   # econet-etwh: !include econet_electric_tank_water_heater.yaml
 

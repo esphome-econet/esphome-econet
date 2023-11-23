@@ -5,7 +5,7 @@ substitutions:
   device_description: "Rheem HVAC"
 
 packages:
-  econet: !include econet_hvac.yaml
+  econet: !include econet_hvac_base.yaml
 
 sensor:
   - platform: econet
