@@ -65,27 +65,25 @@ void extract_obj_names(const uint8_t *pdata, uint8_t data_len, std::vector<std::
       obj_names->push_back(s);
       break;
     }
-	// If the value after the end is not a 0 ... the string actually continues...)
-	if(*(end+1) != 0){
-		const uint8_t *start2 = end + 1;
-		// Look for the next occurrence of 0x00 in the remaining bytes
-		const uint8_t *end2 = (const uint8_t *) memchr(end+1, 0, num);
-		// Add all bytes until the first occurrence of 0x00
-		std::string s1((const char *) start, end - start);
-		// Add all bytes until the next occurrence of 0x00
-		std::string s2((const char *) start2, end2 - start2);
-		// Put the strings together and replace the offending 0x00 with a "~"
-		std::string s3 = s1 + "~" + s2;
-		obj_names->push_back(s3);
-		start = end2 + 1;
-	}
-	else
-	{
-		// Add all bytes until the first occurrence of 0x00
-		std::string s((const char *) start, end - start);
-		obj_names->push_back(s);
-		start = end + 1;
-	}
+    // If the value after the end is not a 0 ... the string actually continues...)
+    if (*(end + 1) != 0) {
+      const uint8_t *start2 = end + 1;
+      // Look for the next occurrence of 0x00 in the remaining bytes
+      const uint8_t *end2 = (const uint8_t *) memchr(end + 1, 0, num);
+      // Add all bytes until the first occurrence of 0x00
+      std::string s1((const char *) start, end - start);
+      // Add all bytes until the next occurrence of 0x00
+      std::string s2((const char *) start2, end2 - start2);
+      // Put the strings together and replace the offending 0x00 with a "~"
+      std::string s3 = s1 + "~" + s2;
+      obj_names->push_back(s3);
+      start = end2 + 1;
+    } else {
+      // Add all bytes until the first occurrence of 0x00
+      std::string s((const char *) start, end - start);
+      obj_names->push_back(s);
+      start = end + 1;
+    }
     // Skip all 0x00 bytes
     while (!*start) {
       start++;
@@ -188,7 +186,7 @@ void Econet::parse_message_(bool is_tx) {
   uint16_t crc = (b[MSG_HEADER_SIZE + data_len]) + (b[MSG_HEADER_SIZE + data_len + 1] << 8);
   uint16_t crc_check = crc16(b, MSG_HEADER_SIZE + data_len, 0);
   if (crc != crc_check) {
-	read_req_.awaiting_res = false;
+    read_req_.awaiting_res = false;
     ESP_LOGW(TAG, "Ignoring message with incorrect crc");
     return;
   }
@@ -243,15 +241,13 @@ void Econet::parse_message_(bool is_tx) {
             ESP_LOGE(TAG, "Unexpected length of %d for %s", item_len, datapoint_id.c_str());
             break;
           }
-		  if(item_len == 1){
-			  handle_response_(datapoint_id, EconetDatapointType::UNSUPPORTED, pdata + tpos + 1, item_len - 4 + 1);
-		  }
-		  else
-		  {
-			  EconetDatapointType item_type = EconetDatapointType(pdata[tpos + 1] & 0x7F);
-			  handle_response_(datapoint_id, item_type, pdata + tpos + 4, item_len - 4 + 1);
+          if (item_len == 1) {
+            handle_response_(datapoint_id, EconetDatapointType::UNSUPPORTED, pdata + tpos + 1, item_len - 4 + 1);
+          } else {
+            EconetDatapointType item_type = EconetDatapointType(pdata[tpos + 1] & 0x7F);
+            handle_response_(datapoint_id, item_type, pdata + tpos + 4, item_len - 4 + 1);
           }
-		  tpos += item_len + 1;
+          tpos += item_len + 1;
           item_num++;
         }
       }
@@ -323,7 +319,7 @@ void Econet::handle_response_(const std::string &datapoint_id, EconetDatapointTy
     this->send_datapoint_(datapoint_id,
                           EconetDatapoint{.type = item_type, .value_enum = item_value, .value_string = s});
   } else if (item_type == EconetDatapointType::UNSUPPORTED) {
-	ESP_LOGI(TAG, "  %s : NOT SUPPORTED", datapoint_id.c_str());
+    ESP_LOGI(TAG, "  %s : NOT SUPPORTED", datapoint_id.c_str());
     this->send_datapoint_(datapoint_id,
                           EconetDatapoint{.type = item_type, .value_enum = 255, .value_string = "NOT SUPPORTED"});
   }
