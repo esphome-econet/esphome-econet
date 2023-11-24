@@ -29,6 +29,7 @@ enum class EconetDatapointType : uint8_t {
   TEXT = 1,
   ENUM_TEXT = 2,
   RAW = 4,
+  UNSUPPORTED = 21,
 };
 
 struct EconetDatapoint {
