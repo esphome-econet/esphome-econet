@@ -51,7 +51,7 @@ pre-commit install  # Enable pre-commit hooks to run prior to any commit
 
 ### Testing Local Changes
 
-The esphome CLI can be used to compile and install changes to YAML and/or code via the `esphome config`, `esphome compile` and `esphome run` commands. The provided `example-local.yaml` file provides a simple example of how to build with all local changes like this; just add a secret.yaml file to the root of your checked-out repo and run `esphome compile example-local.yaml` to test compilation of your configuration and code changes. You can use the `esphome config example-local.yaml` command to see the results of any config updates, or the `esphome run example-local.yaml` to deploy your changes to an ESPHome-capable device over wi-fi or USB.
+The esphome CLI can be used to compile and install changes to YAML and/or code via the `esphome config|compile|run` commands. The provided `example-local.yaml` file provides a simple example of how to build with all local changes like this; just add a `secrets.yaml` file to the root of your checked-out repo and run `esphome compile example-local.yaml` to test compilation of your configuration and code changes. You can use the `esphome config example-local.yaml` command to see the results of any config updates, or the `esphome run example-local.yaml` to deploy your changes to an ESPHome-capable device over wi-fi or USB.
 
 ## Need More Help?
 
