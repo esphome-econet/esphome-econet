@@ -3,6 +3,7 @@ substitutions:
   name: "econet-tlwh"
   friendly_name: "Tankless Water Heater"
   device_description: "Rheem Tankless Water Heater"
+  econet_update_interval: 5s
 
 packages:
   econet: !include econet_base.yaml
@@ -12,6 +13,7 @@ econet:
 
 climate:
   - platform: econet
+    id: econet_climate
     name: None
     visual:
       min_temperature: "43.3333"
@@ -91,3 +93,4 @@ sensor:
     lambda: |-
       return max((id(temp_out).state - id(temp_in).state) * id(flow_rate).state * 8.334 * 60 / 0.92 / 1000, 0.0);
     # yamllint enable rule:line-length
+    update_interval: ${econet_update_interval}
