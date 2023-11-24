@@ -2,11 +2,14 @@
 
 This [ESPHome](https://esphome.io) package creates a local network connection to econet-based device, like a Rheem Heat Pump Water Heater (HPWH), and creates entities in Home Assistant to control and monitor these devices.  This package provides more detailed and reliable sensors than Rheem's cloud-based [econet integration](https://www.home-assistant.io/integrations/econet/) available in Home Assistant.  This package and the Rheem econet integration can, however, coexist if desired.
 
-<img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Device_Page.png?raw=true" alt="Example Home Assistant device page for an ESPHome-econet device" width=50%>
-
-<img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Temperature_and_Mode_Selection.png?raw=true" alt="Setting Water Heater thermostat mode through Home Assistant with ESPHome-econet" width=50%>
-
-<img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Diagnostic_Sensors.png?raw=true" alt="Diagnostic sensors exposed to Home Assistant by ESPHome-econet" width=50%>
+<!-- markdownlint-capture -->
+<!-- markdownlint-disable -->
+<p float="left">
+    <img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Device_Page.png?raw=true" alt="Example Home Assistant device page for an ESPHome-econet device" width=40%>
+    <img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Temperature_and_Mode_Selection.png?raw=true" alt="Setting Water Heater thermostat mode through Home Assistant with ESPHome-econet" width=30%>
+    <img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Diagnostic_Sensors.png?raw=true" alt="Diagnostic sensors exposed to Home Assistant by ESPHome-econet" width=15%>
+</p>
+<!-- markdownlint-restore -->
 
 ## Supported Rheem Hardware
 
