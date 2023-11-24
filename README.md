@@ -8,7 +8,7 @@ Most modern Rheem Heat Pump Water Heaters, Tankless Water Heaters, Electric Tank
 
 ## Required ESPHome Hardware
 
-ESPHome-econet is a great first ESPHome project due to the easy hardware setup. All that's needed to run ESPHome-econet is an ESP32 or ESP8266 microcontroller and an RS485 Interface, plus a phone cord to hook it up to your Rheem appliance. For simplicity, we recommend the m5Stack K045 Kit, which includes both components in a simple package.
+ESPHome-econet is a great first ESPHome project due to the easy hardware setup. All that's needed to run ESPHome-econet is an ESP32 or ESP8266 microcontroller and an RS485 Interface, plus a phone cord to hook it up to your Rheem appliance and a USB-C charger to power it. For simplicity, we recommend the m5Stack K045 Kit, which includes both the ESP32 & RS485 components in a simple package.
 
 For full details on what hardware to buy and how to set it up, head over to the [Recommonded Hardware Purchase and Setup  page on our wiki](https://github.com/esphome-econet/esphome-econet/wiki/Recommended-Hardware-Purchase-and-Setup-Instructions).
 
@@ -24,30 +24,23 @@ For alternative software installation methods and details on how to customize yo
 
 For a video overview of how to setup the recommended hardware and deploy ESPHome-econet to it, please check out this video helpfully created by community member [Ylianst](https://github.com/Ylianst).
 
-[![Water Heater - Home Assistant - ESP-Home EcoNET](https://img.youtube.com/vi/4IVNuJEpytA/0.jpg)](https://www.youtube.com/watch?v=4IVNuJEpytA)
+[![Water Heater - Home Assistant - ESP-Home EcoNET](https://img.youtube.com/vi/4IVNuJEpytA/0.jpg)](https://www.youtube.com/shorts/J4Zf1Vtf2CA)
 
 ## Contributing to ESPHome Econet
 
-Contributions to the ESPHome-econet are welcome and encouraged! If you're looking to help out, please check out [the list of open issues](https://github.com/esphome-econet/esphome-econet/issues) if you need inspiration.
+Contributions to the ESPHome-econet are welcome and encouraged! If you're looking to help out and need inspiration, please check out [the list of open issues](https://github.com/esphome-econet/esphome-econet/issues).
 
 Contributors will want to install esphome and pre-commit, then install pre-commit hooks for your forked repo:
 
 ```bash
-pip install esphome pre-commit
-cd esphome-econet
-pre-commit install
+pip install -U esphome pre-commit  # Install required python packages
+cd esphome-econet  # CD into the directory where you cloned your forked esphome-econet repo
+pre-commit install  # Enable pre-commit hooks to run prior to any commit
 ```
 
 ### Testing Local Changes
 
-The esphome CLI can be used to compile and install changes to YAML and/or code via the `esphome compile` and `esphome run` commands. If you've made code changes, you can force your compilation to use local source code from the `components` directory by either setting `external_components_source: components` as a substitution in your YAML or via a command line flag to esphome, like `esphome run -s external_components_source components`.
-
-If you've made updates to the base or device-specific ESPHome configuration YAML's, you'll need to update your YAML `packages:` command to use the local files by replacing any remote reference with a local reference, such as:
-
-```yaml
-packages:
-  econet: !include ./econet_electric_tank_water_heater.yaml
-```
+The esphome CLI can be used to compile and install changes to YAML and/or code via the `esphome config`, `esphome compile` and `esphome run` commands. The provided `example-local.yaml` file provides a simple example of how to build with all local changes like this; just add a secret.yaml file to the root of your checked-out repo and run `esphome compile example-local.yaml` to test compilation of your configuration and code changes. You can use the `esphome config example-local.yaml` command to see the results of any config updates, or the `esphome run example-local.yaml` to deploy your changes to an ESPHome-capable device over wi-fi or USB.
 
 ## Need More Help?
 
