@@ -2,6 +2,12 @@
 
 This [ESPHome](https://esphome.io) package creates a local network connection to econet-based device, like a Rheem Heat Pump Water Heater (HPWH), and creates entities in Home Assistant to control and monitor these devices.  This package provides more detailed and reliable sensors than Rheem's cloud-based [econet integration](https://www.home-assistant.io/integrations/econet/) available in Home Assistant.  This package and the Rheem econet integration can, however, coexist if desired.
 
+<img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Device_Page.png?raw=true" alt="Example Home Assistant device page for an ESPHome-econet device" width=50%>
+
+<img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Temperature_and_Mode_Selection.png?raw=true" alt="Setting Water Heater thermostat mode through Home Assistant with ESPHome-econet" width=50%>
+
+<img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Diagnostic_Sensors.png?raw=true" alt="Diagnostic sensors exposed to Home Assistant by ESPHome-econet" width=50%>
+
 ## Supported Rheem Hardware
 
 Most modern Rheem Heat Pump Water Heaters, Tankless Water Heaters, Electric Tank Water Heaters, and HVAC Systems are supported.
@@ -12,7 +18,7 @@ ESPHome-econet is a great first ESPHome project due to the easy hardware setup. 
 
 For full details on what hardware to buy and how to set it up, head over to the [Recommonded Hardware Purchase and Setup  page on our wiki](https://github.com/esphome-econet/esphome-econet/wiki/Recommended-Hardware-Purchase-and-Setup-Instructions).
 
-<img src="https://github.com/esphome-econet/econet-docs/blob/main/photos/Correctly-Wired-K045.jpeg?raw=true" alt="A correctly wired K045 unit." width=25%>
+<img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Correctly-Wired-K045.jpeg?raw=true" alt="A correctly wired K045 unit." width=25%>
 
 ## Software Installation
 
