@@ -7,9 +7,12 @@ This package and the Rheem econet integration can coexist if desired.
 <!-- markdownlint-capture -->
 <!-- markdownlint-disable -->
 <p float="left">
-    <img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Device_Page.png?raw=true" alt="Example Home Assistant device page for an ESPHome-econet device" width=40%>
-    <img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Temperature_and_Mode_Selection.png?raw=true" alt="Setting Water Heater thermostat mode through Home Assistant with ESPHome-econet" width=30%>
-    <img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Diagnostic_Sensors.png?raw=true" alt="Diagnostic sensors exposed to Home Assistant by ESPHome-econet" width=15%>
+    <img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Controls_and_Sensors.png?raw=true" alt="Example Home Assistant device controls and sensors for an ESPHome-econet device" width=40%>
+    <img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Thermostat.png?raw=true" alt="Setting Water Heater thermostat mode through Home Assistant with ESPHome-econet" width=50%>
+</p>
+<p float="left">
+    <img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Diagnostics.png?raw=true" alt="Diagnostic sensors exposed to Home Assistant by ESPHome-econet" width=40%>
+    <img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Configuration.png?raw=true" alt="Configuration via Home Assistant with ESPHome-econet" width=40%>
 </p>
 <!-- markdownlint-restore -->
 
@@ -27,7 +30,7 @@ For full details on what hardware to buy and how to set it up, head over to the 
 
 ## Software Installation
 
-For simplified software installation, simply connect your ESP32 device to your computer via USB and [visit the Installation page on the ESPHome-econet website](https://esphome-econet.github.io/install/). Simplify select your Rheem hardware type and the site will allow you to image the device, connect it to wi-fi, and add it to Home Assistant.
+To install the ESPHome-econet software, connect your ESP device to your computer via USB and [visit the Installation page on the ESPHome-econet website](https://esphome-econet.github.io/install/). Simply select your Rheem hardware type and the site will allow you to image the device, connect it to wi-fi, and add it to Home Assistant.
 
 For alternative software installation methods and details on how to customize your configuration, check out [the detailed Software Configuration and Installation Guided on our wiki](https://github.com/esphome-econet/esphome-econet/wiki/Initial-ESPHome%E2%80%90econet-Software-Configuration-and-Installation).
 
@@ -35,7 +38,7 @@ For alternative software installation methods and details on how to customize yo
 
 For a video overview of how to setup the recommended hardware and deploy ESPHome-econet to it, please check out this video helpfully created by community member [Ylianst](https://github.com/Ylianst).
 
-[![Water Heater - Home Assistant - ESP-Home EcoNET](https://img.youtube.com/vi/4IVNuJEpytA/0.jpg)](https://www.youtube.com/shorts/J4Zf1Vtf2CA)
+[![Water Heater - Home Assistant - ESP-Home EcoNET](https://img.youtube.com/vi/5u0_TsBOTEI/0.jpg)](https://www.youtube.com/shorts/K75njuvRIks)
 
 ## Contributing to ESPHome Econet
 
