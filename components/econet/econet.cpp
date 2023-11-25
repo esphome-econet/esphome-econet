@@ -343,8 +343,6 @@ void Econet::handle_response_(const std::string &datapoint_id, const uint8_t *p,
       break;
     case EconetDatapointType::UNSUPPORTED:
       ESP_LOGW(TAG, "  %s : UNSUPPORTED", datapoint_id.c_str());
-      this->send_datapoint_(datapoint_id,
-                            EconetDatapoint{.type = item_type, .value_enum = 0xFF, .value_string = "UNSUPPORTED"});
       break;
   }
 }
