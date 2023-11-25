@@ -89,7 +89,7 @@ void join_obj_names(const std::vector<std::string> &objects, std::vector<uint8_t
 
 std::string trim_trailing_whitespace(const char *p, uint8_t len) {
   const char *endp = p + len - 1;
-  while ((*endp == ' ' || *endp == 0) && endp != p - 1) {
+  while (endp >= p && (*endp == ' ' || *endp == 0)) {
     endp--;
   }
   std::string s(p, endp - p + 1);
@@ -121,6 +121,9 @@ void Econet::dump_config() {
         ESP_LOGCONFIG(TAG, "  Datapoint %s: raw value (value: %s)", kv.first.c_str(),
                       format_hex_pretty(kv.second.value_raw).c_str());
         break;
+      case EconetDatapointType::UNSUPPORTED:
+        ESP_LOGCONFIG(TAG, "  Datapoint %s: UNSUPPORTED", kv.first.c_str());
+        break;
     }
   }
 }
@@ -138,6 +141,7 @@ void Econet::make_request_() {
         break;
       case EconetDatapointType::TEXT:
       case EconetDatapointType::RAW:
+      case EconetDatapointType::UNSUPPORTED:
         ESP_LOGW(TAG, "Unexpected pending write: datapoint %s", kv->first.c_str());
         break;
     }
@@ -215,20 +219,34 @@ void Econet::parse_message_(bool is_tx) {
           this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type, .value_raw = raw});
         }
       } else if (read_req_.type == 2) {
+        // 1st pass to validate response and avoid any buffer over-read
+        // We expect: read_req_.obj_names.size() sections where each section has 1 byte representing the item_len
+        // followed by item_len bytes (see handle_response_).
         int tpos = 0;
         uint8_t item_num = 0;
-
-        while (tpos < data_len && item_num < read_req_.obj_names.size()) {
-          const std::string &datapoint_id = read_req_.obj_names[item_num];
+        while (tpos < data_len) {
           uint8_t item_len = pdata[tpos];
-          if (item_len <= 4 && tpos + item_len >= data_len) {
-            ESP_LOGE(TAG, "Unexpected length of %d for %s", item_len, datapoint_id.c_str());
+          if (item_len == 0 || tpos + item_len >= data_len) {
+            ESP_LOGE(TAG, "Unexpected item length of %d at position %d", item_len, tpos);
             break;
           }
-          EconetDatapointType item_type = EconetDatapointType(pdata[tpos + 1] & 0x7F);
-          handle_response_(datapoint_id, item_type, pdata + tpos + 4, item_len - 4 + 1);
           tpos += item_len + 1;
           item_num++;
+        }
+        if (item_num != read_req_.obj_names.size()) {
+          ESP_LOGE(TAG, "We requested %d objects but we received %d. Ignoring response.", read_req_.obj_names.size(),
+                   item_num);
+        } else {
+          // 2nd pass to handle response
+          tpos = 0;
+          item_num = 0;
+          while (tpos < data_len) {
+            const std::string &datapoint_id = read_req_.obj_names[item_num];
+            uint8_t item_len = pdata[tpos];
+            handle_response_(datapoint_id, pdata + tpos + 1, item_len);
+            tpos += item_len + 1;
+            item_num++;
+          }
         }
       }
       read_req_.awaiting_res = false;
@@ -245,7 +263,7 @@ void Econet::parse_message_(bool is_tx) {
             float item_value = bytes_to_float(pdata + WRITE_DATA_POS);
             ESP_LOGI(TAG, "  %s: %f", item_name.c_str(), item_value);
           } else {
-            ESP_LOGI(TAG, "  Unexpected Write Data Length");
+            ESP_LOGW(TAG, "  %s: Unexpected Write Data Length", item_name.c_str());
           }
           break;
         case EconetDatapointType::RAW:
@@ -255,6 +273,9 @@ void Econet::parse_message_(bool is_tx) {
         case EconetDatapointType::TEXT:
           ESP_LOGW(TAG, "(Please file an issue with the following line to add support for TEXT)");
           ESP_LOGW(TAG, "  %s: %s", item_name.c_str(), format_hex_pretty(pdata, data_len).c_str());
+          break;
+        case EconetDatapointType::UNSUPPORTED:
+          ESP_LOGW(TAG, "  %s: UNSUPPORTED", item_name.c_str());
           break;
       }
     } else if (type == 7) {
@@ -269,35 +290,62 @@ void Econet::parse_message_(bool is_tx) {
   }
 }
 
-void Econet::handle_response_(const std::string &datapoint_id, EconetDatapointType item_type, const uint8_t *p,
-                              uint8_t len) {
-  if (item_type == EconetDatapointType::FLOAT) {
-    if (len != FLOAT_SIZE) {
-      ESP_LOGE(TAG, "Expected len of %d but was %d for %s", FLOAT_SIZE, len, datapoint_id.c_str());
-      return;
+// len comes from p[-1], see caller. The caller is responsible for ensuring there won't be any buffer over-read.
+// type is at p[0]. If it's a supported type there is always 3 bytes: 0x80, 0x00, 0x00 followed by the actual data.
+// For FLOAT it's 4 bytes.
+// For TEXT it's some predefined number of bytes depending on the requested object padded with trailing whitespace.
+// For ENUM_TEXT it's 1 byte for the enum value, followed by one byte for the length of the enum text, and finally
+// followed by the bytes of the enum text padded with trailing whitespace.
+void Econet::handle_response_(const std::string &datapoint_id, const uint8_t *p, uint8_t len) {
+  EconetDatapointType item_type = EconetDatapointType(p[0] & 0x7F);
+  switch (item_type) {
+    case EconetDatapointType::FLOAT: {
+      p += 3;
+      len -= 3;
+      if (len != FLOAT_SIZE) {
+        ESP_LOGE(TAG, "Expected len of %d but was %d for %s", FLOAT_SIZE, len, datapoint_id.c_str());
+        return;
+      }
+      float item_value = bytes_to_float(p);
+      ESP_LOGI(TAG, "  %s : %f", datapoint_id.c_str(), item_value);
+      this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type, .value_float = item_value});
+      break;
     }
-    float item_value = bytes_to_float(p);
-    ESP_LOGI(TAG, "  %s : %f", datapoint_id.c_str(), item_value);
-    this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type, .value_float = item_value});
-  } else if (item_type == EconetDatapointType::TEXT) {
-    std::string s = trim_trailing_whitespace((const char *) p, len);
-    ESP_LOGI(TAG, "  %s : (%s)", datapoint_id.c_str(), s.c_str());
-    this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type, .value_string = s});
-  } else if (item_type == EconetDatapointType::ENUM_TEXT) {
-    if (len < 2) {
-      ESP_LOGE(TAG, "Expected len of at least 2 but was %d for %s", len, datapoint_id.c_str());
-      return;
+    case EconetDatapointType::TEXT: {
+      p += 3;
+      len -= 3;
+      std::string s = trim_trailing_whitespace((const char *) p, len);
+      ESP_LOGI(TAG, "  %s : (%s)", datapoint_id.c_str(), s.c_str());
+      this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type, .value_string = s});
+      break;
     }
-    uint8_t item_value = p[0];
-    uint8_t item_text_len = p[1];
-    if (item_text_len != len - 2) {
-      ESP_LOGE(TAG, "Expected text len of %d but was %d for %s", len - 2, item_text_len, datapoint_id.c_str());
-      return;
+    case EconetDatapointType::ENUM_TEXT: {
+      p += 3;
+      len -= 3;
+      if (len < 2) {
+        ESP_LOGE(TAG, "Expected len of at least 2 but was %d for %s", len, datapoint_id.c_str());
+        return;
+      }
+      uint8_t item_value = p[0];
+      uint8_t item_text_len = p[1];
+      if (item_text_len != len - 2) {
+        ESP_LOGE(TAG, "Expected text len of %d but was %d for %s", len - 2, item_text_len, datapoint_id.c_str());
+        return;
+      }
+      std::string s = trim_trailing_whitespace((const char *) p + 2, item_text_len);
+      ESP_LOGI(TAG, "  %s : %d (%s)", datapoint_id.c_str(), item_value, s.c_str());
+      this->send_datapoint_(datapoint_id,
+                            EconetDatapoint{.type = item_type, .value_enum = item_value, .value_string = s});
+      break;
     }
-    std::string s = trim_trailing_whitespace((const char *) p + 2, item_text_len);
-    ESP_LOGI(TAG, "  %s : %d (%s)", datapoint_id.c_str(), item_value, s.c_str());
-    this->send_datapoint_(datapoint_id,
-                          EconetDatapoint{.type = item_type, .value_enum = item_value, .value_string = s});
+    case EconetDatapointType::RAW:
+      // Handled separately since it seems it cannot be requested together with other objects.
+      break;
+    case EconetDatapointType::UNSUPPORTED:
+      ESP_LOGW(TAG, "  %s : UNSUPPORTED", datapoint_id.c_str());
+      this->send_datapoint_(datapoint_id,
+                            EconetDatapoint{.type = item_type, .value_enum = 0xFF, .value_string = "UNSUPPORTED"});
+      break;
   }
 }
 

@@ -29,6 +29,7 @@ enum class EconetDatapointType : uint8_t {
   TEXT = 1,
   ENUM_TEXT = 2,
   RAW = 4,
+  UNSUPPORTED = 21,
 };
 
 struct EconetDatapoint {
@@ -53,6 +54,8 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
       return lhs.value_enum == rhs.value_enum;
     case EconetDatapointType::RAW:
       return lhs.value_raw == rhs.value_raw;
+    case EconetDatapointType::UNSUPPORTED:
+      return true;
   }
   return false;
 }
@@ -91,7 +94,7 @@ class Econet : public Component, public uart::UARTDevice {
   void parse_message_(bool is_tx);
   void parse_rx_message_();
   void parse_tx_message_();
-  void handle_response_(const std::string &datapoint_id, EconetDatapointType item_type, const uint8_t *p, uint8_t len);
+  void handle_response_(const std::string &datapoint_id, const uint8_t *p, uint8_t len);
 
   void transmit_message_(uint8_t command, const std::vector<uint8_t> &data);
   void request_strings_();
