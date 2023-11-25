@@ -52,42 +52,15 @@ void address_to_bytes(uint32_t adr, std::vector<uint8_t> *data) {
   data->push_back(0);
 }
 
-// Extracts strings in pdata separated by 0x00, 0x00
+// Extracts strings of length OBJ_NAME_SIZE in pdata separated by 0x00, 0x00
 void extract_obj_names(const uint8_t *pdata, uint8_t data_len, std::vector<std::string> *obj_names) {
   const uint8_t *start = pdata + 4;
-  while (true) {
-    // Look for the first occurrence of 0x00 in the remaining bytes
-    size_t num = data_len - (start - pdata);
-    const uint8_t *end = (const uint8_t *) memchr(start, 0, num);
-    if (!end) {
-      // Not found, so add all the remaining bytes and finish
-      std::string s((const char *) start, num);
-      obj_names->push_back(s);
-      break;
-    }
-    // If the value after the end is not a 0 ... the string actually continues...)
-    if (*(end + 1) != 0) {
-      const uint8_t *start2 = end + 1;
-      // Look for the next occurrence of 0x00 in the remaining bytes
-      const uint8_t *end2 = (const uint8_t *) memchr(end + 1, 0, num);
-      // Add all bytes until the first occurrence of 0x00
-      std::string s1((const char *) start, end - start);
-      // Add all bytes until the next occurrence of 0x00
-      std::string s2((const char *) start2, end2 - start2);
-      // Put the strings together and replace the offending 0x00 with a "~"
-      std::string s3 = s1 + "~" + s2;
-      obj_names->push_back(s3);
-      start = end2 + 1;
-    } else {
-      // Add all bytes until the first occurrence of 0x00
-      std::string s((const char *) start, end - start);
-      obj_names->push_back(s);
-      start = end + 1;
-    }
-    // Skip all 0x00 bytes
-    while (!*start) {
-      start++;
-    }
+  const uint8_t *endp = pdata + data_len;
+  while (start < endp) {
+    const uint8_t *end = std::min(start + OBJ_NAME_SIZE, endp);
+    std::string s((const char *) start, end - start + 1);
+    obj_names->push_back(s);
+    start = end + 2;
   }
 }
 
