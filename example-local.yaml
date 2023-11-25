@@ -10,3 +10,7 @@ packages:
     # file: econet_electric_tank_water_heater.yaml
     vars:
       external_components_source: components
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
