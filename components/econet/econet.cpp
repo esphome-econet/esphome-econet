@@ -214,12 +214,8 @@ void Econet::parse_message_(bool is_tx) {
             ESP_LOGE(TAG, "Unexpected length of %d for %s", item_len, datapoint_id.c_str());
             break;
           }
-          if (item_len == 1) {
-            handle_response_(datapoint_id, EconetDatapointType::UNSUPPORTED, pdata + tpos + 1, item_len - 4 + 1);
-          } else {
-            EconetDatapointType item_type = EconetDatapointType(pdata[tpos + 1] & 0x7F);
-            handle_response_(datapoint_id, item_type, pdata + tpos + 4, item_len - 4 + 1);
-          }
+          EconetDatapointType item_type = EconetDatapointType(pdata[tpos + 1] & 0x7F);
+          handle_response_(datapoint_id, item_type, pdata + tpos + 4, item_len - 4 + 1);
           tpos += item_len + 1;
           item_num++;
         }
@@ -291,10 +287,6 @@ void Econet::handle_response_(const std::string &datapoint_id, EconetDatapointTy
     ESP_LOGI(TAG, "  %s : %d (%s)", datapoint_id.c_str(), item_value, s.c_str());
     this->send_datapoint_(datapoint_id,
                           EconetDatapoint{.type = item_type, .value_enum = item_value, .value_string = s});
-  } else if (item_type == EconetDatapointType::UNSUPPORTED) {
-    ESP_LOGI(TAG, "  %s : NOT SUPPORTED", datapoint_id.c_str());
-    this->send_datapoint_(datapoint_id,
-                          EconetDatapoint{.type = item_type, .value_enum = 255, .value_string = "NOT SUPPORTED"});
   }
 }
 
