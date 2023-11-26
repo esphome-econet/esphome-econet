@@ -32,6 +32,24 @@ wifi:
 captive_portal:
 
 api:
+  services:
+    - service: read
+      variables:
+        id: string
+      then:
+        - lambda: id(econet_id).homeassistant_read(id);
+    - service: write_enum
+      variables:
+        id: string
+        value: int
+      then:
+        - lambda: id(econet_id).homeassistant_write(id, (uint8_t) value);
+    - service: write_float
+      variables:
+        id: string
+        value: float
+      then:
+        - lambda: id(econet_id).homeassistant_write(id, value);
 
 ota:
 
@@ -51,6 +69,7 @@ uart:
   rx_pin: ${rx_pin}
 
 econet:
+  id: econet_id
   uart_id: econet_uart
   update_interval: ${econet_update_interval}
   src_address: 0x340
