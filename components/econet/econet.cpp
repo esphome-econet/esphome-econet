@@ -52,27 +52,15 @@ void address_to_bytes(uint32_t adr, std::vector<uint8_t> *data) {
   data->push_back(0);
 }
 
-// Extracts strings in pdata separated by 0x00
+// Extracts strings of length OBJ_NAME_SIZE in pdata separated by 0x00, 0x00
 void extract_obj_names(const uint8_t *pdata, uint8_t data_len, std::vector<std::string> *obj_names) {
   const uint8_t *start = pdata + 4;
-  while (true) {
-    // Look for the first occurrence of 0x00 in the remaining bytes
-    size_t num = data_len - (start - pdata);
-    const uint8_t *end = (const uint8_t *) memchr(start, 0, num);
-    if (!end) {
-      // Not found, so add all the remaining bytes and finish
-      std::string s((const char *) start, num);
-      obj_names->push_back(s);
-      break;
-    }
-    // Add all bytes until the first occurrence of 0x00
-    std::string s((const char *) start, end - start);
+  const uint8_t *endp = pdata + data_len - 1;
+  while (start < endp) {
+    const uint8_t *end = std::min(start + OBJ_NAME_SIZE, endp);
+    std::string s((const char *) start, end - start + 1);
     obj_names->push_back(s);
-    start = end + 1;
-    // Skip all 0x00 bytes
-    while (!*start) {
-      start++;
-    }
+    start = end + 2;
   }
 }
 
@@ -175,6 +163,7 @@ void Econet::parse_message_(bool is_tx) {
   uint16_t crc = (b[MSG_HEADER_SIZE + data_len]) + (b[MSG_HEADER_SIZE + data_len + 1] << 8);
   uint16_t crc_check = crc16(b, MSG_HEADER_SIZE + data_len, 0);
   if (crc != crc_check) {
+    read_req_.awaiting_res = false;
     ESP_LOGW(TAG, "Ignoring message with incorrect crc");
     return;
   }
