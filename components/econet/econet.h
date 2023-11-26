@@ -94,7 +94,10 @@ class Econet : public Component, public uart::UARTDevice {
   void parse_message_(bool is_tx);
   void parse_rx_message_();
   void parse_tx_message_();
-  void handle_response_(const std::string &datapoint_id, const uint8_t *p, uint8_t len);
+  void handle_response_(const std::string &datapoint_id, const uint8_t *p, uint8_t len, uint32_t src_adr = 0);
+void handle_hwstatus(std::vector<uint8_t> &x);
+void handle_zonestat(std::vector<uint8_t> &x, uint32_t src_adr);
+
 
   void transmit_message_(uint8_t command, const std::vector<uint8_t> &data);
   void request_strings_();
@@ -116,6 +119,20 @@ class Econet : public Component, public uart::UARTDevice {
   uint32_t src_adr_{0};
   uint32_t dst_adr_{0};
   GPIOPin *flow_control_pin_{nullptr};
+
+	uint32_t COMPUTER =      				192	;	// 80 00 00 C0
+	uint32_t FURNACE = 						0x1c0;	// 80 00 01 C0
+	uint32_t WIFI_MODULE =    				832	;	// 80 00 03 40
+	uint32_t SMARTEC_TRANSLATOR = 			4160;	// 80 00 10 40
+	uint32_t INTERNAL = 					4736; 	// 80 00 10 40
+	uint32_t HEAT_PUMP_WATER_HEATER =       0x1280; // 80 00 12 80
+	uint32_t AIR_HANDLER = 					0x3c0;	// 80 00 03 C0
+	uint32_t CONTROL_CENTER = 				0x380;	// 80 00 03 80
+	uint32_t ZONE_THERMOSTAT_2 =            0x680;
+	uint32_t ZONE_THERMOSTAT_3 =            0x681;
+	uint32_t ZONE_CONTROL =                 0x540;
+	uint32_t BROADCAST =                    0xf1;
+
 };
 
 class EconetClient {
@@ -128,7 +145,9 @@ class EconetClient {
   Econet *parent_;
   int8_t request_mod_{0};
   bool request_once_{false};
+
 };
+
 
 }  // namespace econet
 }  // namespace esphome
