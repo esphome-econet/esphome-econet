@@ -185,6 +185,9 @@ void Econet::parse_message_(bool is_tx) {
       return;
     }
 
+    if (read_req_.awaiting_res) {
+      ESP_LOGW(TAG, "New read request while waiting response for previous read request");
+    }
     std::vector<std::string> obj_names;
     extract_obj_names(pdata, data_len, &obj_names);
     for (auto &obj_name : obj_names) {
@@ -367,6 +370,7 @@ void Econet::loop() {
   if ((now - this->last_read_data_ > RECEIVE_TIMEOUT) && !rx_message_.empty()) {
     ESP_LOGW(TAG, "Ignoring partially received message due to timeout");
     rx_message_.clear();
+    read_req_.awaiting_res = false;
   }
 
   // Read Everything that is in the buffer
