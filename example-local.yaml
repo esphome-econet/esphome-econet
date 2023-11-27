@@ -1,15 +1,13 @@
 ---
-packages:
-  econet: !include
-    # Change this file to the correct one for your device
-    file: econet_heatpump_water_heater.yaml
-    # file: econet_hvac.yaml
-    # Use this if you have a communicating outdoor unit (ODU)
-    # files: [econet_hvac.yaml, econet_hvac_odu.yaml]
-    # file: econet_tankless_water_heater.yaml
-    # file: econet_electric_tank_water_heater.yaml
-    vars:
-      external_components_source: components
+substitutions:
+  external_components_source: components  # Build with local code instead of pulling from Github
+
+packages:  # Change this file to the correct one(s) for your device
+  econet-hpwh: !include econet_heatpump_water_heater.yaml
+  # econet-hvac: !include econet_hvac.yaml
+  # econet-hvac-odu: !include econet_hvac_odu.yaml  # Must be included with econet_hvac.yaml
+  # econet-tlwh: !include econet_tankless_water_heater.yaml
+  # econet-etwh: !include econet_electric_tank_water_heater.yaml
 
 wifi:
   ssid: !secret wifi_ssid
