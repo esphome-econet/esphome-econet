@@ -12,3 +12,9 @@ packages:  # Change this file to the correct one(s) for your device
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+
+# If you have UNSUPPORTED sensors add something like the following to disable them
+# sensor:
+#   - id: !extend hot_water
+#     request_mod: none
+#     internal: true
