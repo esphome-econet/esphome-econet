@@ -1,0 +1,52 @@
+---
+substitutions:
+  name: "econet-hvac"
+  friendly_name: "Rheem HVAC"
+  device_description: "Rheem HVAC"
+
+packages:
+  econet: !include econet_hvac.yaml
+
+sensor:
+  - platform: econet
+    name: "Register Air Temperature"
+    id: register_air_temperature
+    sensor_datapoint: TEMP_LAT
+    device_class: "temperature"
+    unit_of_measurement: "°F"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Return Air Temperature"
+    id: return_air_temperature
+    sensor_datapoint: TEMP_RAT
+    device_class: "temperature"
+    unit_of_measurement: "°F"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+
+text_sensor:
+  - platform: econet
+    name: "Operating Mode"
+    id: operating_mode
+    sensor_datapoint: HVACMODE
+  - platform: econet
+    name: "Auto Mode"
+    id: auto_mode
+    sensor_datapoint: AUTOMODE
+
+binary_sensor:
+  - platform: econet
+    name: "Electric Heat Relay 1"
+    id: electric_heat_relay_1
+    sensor_datapoint: HT1_RELY
+    icon: "mdi:heating-coil"
+    entity_category: "diagnostic"
+    disabled_by_default: true
+  - platform: econet
+    name: "Electric Heat Relay 2"
+    id: electric_heat_relay_2
+    sensor_datapoint: HT2_RELY
+    icon: "mdi:heating-coil"
+    entity_category: "diagnostic"
+    disabled_by_default: true
