@@ -1,15 +1,15 @@
 ---
 substitutions:
-  tx_pin: GPIO4
-  rx_pin: GPIO5
-  platform: esp8266
-  board: d1_mini
+  tx_pin: GPIO19
+  rx_pin: GPIO22
+  platform: esp32
+  board: esp32dev
 
 packages:
   econet:
     url: https://github.com/esphome-econet/esphome-econet
     ref: main
-    file: econet_hvac.yaml
+    file: econet_hvac_furnace.yaml
   # Uncomment if you have an communicationg Outdoor Unit
   # econet-hvac-odu:
   #   url: https://github.com/esphome-econet/esphome-econet
