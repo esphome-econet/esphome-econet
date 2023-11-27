@@ -35,21 +35,21 @@ api:
   services:
     - service: read
       variables:
-        id: string
+        datapoint_id: string
       then:
-        - lambda: id(econet_id).homeassistant_read(id);
+        - lambda: id(econet_id).homeassistant_read(datapoint_id);
     - service: write_enum
       variables:
-        id: string
+        datapoint_id: string
         value: int
       then:
-        - lambda: id(econet_id).homeassistant_write(id, (uint8_t) value);
+        - lambda: id(econet_id).homeassistant_write(datapoint_id, (uint8_t) value);
     - service: write_float
       variables:
-        id: string
+        datapoint_id: string
         value: float
       then:
-        - lambda: id(econet_id).homeassistant_write(id, value);
+        - lambda: id(econet_id).homeassistant_write(datapoint_id, value);
 
 ota:
 
