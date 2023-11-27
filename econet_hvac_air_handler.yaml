@@ -25,16 +25,6 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
 
-text_sensor:
-  - platform: econet
-    name: "Operating Mode"
-    id: operating_mode
-    sensor_datapoint: HVACMODE
-  - platform: econet
-    name: "Auto Mode"
-    id: auto_mode
-    sensor_datapoint: AUTOMODE
-
 binary_sensor:
   - platform: econet
     name: "Electric Heat Relay 1"
