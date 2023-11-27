@@ -568,7 +568,7 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
 void Econet::homeassistant_read(std::string datapoint_id) {
   register_listener(datapoint_id, -1, true, [this, datapoint_id](const EconetDatapoint &datapoint) {
     std::map<std::string, std::string> data;
-    data["id"] = datapoint_id;
+    data["datapoint_id"] = datapoint_id;
     switch (datapoint.type) {
       case EconetDatapointType::FLOAT:
         data["type"] = "FLOAT";
