@@ -27,8 +27,10 @@ jobs:
             shorthand: etwh
           - name: heatpump_water_heater
             shorthand: hpwh
-          - name: hvac
-            shorthand: hvac
+          - name: hvac_furnace
+            shorthand: hvac_furnace
+          - name: hvac_air_handler
+            shorthand: hvac_air_handler
           - name: tankless_water_heater
             shorthand: tlwh
       fail-fast: false
