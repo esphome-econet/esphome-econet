@@ -42,11 +42,13 @@ sensor:
     name: "Airhandler CFM"
     id: airhandler_cfm
     sensor_datapoint: F_ACTCFM
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "Airhandler RPM"
     id: airhandler_rpm
     sensor_datapoint: F_ACTRPM
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "Static Pressure"
@@ -54,6 +56,7 @@ sensor:
     sensor_datapoint: STATIC_P
     accuracy_decimals: 6
     unit_of_measurement: "in"
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "Register Air Temperature"
