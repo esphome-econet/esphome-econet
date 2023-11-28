@@ -28,7 +28,9 @@ climate:
       2: "HEAT_COOL"
       3: "FAN_ONLY"
       4: "OFF"
-    custom_fan_mode_datapoint: STATNFAN
+    custom_fan_mode_datapoint: STAT_FAN
+    custom_fan_mode_no_schedule_datapoint: STATNFAN
+    custom_follow_schedule_datapoint: SCHEDULE
     custom_fan_modes:
       0: "Automatic"
       1: "Speed 1 (Low)"
@@ -94,3 +96,7 @@ switch:
     id: dehumidification_enable_state
     switch_datapoint: DHUMENAB
     icon: "mdi:air-humidifier-off"
+  - platform: econet
+    name: "Follow Schedule"
+    id: schedule
+    switch_datapoint: SCHEDULE
