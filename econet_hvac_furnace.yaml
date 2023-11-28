@@ -1,6 +1,6 @@
 ---
 substitutions:
-  name: "econet-hvac"
+  name: "econet-hvac_furnace"
   friendly_name: "Rheem HVAC"
   device_description: "Rheem HVAC"
 
