@@ -154,6 +154,7 @@ sensor:
     sensor_datapoint: ODULCS1H
     request_mod: none
     accuracy_decimals: 1
+    state_class: "total"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU High Cool Lifetime Hours"
@@ -161,6 +162,7 @@ sensor:
     sensor_datapoint: ODULCS2H
     request_mod: none
     accuracy_decimals: 1
+    state_class: "total"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Low Heat Lifetime Hours"
@@ -168,6 +170,7 @@ sensor:
     sensor_datapoint: ODULHS1H
     request_mod: none
     accuracy_decimals: 1
+    state_class: "total"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU High Heat Lifetime Hours"
@@ -175,6 +178,7 @@ sensor:
     sensor_datapoint: ODULHS2H
     request_mod: none
     accuracy_decimals: 1
+    state_class: "total"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Low Cool Lifetime Cycles"
@@ -182,6 +186,7 @@ sensor:
     sensor_datapoint: ODULCS1C
     request_mod: none
     accuracy_decimals: 1
+    state_class: "total"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU High Cool Lifetime Cycles"
@@ -189,6 +194,7 @@ sensor:
     sensor_datapoint: ODULCS2C
     request_mod: none
     accuracy_decimals: 1
+    state_class: "total"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Low Heat Lifetime Cycles"
@@ -196,6 +202,7 @@ sensor:
     sensor_datapoint: ODULHS1C
     request_mod: none
     accuracy_decimals: 1
+    state_class: "total"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU High Heat Lifetime Cycles"
@@ -203,6 +210,7 @@ sensor:
     sensor_datapoint: ODULHS2C
     request_mod: none
     accuracy_decimals: 1
+    state_class: "total"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Defrost Cycles Two Week Hours"
@@ -217,6 +225,7 @@ sensor:
     sensor_datapoint: ODULDEFC
     request_mod: none
     accuracy_decimals: 1
+    state_class: "total"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Days"
