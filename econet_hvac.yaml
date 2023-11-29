@@ -30,7 +30,7 @@ climate:
       4: "OFF"
     custom_fan_mode_datapoint: STAT_FAN
     custom_fan_mode_no_schedule_datapoint: STATNFAN
-    custom_follow_schedule_datapoint: SCHEDULE
+    follow_schedule_datapoint: SCHEDULE
     custom_fan_modes:
       0: "Automatic"
       1: "Speed 1 (Low)"

@@ -22,7 +22,7 @@ CONF_MODE_DATAPOINT = "mode_datapoint"
 CONF_CUSTOM_PRESET_DATAPOINT = "custom_preset_datapoint"
 CONF_CUSTOM_FAN_MODE_DATAPOINT = "custom_fan_mode_datapoint"
 CONF_CUSTOM_FAN_MODE_NO_SCHEDULE_DATAPOINT = "custom_fan_mode_no_schedule_datapoint"
-CONF_CUSTOM_FOLLOW_SCHEDULE_DATAPOINT = "custom_follow_schedule_datapoint"
+CONF_FOLLOW_SCHEDULE_DATAPOINT = "follow_schedule_datapoint"
 CONF_MODES = "modes"
 
 EconetClimate = econet_ns.class_(
@@ -66,7 +66,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(
                 CONF_CUSTOM_FAN_MODE_NO_SCHEDULE_DATAPOINT, default=""
             ): cv.string,
-            cv.Optional(CONF_CUSTOM_FOLLOW_SCHEDULE_DATAPOINT, default=""): cv.string,
+            cv.Optional(CONF_FOLLOW_SCHEDULE_DATAPOINT, default=""): cv.string,
             cv.Optional(CONF_MODES, default={}): ensure_climate_mode_map,
             cv.Optional(CONF_CUSTOM_PRESETS, default={}): ensure_option_map,
             cv.Optional(CONF_CUSTOM_FAN_MODES, default={}): ensure_option_map,
@@ -104,9 +104,7 @@ async def to_code(config):
             config[CONF_CUSTOM_FAN_MODE_NO_SCHEDULE_DATAPOINT]
         )
     )
-    cg.add(
-        var.set_custom_follow_schedule_id(config[CONF_CUSTOM_FOLLOW_SCHEDULE_DATAPOINT])
-    )
+    cg.add(var.set_follow_schedule_id(config[CONF_FOLLOW_SCHEDULE_DATAPOINT]))
     cg.add(
         var.set_modes(
             list(config[CONF_MODES].keys()),

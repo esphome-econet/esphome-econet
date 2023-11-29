@@ -109,9 +109,11 @@ void EconetClimate::setup() {
                                             datapoint.value_enum, datapoint.value_string.c_str());
                                  } else {
                                    fan_mode_ = it->second;
-                                   if (follow_schedule_ == 1) {
-                                     set_custom_fan_mode_(fan_mode_);
-                                     publish_state();
+                                   if (follow_schedule_.has_value()) {
+                                     if (follow_schedule_.value()) {
+                                       set_custom_fan_mode_(fan_mode_);
+                                       publish_state();
+                                     }
                                    }
                                  }
                                });
@@ -125,25 +127,27 @@ void EconetClimate::setup() {
                                             datapoint.value_enum, datapoint.value_string.c_str());
                                  } else {
                                    fan_mode_no_schedule_ = it->second;
-                                   if (follow_schedule_ == 0) {
-                                     set_custom_fan_mode_(fan_mode_no_schedule_);
-                                     publish_state();
+                                   if (follow_schedule_.has_value()) {
+                                     if (!follow_schedule_.value()) {
+                                       set_custom_fan_mode_(fan_mode_no_schedule_);
+                                       publish_state();
+                                     }
                                    }
                                  }
                                });
   }
-  if (!custom_follow_schedule_id_.empty()) {
-    parent_->register_listener(custom_follow_schedule_id_, request_mod_, request_once_,
+  if (!follow_schedule_id_.empty()) {
+    parent_->register_listener(follow_schedule_id_, request_mod_, request_once_,
                                [this](const EconetDatapoint &datapoint) {
                                  ESP_LOGI(TAG, "MCU reported climate sensor %s is: %s",
-                                          this->custom_follow_schedule_id_.c_str(), datapoint.value_string.c_str());
-                                 follow_schedule_ = datapoint.value_enum;
-                                 if (follow_schedule_ == 1) {
+                                          this->follow_schedule_id_.c_str(), datapoint.value_string.c_str());
+                                 follow_schedule_ = datapoint.value_enum > 0;
+                                 if (follow_schedule_.value()) {
                                    if (fan_mode_ != "") {
                                      set_custom_fan_mode_(fan_mode_);
                                      publish_state();
                                    }
-                                 } else if (follow_schedule_ == 0) {
+                                 } else {
                                    if (fan_mode_no_schedule_ != "") {
                                      set_custom_fan_mode_(fan_mode_no_schedule_);
                                      publish_state();
@@ -187,10 +191,12 @@ void EconetClimate::control(const climate::ClimateCall &call) {
     auto it = std::find_if(custom_fan_modes_.begin(), custom_fan_modes_.end(),
                            [&fan_mode](const std::pair<uint8_t, std::string> &p) { return p.second == fan_mode; });
     if (it != custom_fan_modes_.end()) {
-      if (follow_schedule_ == 1) {
-        parent_->set_enum_datapoint_value(custom_fan_mode_id_, it->first);
-      } else if (follow_schedule_ == 0) {
-        parent_->set_enum_datapoint_value(custom_fan_mode_no_schedule_id_, it->first);
+      if (follow_schedule_.has_value()) {
+        if (follow_schedule_.value()) {
+          parent_->set_enum_datapoint_value(custom_fan_mode_id_, it->first);
+        } else {
+          parent_->set_enum_datapoint_value(custom_fan_mode_no_schedule_id_, it->first);
+        }
       }
     }
   }

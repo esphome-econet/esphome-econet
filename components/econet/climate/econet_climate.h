@@ -29,9 +29,7 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   void set_custom_fan_mode_no_schedule_id(const std::string &custom_fan_mode_no_schedule_id) {
     custom_fan_mode_no_schedule_id_ = custom_fan_mode_no_schedule_id;
   }
-  void set_custom_follow_schedule_id(const std::string &custom_follow_schedule_id) {
-    custom_follow_schedule_id_ = custom_follow_schedule_id;
-  }
+  void set_follow_schedule_id(const std::string &follow_schedule_id) { follow_schedule_id_ = follow_schedule_id; }
   void set_modes(const std::vector<uint8_t> &keys, const std::vector<climate::ClimateMode> &values) {
     std::transform(keys.begin(), keys.end(), values.begin(), std::inserter(modes_, modes_.end()),
                    [](uint8_t k, climate::ClimateMode v) { return std::make_pair(k, v); });
@@ -54,8 +52,8 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   std::string custom_preset_id_{""};
   std::string custom_fan_mode_id_{""};
   std::string custom_fan_mode_no_schedule_id_{""};
-  std::string custom_follow_schedule_id_{""};
-  uint8_t follow_schedule_{255};
+  std::string follow_schedule_id_{""};
+  optional<bool> follow_schedule_;
   std::string fan_mode_{""};
   std::string fan_mode_no_schedule_{""};
   std::map<uint8_t, climate::ClimateMode> modes_;
