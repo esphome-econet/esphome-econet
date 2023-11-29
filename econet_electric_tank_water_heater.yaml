@@ -120,6 +120,7 @@ text_sensor:
     name: "Mode"
     id: mode
     sensor_datapoint: WHTRMODE
+    icon: "mdi:water-boiler"
     entity_category: "diagnostic"
   - platform: econet
     name: "Model Number"
