@@ -2,6 +2,7 @@
 
 #include "esphome/core/component.h"
 #include "esphome/core/helpers.h"
+#include "esphome/components/api/custom_api_device.h"
 #include "esphome/components/uart/uart.h"
 #include <map>
 #include <vector>
@@ -55,7 +56,7 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
     case EconetDatapointType::RAW:
       return lhs.value_raw == rhs.value_raw;
     case EconetDatapointType::UNSUPPORTED:
-      return true;
+      return false;
   }
   return false;
 }
@@ -82,6 +83,10 @@ class Econet : public Component, public uart::UARTDevice {
   void register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
                          const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false);
 
+  void homeassistant_read(std::string datapoint_id);
+  void homeassistant_write(std::string datapoint_id, uint8_t value);
+  void homeassistant_write(std::string datapoint_id, float value);
+
  protected:
   uint32_t update_interval_millis_{30000};
   std::vector<EconetDatapointListener> listeners_;
@@ -95,9 +100,8 @@ class Econet : public Component, public uart::UARTDevice {
   void parse_rx_message_();
   void parse_tx_message_();
   void handle_response_(const std::string &datapoint_id, const uint8_t *p, uint8_t len, uint32_t src_adr = 0);
-void handle_hwstatus(std::vector<uint8_t> &x);
-void handle_zonestat(std::vector<uint8_t> &x, uint32_t src_adr);
-
+  void handle_furnace_hwstatus(std::vector<uint8_t> &x);
+  void handle_zonestat(std::vector<uint8_t> &x, uint32_t src_adr);
 
   void transmit_message_(uint8_t command, const std::vector<uint8_t> &data);
   void request_strings_();
@@ -109,6 +113,7 @@ void handle_zonestat(std::vector<uint8_t> &x, uint32_t src_adr);
   std::set<std::string> request_once_datapoint_ids_;
   std::map<std::string, EconetDatapoint> datapoints_;
   std::map<std::string, EconetDatapoint> pending_writes_;
+  std::queue<std::string> datapoint_ids_for_read_service_;
 
   uint32_t read_requests_{0};
   uint32_t last_request_{0};
@@ -119,20 +124,20 @@ void handle_zonestat(std::vector<uint8_t> &x, uint32_t src_adr);
   uint32_t src_adr_{0};
   uint32_t dst_adr_{0};
   GPIOPin *flow_control_pin_{nullptr};
+  esphome::api::CustomAPIDevice capi_;
 
-	uint32_t COMPUTER =      				192	;	// 80 00 00 C0
-	uint32_t FURNACE = 						0x1c0;	// 80 00 01 C0
-	uint32_t WIFI_MODULE =    				832	;	// 80 00 03 40
-	uint32_t SMARTEC_TRANSLATOR = 			4160;	// 80 00 10 40
-	uint32_t INTERNAL = 					4736; 	// 80 00 10 40
-	uint32_t HEAT_PUMP_WATER_HEATER =       0x1280; // 80 00 12 80
-	uint32_t AIR_HANDLER = 					0x3c0;	// 80 00 03 C0
-	uint32_t CONTROL_CENTER = 				0x380;	// 80 00 03 80
-	uint32_t ZONE_THERMOSTAT_2 =            0x680;
-	uint32_t ZONE_THERMOSTAT_3 =            0x681;
-	uint32_t ZONE_CONTROL =                 0x540;
-	uint32_t BROADCAST =                    0xf1;
-
+  uint32_t COMPUTER = 192;                   // 80 00 00 C0
+  uint32_t FURNACE = 0x1c0;                  // 80 00 01 C0
+  uint32_t WIFI_MODULE = 832;                // 80 00 03 40
+  uint32_t SMARTEC_TRANSLATOR = 4160;        // 80 00 10 40
+  uint32_t INTERNAL = 4736;                  // 80 00 10 40
+  uint32_t HEAT_PUMP_WATER_HEATER = 0x1280;  // 80 00 12 80
+  uint32_t AIR_HANDLER = 0x3c0;              // 80 00 03 C0
+  uint32_t CONTROL_CENTER = 0x380;           // 80 00 03 80
+  uint32_t ZONE_THERMOSTAT_2 = 0x680;
+  uint32_t ZONE_THERMOSTAT_3 = 0x681;
+  uint32_t ZONE_CONTROL = 0x540;
+  uint32_t BROADCAST = 0xf1;
 };
 
 class EconetClient {

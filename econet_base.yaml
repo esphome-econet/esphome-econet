@@ -21,7 +21,7 @@ esphome:
   board: $board
   project:
     name: "esphome-econet.esphome-econet"
-    version: 1.5.0
+    version: 1.5.1
 
 preferences:
   flash_write_interval: "24h"
@@ -32,11 +32,30 @@ wifi:
 captive_portal:
 
 api:
+  services:
+    - service: read
+      variables:
+        datapoint_id: string
+      then:
+        - lambda: id(econet_id).homeassistant_read(datapoint_id);
+    - service: write_enum
+      variables:
+        datapoint_id: string
+        value: int
+      then:
+        - lambda: id(econet_id).homeassistant_write(datapoint_id, (uint8_t) value);
+    - service: write_float
+      variables:
+        datapoint_id: string
+        value: float
+      then:
+        - lambda: id(econet_id).homeassistant_write(datapoint_id, value);
 
 ota:
 
 logger:
   level: ${logger_level}
+  tx_buffer_size: 1024
 
 improv_serial:
 
@@ -51,6 +70,7 @@ uart:
   rx_pin: ${rx_pin}
 
 econet:
+  id: econet_id
   uart_id: econet_uart
   update_interval: ${econet_update_interval}
   src_address: 0x340

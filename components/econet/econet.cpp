@@ -52,27 +52,15 @@ void address_to_bytes(uint32_t adr, std::vector<uint8_t> *data) {
   data->push_back(0);
 }
 
-// Extracts strings in pdata separated by 0x00
+// Extracts strings of length OBJ_NAME_SIZE in pdata separated by 0x00, 0x00
 void extract_obj_names(const uint8_t *pdata, uint8_t data_len, std::vector<std::string> *obj_names) {
   const uint8_t *start = pdata + 4;
-  while (true) {
-    // Look for the first occurrence of 0x00 in the remaining bytes
-    size_t num = data_len - (start - pdata);
-    const uint8_t *end = (const uint8_t *) memchr(start, 0, num);
-    if (!end) {
-      // Not found, so add all the remaining bytes and finish
-      std::string s((const char *) start, num);
-      obj_names->push_back(s);
-      break;
-    }
-    // Add all bytes until the first occurrence of 0x00
+  const uint8_t *endp = pdata + data_len;
+  while (start < endp) {
+    const uint8_t *end = std::min(start + OBJ_NAME_SIZE, endp);
     std::string s((const char *) start, end - start);
     obj_names->push_back(s);
-    start = end + 1;
-    // Skip all 0x00 bytes
-    while (!*start) {
-      start++;
-    }
+    start = end + 2;
   }
 }
 
@@ -175,6 +163,7 @@ void Econet::parse_message_(bool is_tx) {
   uint16_t crc = (b[MSG_HEADER_SIZE + data_len]) + (b[MSG_HEADER_SIZE + data_len + 1] << 8);
   uint16_t crc_check = crc16(b, MSG_HEADER_SIZE + data_len, 0);
   if (crc != crc_check) {
+    read_req_.awaiting_res = false;
     ESP_LOGW(TAG, "Ignoring message with incorrect crc");
     return;
   }
@@ -196,6 +185,9 @@ void Econet::parse_message_(bool is_tx) {
       return;
     }
 
+    if (read_req_.awaiting_res) {
+      ESP_LOGW(TAG, "New read request while waiting response for previous read request");
+    }
     std::vector<std::string> obj_names;
     extract_obj_names(pdata, data_len, &obj_names);
     for (auto &obj_name : obj_names) {
@@ -216,21 +208,19 @@ void Econet::parse_message_(bool is_tx) {
         if (item_type == EconetDatapointType::RAW) {
           std::vector<uint8_t> raw(pdata, pdata + data_len);
           const std::string &datapoint_id = read_req_.obj_names[0];
-          // special handling for HWSTATUS and ZONESTAT
+          this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type, .value_raw = raw});
 
+          // special handling for HWSTATUS and ZONESTAT
           ESP_LOGI(TAG, "  %s : RAW", datapoint_id.c_str());
 
           if (datapoint_id.compare("HWSTATUS") == 0) {
-            ESP_LOGI(TAG, "  HWSTATUS!");
-            if (src_adr == Econet::AIR_HANDLER || src_adr == Econet::FURNACE) {
-              ESP_LOGI(TAG, "  HWSTATUS-handling");
-              handle_hwstatus(raw);
+            if (src_adr == Econet::FURNACE) {
+              ESP_LOGI(TAG, "  parsing furnace HWSTATUS");
+              handle_furnace_hwstatus(raw);
             }
-          } else if (datapoint_id.compare("ZONESTAT")==0) {
+          } else if (datapoint_id.compare("ZONESTAT") == 0) {
             handle_zonestat(raw, src_adr);
           }
-          else
-            this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type, .value_raw = raw});
         }
       } else if (read_req_.type == 2) {
         // 1st pass to validate response and avoid any buffer over-read
@@ -357,26 +347,50 @@ void Econet::handle_response_(const std::string &datapoint_id, const uint8_t *p,
       break;
     case EconetDatapointType::UNSUPPORTED:
       ESP_LOGW(TAG, "  %s : UNSUPPORTED", datapoint_id.c_str());
+      this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type});
       break;
   }
 }
 
-void Econet::handle_hwstatus(std::vector<uint8_t> &x) {
+EconetDatapoint get_float_datapoint(uint16_t val) {
+  EconetDatapointType edt = EconetDatapointType(0);
+  float f = val;
+  return EconetDatapoint { .type = edt, .value_float = f }
+}
+
+EconetDatapoint get_float_datapoint(uint8_t val) {
+  EconetDatapointType edt = EconetDatapointType(0);
+  float f = val;
+  return EconetDatapoint { .type = edt, .value_float = f }
+}
+
+EconetDatapoint get_float_datapoint(float val) {
+  EconetDatapointType edt = EconetDatapointType(0);
+  return EconetDatapoint { .type = edt, .value_float = val }
+}
+
+void Econet::handle_furnace_hwstatus(std::vector<uint8_t> &x) {
   // need a length check here.
   // parsing below taken from stockmopar's yaml
   ESP_LOGI(TAG, "  HWSTATUS-handle_hwstatus");
   uint16_t airhandler_cfm_ = (x[13] << 8) + x[14];
-  float f = airhandler_cfm_;
-  EconetDatapointType edt = EconetDatapointType(0);
-  this->send_datapoint_("airhandler_cfm", EconetDatapoint{.type = edt, .value_float = f});
+  uint16_t airhandler_rpm_ = (x[17] << 8) + x[18];
+  uint8_t heat_per_ = x[11];
+  uint8_t cool_stage_ = x[12];
+  float flame_sensor_ = ((float) x[33]) / 10;
+  float return_air_temperature_ = (float) ((x[50] << 8) + x[51]) / 10;
 
-  // uint16_t airhandler_rpm_ = (x[17] << 8) + x[18];
-  // uint16_t lh_lh_ = (x[129] << 8) + x[130];
-  // uint8_t heat_per_ = x[11];
-  // uint16_t hh_lh_ = (x[132] << 8) + x[133];
-  // uint8_t cool_stage_ = x[12];
-  // float flame_sensor_ = ((float) x[33])/10;
-  // float return_air_temperature_ = (float)((x[50] << 8) + x[51])/10;
+  uint16_t lh_lh_ = (x[129] << 8) + x[130];
+  uint16_t hh_lh_ = (x[132] << 8) + x[133];
+
+  this->send_datapoint_("HWSTATUS_AIRHANDLER_CFM", get_float_datapoint(airhandler_cfm_));
+  this->send_datapoint_("HWSTATUS_AIRHANDLER_RPM", get_float_datapoint(airhandler_rpm_));
+  this->send_datapoint_("HWSTATUS_LOWHEAT_LIFETIMEHOURS", get_float_datapoint(lh_lh_));
+  this->send_datapoint_("HWSTATUS_HIGHHEAT_LIFETIMEHOURS", get_float_datapoint(hh_lh_));
+  this->send_datapoint_("HWSTATUS_HEAT_PER", get_float_datapoint(heat_per_));
+  this->send_datapoint_("HWSTATUS_COOL_STAGE", get_float_datapoint(cool_stage_));
+  this->send_datapoint_("HWSTATUS_FURNACE_RETURN_AIR_TEMP", get_float_datapoint(return_air_temperature_));
+  this->send_datapoint_("HWSTATUS_FURNACE_FLAME_SENSOR", get_float_datapoint(flame_sensor_));
 
   // id(airhandler_cfm).publish_state(airhandler_cfm_);
   // id(airhandler_rpm).publish_state(airhandler_rpm_);
@@ -421,11 +435,11 @@ void Econet::handle_zonestat(std::vector<uint8_t> &data, uint32_t src_adr) {
   uint8_t zone2 = data[12] * 100.0 / 35;  //
   f = zone2;
   this->send_datapoint_("zone2pct", EconetDatapoint{.type = edt, .value_float = f});
- 
+
   uint8_t zone3 = data[13] * 100.0 / 35;  //
   f = zone3;
   this->send_datapoint_("zone3pct", EconetDatapoint{.type = edt, .value_float = f});
-  
+
   ESP_LOGI("econet", "  Zone1Pct: %d%", zone1);
   ESP_LOGI("econet", "  Zone2Pct: %d%", zone2);
   ESP_LOGI("econet", "  Zone3Pct: %d%", zone3);
@@ -462,6 +476,7 @@ void Econet::loop() {
   if ((now - this->last_read_data_ > RECEIVE_TIMEOUT) && !rx_message_.empty()) {
     ESP_LOGW(TAG, "Ignoring partially received message due to timeout");
     rx_message_.clear();
+    read_req_.awaiting_res = false;
   }
 
   // Read Everything that is in the buffer
@@ -482,8 +497,9 @@ void Econet::loop() {
     return;
   }
 
-  // Quickly send writes but delay reads.
-  if (!pending_writes_.empty() || (now - this->last_request_ > this->update_interval_millis_ / request_mods_)) {
+  // Quickly send writes or reads from the Home Assistant service but delay regular reads.
+  if (!pending_writes_.empty() || !datapoint_ids_for_read_service_.empty() ||
+      (now - this->last_request_ > this->update_interval_millis_ / request_mods_)) {
     ESP_LOGI(TAG, "request ms=%d", now);
     this->last_request_ = now;
     this->make_request_();
@@ -515,9 +531,15 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
 }
 
 void Econet::request_strings_() {
-  uint8_t request_mod = read_requests_++ % request_mods_;
-  std::vector<std::string> objects(request_datapoint_ids_[request_mod].begin(),
-                                   request_datapoint_ids_[request_mod].end());
+  std::vector<std::string> objects;
+  if (!datapoint_ids_for_read_service_.empty()) {
+    objects.push_back(datapoint_ids_for_read_service_.front());
+    datapoint_ids_for_read_service_.pop();
+  } else {
+    uint8_t request_mod = read_requests_++ % request_mods_;
+    std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
+              back_inserter(objects));
+  }
   std::vector<std::string>::iterator iter;
   for (iter = objects.begin(); iter != objects.end();) {
     if (request_once_datapoint_ids_.count(*iter) == 1 && datapoints_.count(*iter) == 1) {
@@ -644,6 +666,47 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
       func(kv.second);
     }
   }
+}
+
+// Called from a Home Assistant exposed service to read a datapoint.
+// Fires a Home Assistant event: "esphome.econet_event" with the response.
+void Econet::homeassistant_read(std::string datapoint_id) {
+  register_listener(datapoint_id, -1, true, [this, datapoint_id](const EconetDatapoint &datapoint) {
+    std::map<std::string, std::string> data;
+    data["datapoint_id"] = datapoint_id;
+    switch (datapoint.type) {
+      case EconetDatapointType::FLOAT:
+        data["type"] = "FLOAT";
+        data["value"] = std::to_string(datapoint.value_float);
+        break;
+      case EconetDatapointType::ENUM_TEXT:
+        data["type"] = "ENUM_TEXT";
+        data["value"] = std::to_string(datapoint.value_enum);
+        data["value_string"] = datapoint.value_string;
+        break;
+      case EconetDatapointType::TEXT:
+        data["type"] = "TEXT";
+        data["value_string"] = datapoint.value_string;
+        break;
+      case EconetDatapointType::RAW:
+        data["type"] = "RAW";
+        data["value_raw"] = format_hex_pretty(datapoint.value_raw).c_str();
+        break;
+      case EconetDatapointType::UNSUPPORTED:
+        data["type"] = "UNSUPPORTED";
+        break;
+    }
+    capi_.fire_homeassistant_event("esphome.econet_event", data);
+  });
+  datapoint_ids_for_read_service_.push(datapoint_id);
+}
+
+void Econet::homeassistant_write(std::string datapoint_id, uint8_t value) {
+  set_datapoint_(datapoint_id, EconetDatapoint{.type = EconetDatapointType::ENUM_TEXT, .value_enum = value});
+}
+
+void Econet::homeassistant_write(std::string datapoint_id, float value) {
+  set_datapoint_(datapoint_id, EconetDatapoint{.type = EconetDatapointType::FLOAT, .value_float = value});
 }
 
 }  // namespace econet
