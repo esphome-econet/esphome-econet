@@ -100,7 +100,7 @@ class Econet : public Component, public uart::UARTDevice {
   void parse_rx_message_();
   void parse_tx_message_();
   void handle_response_(const std::string &datapoint_id, const uint8_t *p, uint8_t len, uint32_t src_adr = 0);
-  void handle_hwstatus(std::vector<uint8_t> &x);
+  void handle_furnace_hwstatus(std::vector<uint8_t> &x);
   void handle_zonestat(std::vector<uint8_t> &x, uint32_t src_adr);
 
   void transmit_message_(uint8_t command, const std::vector<uint8_t> &data);

@@ -208,20 +208,18 @@ void Econet::parse_message_(bool is_tx) {
         if (item_type == EconetDatapointType::RAW) {
           std::vector<uint8_t> raw(pdata, pdata + data_len);
           const std::string &datapoint_id = read_req_.obj_names[0];
-          // special handling for HWSTATUS and ZONESTAT
+          this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type, .value_raw = raw});
 
+          // special handling for HWSTATUS and ZONESTAT
           ESP_LOGI(TAG, "  %s : RAW", datapoint_id.c_str());
 
           if (datapoint_id.compare("HWSTATUS") == 0) {
-            ESP_LOGI(TAG, "  HWSTATUS!");
-            if (src_adr == Econet::AIR_HANDLER || src_adr == Econet::FURNACE) {
-              ESP_LOGI(TAG, "  HWSTATUS-handling");
-              handle_hwstatus(raw);
+            if (src_adr == Econet::FURNACE) {
+              ESP_LOGI(TAG, "  parsing furnace HWSTATUS");
+              handle_furnace_hwstatus(raw);
             }
           } else if (datapoint_id.compare("ZONESTAT") == 0) {
             handle_zonestat(raw, src_adr);
-          } else {
-            this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type, .value_raw = raw});
           }
         }
       } else if (read_req_.type == 2) {
@@ -354,22 +352,45 @@ void Econet::handle_response_(const std::string &datapoint_id, const uint8_t *p,
   }
 }
 
-void Econet::handle_hwstatus(std::vector<uint8_t> &x) {
+EconetDatapoint get_float_datapoint(uint16_t val) {
+  EconetDatapointType edt = EconetDatapointType(0);
+  float f = val;
+  return EconetDatapoint { .type = edt, .value_float = f }
+}
+
+EconetDatapoint get_float_datapoint(uint8_t val) {
+  EconetDatapointType edt = EconetDatapointType(0);
+  float f = val;
+  return EconetDatapoint { .type = edt, .value_float = f }
+}
+
+EconetDatapoint get_float_datapoint(float val) {
+  EconetDatapointType edt = EconetDatapointType(0);
+  return EconetDatapoint { .type = edt, .value_float = val }
+}
+
+void Econet::handle_furnace_hwstatus(std::vector<uint8_t> &x) {
   // need a length check here.
   // parsing below taken from stockmopar's yaml
   ESP_LOGI(TAG, "  HWSTATUS-handle_hwstatus");
   uint16_t airhandler_cfm_ = (x[13] << 8) + x[14];
-  float f = airhandler_cfm_;
-  EconetDatapointType edt = EconetDatapointType(0);
-  this->send_datapoint_("airhandler_cfm", EconetDatapoint{.type = edt, .value_float = f});
+  uint16_t airhandler_rpm_ = (x[17] << 8) + x[18];
+  uint8_t heat_per_ = x[11];
+  uint8_t cool_stage_ = x[12];
+  float flame_sensor_ = ((float) x[33]) / 10;
+  float return_air_temperature_ = (float) ((x[50] << 8) + x[51]) / 10;
 
-  // uint16_t airhandler_rpm_ = (x[17] << 8) + x[18];
-  // uint16_t lh_lh_ = (x[129] << 8) + x[130];
-  // uint8_t heat_per_ = x[11];
-  // uint16_t hh_lh_ = (x[132] << 8) + x[133];
-  // uint8_t cool_stage_ = x[12];
-  // float flame_sensor_ = ((float) x[33])/10;
-  // float return_air_temperature_ = (float)((x[50] << 8) + x[51])/10;
+  uint16_t lh_lh_ = (x[129] << 8) + x[130];
+  uint16_t hh_lh_ = (x[132] << 8) + x[133];
+
+  this->send_datapoint_("HWSTATUS_AIRHANDLER_CFM", get_float_datapoint(airhandler_cfm_));
+  this->send_datapoint_("HWSTATUS_AIRHANDLER_RPM", get_float_datapoint(airhandler_rpm_));
+  this->send_datapoint_("HWSTATUS_LOWHEAT_LIFETIMEHOURS", get_float_datapoint(lh_lh_));
+  this->send_datapoint_("HWSTATUS_HIGHHEAT_LIFETIMEHOURS", get_float_datapoint(hh_lh_));
+  this->send_datapoint_("HWSTATUS_HEAT_PER", get_float_datapoint(heat_per_));
+  this->send_datapoint_("HWSTATUS_COOL_STAGE", get_float_datapoint(cool_stage_));
+  this->send_datapoint_("HWSTATUS_FURNACE_RETURN_AIR_TEMP", get_float_datapoint(return_air_temperature_));
+  this->send_datapoint_("HWSTATUS_FURNACE_FLAME_SENSOR", get_float_datapoint(flame_sensor_));
 
   // id(airhandler_cfm).publish_state(airhandler_cfm_);
   // id(airhandler_rpm).publish_state(airhandler_rpm_);
