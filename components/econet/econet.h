@@ -52,7 +52,7 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
     case EconetDatapointType::TEXT:
       return lhs.value_string == rhs.value_string;
     case EconetDatapointType::ENUM_TEXT:
-      return lhs.value_enum == rhs.value_enum;
+      return lhs.value_enum == rhs.value_enum && lhs.value_string == rhs.value_string;
     case EconetDatapointType::RAW:
       return lhs.value_raw == rhs.value_raw;
     case EconetDatapointType::UNSUPPORTED:
