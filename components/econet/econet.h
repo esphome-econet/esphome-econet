@@ -126,18 +126,18 @@ class Econet : public Component, public uart::UARTDevice {
   GPIOPin *flow_control_pin_{nullptr};
   esphome::api::CustomAPIDevice capi_;
 
-  uint32_t COMPUTER = 192;                   // 80 00 00 C0
-  uint32_t FURNACE = 0x1c0;                  // 80 00 01 C0
-  uint32_t WIFI_MODULE = 832;                // 80 00 03 40
-  uint32_t SMARTEC_TRANSLATOR = 4160;        // 80 00 10 40
-  uint32_t INTERNAL = 4736;                  // 80 00 10 40
-  uint32_t HEAT_PUMP_WATER_HEATER = 0x1280;  // 80 00 12 80
-  uint32_t AIR_HANDLER = 0x3c0;              // 80 00 03 C0
-  uint32_t CONTROL_CENTER = 0x380;           // 80 00 03 80
-  uint32_t ZONE_THERMOSTAT_2 = 0x680;
-  uint32_t ZONE_THERMOSTAT_3 = 0x681;
-  uint32_t ZONE_CONTROL = 0x540;
-  uint32_t BROADCAST = 0xf1;
+  static const uint32_t COMPUTER = 192;                   // 80 00 00 C0
+  static const uint32_t FURNACE = 0x1c0;                  // 80 00 01 C0
+  static const uint32_t WIFI_MODULE = 832;                // 80 00 03 40
+  static const uint32_t SMARTEC_TRANSLATOR = 4160;        // 80 00 10 40
+  static const uint32_t INTERNAL = 4736;                  // 80 00 10 40
+  static const uint32_t HEAT_PUMP_WATER_HEATER = 0x1280;  // 80 00 12 80
+  static const uint32_t AIR_HANDLER = 0x3c0;              // 80 00 03 C0
+  static const uint32_t CONTROL_CENTER = 0x380;           // 80 00 03 80
+  static const uint32_t ZONE_THERMOSTAT_2 = 0x680;
+  static const uint32_t ZONE_THERMOSTAT_3 = 0x681;
+  static const uint32_t ZONE_CONTROL = 0x540;
+  static const uint32_t BROADCAST = 0xf1;
 };
 
 class EconetClient {
@@ -150,9 +150,7 @@ class EconetClient {
   Econet *parent_;
   int8_t request_mod_{0};
   bool request_once_{false};
-
 };
-
 
 }  // namespace econet
 }  // namespace esphome

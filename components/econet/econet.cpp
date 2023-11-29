@@ -247,7 +247,7 @@ void Econet::parse_message_(bool is_tx) {
           while (tpos < data_len) {
             const std::string &datapoint_id = read_req_.obj_names[item_num];
             uint8_t item_len = pdata[tpos];
-            handle_response_(datapoint_id, pdata + tpos + 1, item_len);
+            handle_response_(datapoint_id, pdata + tpos + 1, item_len, src_adr);
             tpos += item_len + 1;
             item_num++;
           }
@@ -300,8 +300,21 @@ void Econet::parse_message_(bool is_tx) {
 // For TEXT it's some predefined number of bytes depending on the requested object padded with trailing whitespace.
 // For ENUM_TEXT it's 1 byte for the enum value, followed by one byte for the length of the enum text, and finally
 // followed by the bytes of the enum text padded with trailing whitespace.
-void Econet::handle_response_(const std::string &datapoint_id, const uint8_t *p, uint8_t len, uint32_t src_adr) {
+void Econet::handle_response_(const std::string &datapoint_id_orig, const uint8_t *p, uint8_t len, uint32_t src_adr) {
   EconetDatapointType item_type = EconetDatapointType(p[0] & 0x7F);
+  std::string datapoint_id_mod = "";
+  switch (src_adr) {
+    case Econet::ZONE_THERMOSTAT_2: {  // this is an intermediate solution until zones are fully supported for control.
+      datapoint_id_mod = "ZONE2_";
+      break;
+    }
+    case Econet::ZONE_THERMOSTAT_3: {
+      datapoint_id_mod = "ZONE3_";
+      break;
+    }
+  }
+  std::string datapoint_id = datapoint_id_mod + datapoint_id_orig;
+
   switch (item_type) {
     case EconetDatapointType::FLOAT: {
       p += 3;
@@ -355,51 +368,57 @@ void Econet::handle_response_(const std::string &datapoint_id, const uint8_t *p,
 EconetDatapoint get_float_datapoint(uint16_t val) {
   EconetDatapointType edt = EconetDatapointType(0);
   float f = val;
-  return EconetDatapoint { .type = edt, .value_float = f }
+  return EconetDatapoint{.type = edt, .value_float = f};
 }
 
 EconetDatapoint get_float_datapoint(uint8_t val) {
   EconetDatapointType edt = EconetDatapointType(0);
   float f = val;
-  return EconetDatapoint { .type = edt, .value_float = f }
+  return EconetDatapoint{.type = edt, .value_float = f};
 }
 
 EconetDatapoint get_float_datapoint(float val) {
   EconetDatapointType edt = EconetDatapointType(0);
-  return EconetDatapoint { .type = edt, .value_float = val }
+  return EconetDatapoint{.type = edt, .value_float = val};
+}
+
+uint16_t convert_vector_to_uint16(uint16_t pos, std::vector<uint8_t> data) {
+  return (((uint16_t) data[pos]) * 256) + data[pos + 1];
 }
 
 void Econet::handle_furnace_hwstatus(std::vector<uint8_t> &x) {
   // need a length check here.
-  // parsing below taken from stockmopar's yaml
+  // credit for parsing also to stockmopar
   ESP_LOGI(TAG, "  HWSTATUS-handle_hwstatus");
-  uint16_t airhandler_cfm_ = (x[13] << 8) + x[14];
-  uint16_t airhandler_rpm_ = (x[17] << 8) + x[18];
-  uint8_t heat_per_ = x[11];
+  uint16_t fan_cfm_ = convert_vector_to_uint16(13, x);
+  uint16_t fan_rpm_ = convert_vector_to_uint16(17, x);
+
+  float return_temp_ = convert_vector_to_uint16(50, x) / 10.0;
+  float outside_temp_ = convert_vector_to_uint16(52, x) / 10.0;
+  float supply_temp_ = convert_vector_to_uint16(145, x) / 10.0;
+  float static_pressure_ = convert_vector_to_uint16(15, x) / 5280.0;
+
+  uint8_t heat_percent_ = x[11];
   uint8_t cool_stage_ = x[12];
   float flame_sensor_ = ((float) x[33]) / 10;
-  float return_air_temperature_ = (float) ((x[50] << 8) + x[51]) / 10;
 
   uint16_t lh_lh_ = (x[129] << 8) + x[130];
   uint16_t hh_lh_ = (x[132] << 8) + x[133];
 
-  this->send_datapoint_("HWSTATUS_AIRHANDLER_CFM", get_float_datapoint(airhandler_cfm_));
-  this->send_datapoint_("HWSTATUS_AIRHANDLER_RPM", get_float_datapoint(airhandler_rpm_));
+  this->send_datapoint_("HWSTATUS_FAN_CFM", get_float_datapoint(fan_cfm_));
+  this->send_datapoint_("HWSTATUS_FAN_RPM", get_float_datapoint(fan_rpm_));
   this->send_datapoint_("HWSTATUS_LOWHEAT_LIFETIMEHOURS", get_float_datapoint(lh_lh_));
   this->send_datapoint_("HWSTATUS_HIGHHEAT_LIFETIMEHOURS", get_float_datapoint(hh_lh_));
-  this->send_datapoint_("HWSTATUS_HEAT_PER", get_float_datapoint(heat_per_));
+
+  this->send_datapoint_("HWSTATUS_OUTSIDE_TEMP", get_float_datapoint(outside_temp_));
+  this->send_datapoint_("HWSTATUS_RETURN_TEMP", get_float_datapoint(return_temp_));
+  this->send_datapoint_("HWSTATUS_SUPPLY_TEMP", get_float_datapoint(supply_temp_));
+  this->send_datapoint_("HWSTATUS_STATIC_PRESSURE", get_float_datapoint(static_pressure_));
+
+  this->send_datapoint_("HWSTATUS_HEAT_PERCENT", get_float_datapoint(heat_percent_));
   this->send_datapoint_("HWSTATUS_COOL_STAGE", get_float_datapoint(cool_stage_));
-  this->send_datapoint_("HWSTATUS_FURNACE_RETURN_AIR_TEMP", get_float_datapoint(return_air_temperature_));
   this->send_datapoint_("HWSTATUS_FURNACE_FLAME_SENSOR", get_float_datapoint(flame_sensor_));
 
-  // id(airhandler_cfm).publish_state(airhandler_cfm_);
-  // id(airhandler_rpm).publish_state(airhandler_rpm_);
-  // id(lh_lh).publish_state(lh_lh_);
-  // id(hh_lh).publish_state(hh_lh_);
-  // id(temp_signal).publish_state(heat_per_);
-  // id(temp_signal2).publish_state(cool_stage_);
-  // id(return_air_temperature).publish_state(return_air_temperature_);
-  // id(flame_sensor).publish_state(flame_sensor_);
   // if(heat_per_ > 90)
   // {
   //     id(operating_mode).publish_state("High Heat");
@@ -430,19 +449,15 @@ void Econet::handle_zonestat(std::vector<uint8_t> &data, uint32_t src_adr) {
 
   uint8_t zone1 = data[11] * 100.0 / 35;  // multiply by 35 for calibration
   float f = zone1;
-  this->send_datapoint_("zone1pct", EconetDatapoint{.type = edt, .value_float = f});
+  this->send_datapoint_("ZONESTAT_ZONE1_PERCENT_OPEN", EconetDatapoint{.type = edt, .value_float = f});
 
   uint8_t zone2 = data[12] * 100.0 / 35;  //
   f = zone2;
-  this->send_datapoint_("zone2pct", EconetDatapoint{.type = edt, .value_float = f});
+  this->send_datapoint_("ZONESTAT_ZONE2_PERCENT_OPEN", EconetDatapoint{.type = edt, .value_float = f});
 
   uint8_t zone3 = data[13] * 100.0 / 35;  //
   f = zone3;
-  this->send_datapoint_("zone3pct", EconetDatapoint{.type = edt, .value_float = f});
-
-  ESP_LOGI("econet", "  Zone1Pct: %d%", zone1);
-  ESP_LOGI("econet", "  Zone2Pct: %d%", zone2);
-  ESP_LOGI("econet", "  Zone3Pct: %d%", zone3);
+  this->send_datapoint_("ZONESTAT_ZONE3_PERCENT_OPEN", EconetDatapoint{.type = edt, .value_float = f});
 }
 
 void Econet::read_buffer_(int bytes_available) {
