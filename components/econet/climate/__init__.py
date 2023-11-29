@@ -21,6 +21,8 @@ CONF_TARGET_TEMPERATURE_HIGH_DATAPOINT = "target_temperature_high_datapoint"
 CONF_MODE_DATAPOINT = "mode_datapoint"
 CONF_CUSTOM_PRESET_DATAPOINT = "custom_preset_datapoint"
 CONF_CUSTOM_FAN_MODE_DATAPOINT = "custom_fan_mode_datapoint"
+CONF_CUSTOM_FAN_MODE_NO_SCHEDULE_DATAPOINT = "custom_fan_mode_no_schedule_datapoint"
+CONF_FOLLOW_SCHEDULE_DATAPOINT = "follow_schedule_datapoint"
 CONF_MODES = "modes"
 
 EconetClimate = econet_ns.class_(
@@ -61,6 +63,10 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_MODE_DATAPOINT, default=""): cv.string,
             cv.Optional(CONF_CUSTOM_PRESET_DATAPOINT, default=""): cv.string,
             cv.Optional(CONF_CUSTOM_FAN_MODE_DATAPOINT, default=""): cv.string,
+            cv.Optional(
+                CONF_CUSTOM_FAN_MODE_NO_SCHEDULE_DATAPOINT, default=""
+            ): cv.string,
+            cv.Optional(CONF_FOLLOW_SCHEDULE_DATAPOINT, default=""): cv.string,
             cv.Optional(CONF_MODES, default={}): ensure_climate_mode_map,
             cv.Optional(CONF_CUSTOM_PRESETS, default={}): ensure_option_map,
             cv.Optional(CONF_CUSTOM_FAN_MODES, default={}): ensure_option_map,
@@ -93,6 +99,12 @@ async def to_code(config):
     cg.add(var.set_mode_id(config[CONF_MODE_DATAPOINT]))
     cg.add(var.set_custom_preset_id(config[CONF_CUSTOM_PRESET_DATAPOINT]))
     cg.add(var.set_custom_fan_mode_id(config[CONF_CUSTOM_FAN_MODE_DATAPOINT]))
+    cg.add(
+        var.set_custom_fan_mode_no_schedule_id(
+            config[CONF_CUSTOM_FAN_MODE_NO_SCHEDULE_DATAPOINT]
+        )
+    )
+    cg.add(var.set_follow_schedule_id(config[CONF_FOLLOW_SCHEDULE_DATAPOINT]))
     cg.add(
         var.set_modes(
             list(config[CONF_MODES].keys()),
