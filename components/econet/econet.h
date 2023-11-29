@@ -50,7 +50,7 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
     case EconetDatapointType::FLOAT:
       return lhs.value_float == rhs.value_float;
     case EconetDatapointType::TEXT:
-      return lhs.value_string == rhs.value_string;
+      return lhs.value_enum == rhs.value_enum && lhs.value_string == rhs.value_string;
     case EconetDatapointType::ENUM_TEXT:
       return lhs.value_enum == rhs.value_enum;
     case EconetDatapointType::RAW:
