@@ -349,6 +349,7 @@ void Econet::handle_response_(const std::string &datapoint_id, const uint8_t *p,
       break;
     case EconetDatapointType::UNSUPPORTED:
       ESP_LOGW(TAG, "  %s : UNSUPPORTED", datapoint_id.c_str());
+      this->send_datapoint_(datapoint_id, EconetDatapoint{.type = item_type});
       break;
   }
 }
@@ -475,8 +476,9 @@ void Econet::loop() {
     return;
   }
 
-  // Quickly send writes but delay reads.
-  if (!pending_writes_.empty() || (now - this->last_request_ > this->update_interval_millis_ / request_mods_)) {
+  // Quickly send writes or reads from the Home Assistant service but delay regular reads.
+  if (!pending_writes_.empty() || !datapoint_ids_for_read_service_.empty() ||
+      (now - this->last_request_ > this->update_interval_millis_ / request_mods_)) {
     ESP_LOGI(TAG, "request ms=%d", now);
     this->last_request_ = now;
     this->make_request_();
@@ -508,9 +510,15 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
 }
 
 void Econet::request_strings_() {
-  uint8_t request_mod = read_requests_++ % request_mods_;
-  std::vector<std::string> objects(request_datapoint_ids_[request_mod].begin(),
-                                   request_datapoint_ids_[request_mod].end());
+  std::vector<std::string> objects;
+  if (!datapoint_ids_for_read_service_.empty()) {
+    objects.push_back(datapoint_ids_for_read_service_.front());
+    datapoint_ids_for_read_service_.pop();
+  } else {
+    uint8_t request_mod = read_requests_++ % request_mods_;
+    std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
+              back_inserter(objects));
+  }
   std::vector<std::string>::iterator iter;
   for (iter = objects.begin(); iter != objects.end();) {
     if (request_once_datapoint_ids_.count(*iter) == 1 && datapoints_.count(*iter) == 1) {
@@ -637,6 +645,47 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
       func(kv.second);
     }
   }
+}
+
+// Called from a Home Assistant exposed service to read a datapoint.
+// Fires a Home Assistant event: "esphome.econet_event" with the response.
+void Econet::homeassistant_read(std::string datapoint_id) {
+  register_listener(datapoint_id, -1, true, [this, datapoint_id](const EconetDatapoint &datapoint) {
+    std::map<std::string, std::string> data;
+    data["datapoint_id"] = datapoint_id;
+    switch (datapoint.type) {
+      case EconetDatapointType::FLOAT:
+        data["type"] = "FLOAT";
+        data["value"] = std::to_string(datapoint.value_float);
+        break;
+      case EconetDatapointType::ENUM_TEXT:
+        data["type"] = "ENUM_TEXT";
+        data["value"] = std::to_string(datapoint.value_enum);
+        data["value_string"] = datapoint.value_string;
+        break;
+      case EconetDatapointType::TEXT:
+        data["type"] = "TEXT";
+        data["value_string"] = datapoint.value_string;
+        break;
+      case EconetDatapointType::RAW:
+        data["type"] = "RAW";
+        data["value_raw"] = format_hex_pretty(datapoint.value_raw).c_str();
+        break;
+      case EconetDatapointType::UNSUPPORTED:
+        data["type"] = "UNSUPPORTED";
+        break;
+    }
+    capi_.fire_homeassistant_event("esphome.econet_event", data);
+  });
+  datapoint_ids_for_read_service_.push(datapoint_id);
+}
+
+void Econet::homeassistant_write(std::string datapoint_id, uint8_t value) {
+  set_datapoint_(datapoint_id, EconetDatapoint{.type = EconetDatapointType::ENUM_TEXT, .value_enum = value});
+}
+
+void Econet::homeassistant_write(std::string datapoint_id, float value) {
+  set_datapoint_(datapoint_id, EconetDatapoint{.type = EconetDatapointType::FLOAT, .value_float = value});
 }
 
 }  // namespace econet

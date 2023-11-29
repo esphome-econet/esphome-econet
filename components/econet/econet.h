@@ -2,6 +2,7 @@
 
 #include "esphome/core/component.h"
 #include "esphome/core/helpers.h"
+#include "esphome/components/api/custom_api_device.h"
 #include "esphome/components/uart/uart.h"
 #include <map>
 #include <vector>
@@ -55,7 +56,7 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
     case EconetDatapointType::RAW:
       return lhs.value_raw == rhs.value_raw;
     case EconetDatapointType::UNSUPPORTED:
-      return true;
+      return false;
   }
   return false;
 }
@@ -81,6 +82,10 @@ class Econet : public Component, public uart::UARTDevice {
 
   void register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
                          const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false);
+
+  void homeassistant_read(std::string datapoint_id);
+  void homeassistant_write(std::string datapoint_id, uint8_t value);
+  void homeassistant_write(std::string datapoint_id, float value);
 
  protected:
   uint32_t update_interval_millis_{30000};
@@ -108,6 +113,7 @@ class Econet : public Component, public uart::UARTDevice {
   std::set<std::string> request_once_datapoint_ids_;
   std::map<std::string, EconetDatapoint> datapoints_;
   std::map<std::string, EconetDatapoint> pending_writes_;
+  std::queue<std::string> datapoint_ids_for_read_service_;
 
   uint32_t read_requests_{0};
   uint32_t last_request_{0};
@@ -118,6 +124,7 @@ class Econet : public Component, public uart::UARTDevice {
   uint32_t src_adr_{0};
   uint32_t dst_adr_{0};
   GPIOPin *flow_control_pin_{nullptr};
+  esphome::api::CustomAPIDevice capi_;
 
   uint32_t COMPUTER = 192;                   // 80 00 00 C0
   uint32_t FURNACE = 0x1c0;                  // 80 00 01 C0
