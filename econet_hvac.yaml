@@ -46,12 +46,16 @@ sensor:
     sensor_datapoint: F_ACTCFM
     state_class: "measurement"
     entity_category: "diagnostic"
+    filters:
+      - delta: 10.0
   - platform: econet
     name: "Airhandler RPM"
     id: airhandler_rpm
     sensor_datapoint: F_ACTRPM
     state_class: "measurement"
     entity_category: "diagnostic"
+    filters:
+      - delta: 10.0
   - platform: econet
     name: "Static Pressure"
     id: static_pressure
@@ -60,6 +64,8 @@ sensor:
     unit_of_measurement: "in"
     state_class: "measurement"
     entity_category: "diagnostic"
+    filters:
+      - delta: 0.02
   - platform: econet
     name: "Thermostat Current Humidity"
     id: thermostat_current_humidity
@@ -74,10 +80,26 @@ text_sensor:
     name: "Operating Mode"
     id: operating_mode
     sensor_datapoint: HVACMODE
+    filters:
+      - lambda: |-
+            static std::string last;
+            if (x == last) {
+                return {};
+            }
+            last = x;
+            return x;
   - platform: econet
     name: "Auto Mode"
     id: auto_mode
     sensor_datapoint: AUTOMODE
+    filters:
+      - lambda: |-
+            static std::string last;
+            if (x == last) {
+                return {};
+            }
+            last = x;
+            return x;
 
 number:
   - platform: econet

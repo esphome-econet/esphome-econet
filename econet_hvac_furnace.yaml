@@ -7,15 +7,64 @@ substitutions:
 packages:
   econet: !include econet_hvac.yaml
 
+econet:
+  on_datapoint_update:
+    - sensor_datapoint: HWSTATUS
+      datapoint_type: raw
+      then:
+        - lambda: |-
+            uint16_t airhandler_cfm_ = (x[13] << 8) + x[14];
+            uint16_t airhandler_rpm_ = (x[17] << 8) + x[18];
+            uint8_t heat_per_ = x[11];
+            uint8_t heat_stage_ = x[26];
+            uint16_t lh_lh_ = (x[129] << 8) + x[130];
+            uint16_t hh_lh_ = (x[132] << 8) + x[133];
+            uint8_t cool_stage_ = x[12];
+            float flame_sensor_ = ((float) x[33])/10;
+            float return_air_temperature_ = ((x[50] << 8) + x[51])/10.0;
+            float static_pressure_ = ((x[15] << 8) + x[16])/5280.0;
+            if(id(airhandler_cfm).state != airhandler_cfm_) {
+                id(airhandler_cfm).publish_state(airhandler_cfm_);
+            }
+            id(airhandler_rpm).publish_state(airhandler_rpm_);
+            id(lh_lh).publish_state(lh_lh_);
+            id(hh_lh).publish_state(hh_lh_);
+            id(heat_stage).publish_state(heat_stage_);
+            id(return_air_temperature).publish_state(return_air_temperature_);
+            id(flame_sensor).publish_state(flame_sensor_);
+            // Operating Mode
+            if(heat_per_ > 90)
+            {
+                id(operating_mode).publish_state("High Heat");
+            }
+            else if(heat_per_ > 0)
+            {
+                id(operating_mode).publish_state("Low Heat");
+            }
+            else if(cool_stage_ > 0)
+            {
+                id(operating_mode).publish_state("Cooling");
+            }
+            else if(airhandler_cfm_ > 0)
+            {
+                id(operating_mode).publish_state("Fan");
+            }
+            else
+            {
+                id(operating_mode).publish_state("Off");
+            }
+
 sensor:
   - platform: econet
-    name: "Register Air Temperature"
-    id: register_air_temperature
+    name: "Supply Air Temperature"
+    id: supply_air_temperature
     sensor_datapoint: FURNSTMP
     device_class: "temperature"
     unit_of_measurement: "°F"
     state_class: "measurement"
     entity_category: "diagnostic"
+    filters:
+      - delta: 0.9
   - platform: econet
     name: "Return Air Temperature"
     id: return_air_temperature
@@ -24,3 +73,112 @@ sensor:
     unit_of_measurement: "°F"
     state_class: "measurement"
     entity_category: "diagnostic"
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: "Flame Sensor"
+    id: flame_sensor
+    entity_category: "diagnostic"
+    accuracy_decimals: 1
+    unit_of_measurement: "uA"
+    filters:
+      - delta: 0.09
+  - platform: econet
+    name: "Furnace AFUE"
+    id: furnace_afue
+    sensor_datapoint: FURNAFUE
+    entity_category: "diagnostic"
+    request_once: true
+  - platform: econet
+    name: "Furnace High Heat BTU Output"
+    id: furnace_hh_btus
+    sensor_datapoint: FURNHBTU
+    entity_category: "diagnostic"
+    request_once: true
+  - platform: econet
+    name: "Furnace Low Heat BTU Output"
+    id: furnace_lh_btus
+    sensor_datapoint: FURNLBTU
+    entity_category: "diagnostic"
+    request_once: true
+  - platform: template
+    name: "Lifetime Hours - Low Heat"
+    id: lh_lh
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: "Lifetime Hours - High Heat"
+    id: hh_lh
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: "Instant BTU Output"
+    id: instant_btu_output
+    unit_of_measurement: "kbtu/h"
+    accuracy_decimals: 3
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: "Instant BTU Usage"
+    id: instant_btu_usage
+    unit_of_measurement: "kbtu/h"
+    accuracy_decimals: 3
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: "Instant Gas Usage"
+    id: gas_usage_m3_h
+    unit_of_measurement: "m³/h"
+    accuracy_decimals: 3
+  - platform: integration
+    name: "Total Daily Gas"
+    sensor: gas_usage_m3_h
+    time_unit: h
+    state_class: total_increasing
+    device_class: gas
+    accuracy_decimals: 5
+    unit_of_measurement: "m³"
+  - platform: econet
+    name: "Indoor KW"
+    id: indoor_kw
+    sensor_datapoint: INDOORKW
+    entity_category: "diagnostic"
+    state_class: "measurement"
+  - platform: template
+    name: "Heating Stage"
+    id: heat_stage
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    state_class: "measurement"
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: "Colling Stage"
+    id: cool_stage
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    state_class: "measurement"
+    filters:
+      - delta: 0.9
+
+interval:
+  - interval: 5s
+    then:
+      - lambda: |-
+            if (id(operating_mode).state == "Low Heat") {
+                id(instant_btu_output).publish_state(id(furnace_lh_btus).state / 1000);
+                id(instant_btu_usage).publish_state(id(furnace_lh_btus).state / id(furnace_afue).state * 100 / 1000);
+                id(gas_usage_m3_h).publish_state(id(furnace_lh_btus).state / id(furnace_afue).state * 100 / 35300);
+            }else if(id(operating_mode).state == "High Heat") {
+                id(instant_btu_output).publish_state(id(furnace_hh_btus).state / 1000);
+                id(instant_btu_usage).publish_state(id(furnace_hh_btus).state / id(furnace_afue).state * 100 / 1000);
+                id(gas_usage_m3_h).publish_state(id(furnace_hh_btus).state / id(furnace_afue).state * 100 / 35300 );
+            }else{
+                id(instant_btu_output).publish_state(0);
+                id(instant_btu_usage).publish_state(0);
+                id(gas_usage_m3_h).publish_state(0);
+            }
