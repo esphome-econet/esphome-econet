@@ -47,7 +47,7 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
     filters:
-      - delta: 10.0
+      - delta: 9.9
   - platform: econet
     name: "Airhandler RPM"
     id: airhandler_rpm
@@ -55,7 +55,7 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
     filters:
-      - delta: 10.0
+      - delta: 9.9
   - platform: econet
     name: "Static Pressure"
     id: static_pressure
@@ -80,26 +80,10 @@ text_sensor:
     name: "Operating Mode"
     id: operating_mode
     sensor_datapoint: HVACMODE
-    filters:
-      - lambda: |-
-            static std::string last;
-            if (x == last) {
-                return {};
-            }
-            last = x;
-            return x;
   - platform: econet
     name: "Auto Mode"
     id: auto_mode
     sensor_datapoint: AUTOMODE
-    filters:
-      - lambda: |-
-            static std::string last;
-            if (x == last) {
-                return {};
-            }
-            last = x;
-            return x;
 
 number:
   - platform: econet

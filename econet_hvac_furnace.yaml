@@ -13,46 +13,16 @@ econet:
       datapoint_type: raw
       then:
         - lambda: |-
-            uint16_t airhandler_cfm_ = (x[13] << 8) + x[14];
-            uint16_t airhandler_rpm_ = (x[17] << 8) + x[18];
-            uint8_t heat_per_ = x[11];
-            uint8_t heat_stage_ = x[26];
-            uint16_t lh_lh_ = (x[129] << 8) + x[130];
-            uint16_t hh_lh_ = (x[132] << 8) + x[133];
-            uint8_t cool_stage_ = x[12];
-            float flame_sensor_ = ((float) x[33])/10;
-            float return_air_temperature_ = ((x[50] << 8) + x[51])/10.0;
-            float static_pressure_ = ((x[15] << 8) + x[16])/5280.0;
-            if(id(airhandler_cfm).state != airhandler_cfm_) {
-                id(airhandler_cfm).publish_state(airhandler_cfm_);
-            }
-            id(airhandler_rpm).publish_state(airhandler_rpm_);
-            id(lh_lh).publish_state(lh_lh_);
-            id(hh_lh).publish_state(hh_lh_);
-            id(heat_stage).publish_state(heat_stage_);
-            id(return_air_temperature).publish_state(return_air_temperature_);
-            id(flame_sensor).publish_state(flame_sensor_);
-            // Operating Mode
-            if(heat_per_ > 90)
-            {
-                id(operating_mode).publish_state("High Heat");
-            }
-            else if(heat_per_ > 0)
-            {
-                id(operating_mode).publish_state("Low Heat");
-            }
-            else if(cool_stage_ > 0)
-            {
-                id(operating_mode).publish_state("Cooling");
-            }
-            else if(airhandler_cfm_ > 0)
-            {
-                id(operating_mode).publish_state("Fan");
-            }
-            else
-            {
-                id(operating_mode).publish_state("Off");
-            }
+            id(airhandler_cfm).publish_state((x[13] << 8) + x[14]);
+            id(airhandler_rpm).publish_state((x[17] << 8) + x[18]);
+            id(lh_lh).publish_state((x[129] << 8) + x[130]);
+            id(hh_lh).publish_state((x[132] << 8) + x[133]);
+            id(heat_capacity).publish_state(x[11]);
+            id(cool_stage).publish_state(x[12]);
+            id(heat_stage).publish_state(x[26]);
+            id(static_pressure).publish_state(((x[15] << 8) + x[16]) / 5280.0);
+            id(return_air_temperature).publish_state(((x[50] << 8) + x[51]) / 10.0);
+            id(flame_sensor).publish_state(x[33] / 10.0);
 
 sensor:
   - platform: econet
@@ -148,6 +118,15 @@ sensor:
     sensor_datapoint: INDOORKW
     entity_category: "diagnostic"
     state_class: "measurement"
+    device_class: energy
+  - platform: template
+    name: "Heating Capacity"
+    id: heat_capacity
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    state_class: "measurement"
+    filters:
+      - delta: 0.9
   - platform: template
     name: "Heating Stage"
     id: heat_stage
@@ -169,16 +148,8 @@ interval:
   - interval: 5s
     then:
       - lambda: |-
-            if (id(operating_mode).state == "Low Heat") {
-                id(instant_btu_output).publish_state(id(furnace_lh_btus).state / 1000);
-                id(instant_btu_usage).publish_state(id(furnace_lh_btus).state / id(furnace_afue).state * 100 / 1000);
-                id(gas_usage_m3_h).publish_state(id(furnace_lh_btus).state / id(furnace_afue).state * 100 / 35300);
-            }else if(id(operating_mode).state == "High Heat") {
-                id(instant_btu_output).publish_state(id(furnace_hh_btus).state / 1000);
-                id(instant_btu_usage).publish_state(id(furnace_hh_btus).state / id(furnace_afue).state * 100 / 1000);
-                id(gas_usage_m3_h).publish_state(id(furnace_hh_btus).state / id(furnace_afue).state * 100 / 35300 );
-            }else{
-                id(instant_btu_output).publish_state(0);
-                id(instant_btu_usage).publish_state(0);
-                id(gas_usage_m3_h).publish_state(0);
-            }
+            float furnace_kbtus = id(furnace_hh_btus).state / 1000.0 * id(heat_capacity).state / 100.0;
+            float furnace_eff = id(furnace_afue).state / 100.0;
+            id(instant_btu_output).publish_state(furnace_kbtus);
+            id(instant_btu_usage).publish_state(furnace_kbtus / furnace_eff);
+            id(gas_usage_m3_h).publish_state(furnace_kbtus / furnace_eff / 35.300 );
