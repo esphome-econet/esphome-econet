@@ -59,7 +59,7 @@ sensor:
     id: furnace_afue
     sensor_datapoint: FURNAFUE
     entity_category: "diagnostic"
-    icon: "mdi:water-boiler"
+    icon: "mdi:fire-circle"
     request_once: true
   - platform: econet
     name: "Furnace High Heat BTU Output"
@@ -115,7 +115,7 @@ sensor:
     name: "Instant Gas Usage"
     id: gas_usage_m3_h
     unit_of_measurement: "m³/h"
-    icon: "mdi:water-boiler"
+    icon: "mdi:meter-gas"
     accuracy_decimals: 3
   - platform: integration
     name: "Total Daily Gas"
@@ -138,7 +138,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     state_class: "measurement"
-    icon: "mdi:water-boiler"
+    icon: "mdi:gas-burner"
     filters:
       - delta: 0.9
   - platform: template
@@ -147,7 +147,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     state_class: "measurement"
-    icon: "mdi:water-boiler"
+    icon: "mdi:gas-burner"
     filters:
       - delta: 0.9
   - platform: template
