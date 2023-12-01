@@ -48,6 +48,7 @@ sensor:
   - platform: template
     name: "Flame Sensor"
     id: flame_sensor
+    device_class: "current"
     entity_category: "diagnostic"
     accuracy_decimals: 1
     unit_of_measurement: "uA"
@@ -58,21 +59,28 @@ sensor:
     id: furnace_afue
     sensor_datapoint: FURNAFUE
     entity_category: "diagnostic"
+    icon: "mdi:water-boiler"
     request_once: true
   - platform: econet
     name: "Furnace High Heat BTU Output"
     id: furnace_hh_btus
     sensor_datapoint: FURNHBTU
     entity_category: "diagnostic"
+    unit_of_measurement: "btu/h"
+    device_class: "power"
     request_once: true
   - platform: econet
     name: "Furnace Low Heat BTU Output"
     id: furnace_lh_btus
     sensor_datapoint: FURNLBTU
     entity_category: "diagnostic"
+    unit_of_measurement: "btu/h"
+    device_class: "power"
     request_once: true
   - platform: template
     name: "Lifetime Hours - Low Heat"
+    unit_of_measurement: "h"
+    device_class: "duration"
     id: lh_lh
     entity_category: "diagnostic"
     accuracy_decimals: 0
@@ -80,6 +88,8 @@ sensor:
       - delta: 0.9
   - platform: template
     name: "Lifetime Hours - High Heat"
+    unit_of_measurement: "h"
+    device_class: "duration"
     id: hh_lh
     entity_category: "diagnostic"
     accuracy_decimals: 0
@@ -89,6 +99,7 @@ sensor:
     name: "Instant BTU Output"
     id: instant_btu_output
     unit_of_measurement: "kbtu/h"
+    device_class: "power"
     accuracy_decimals: 3
     filters:
       - delta: 0.9
@@ -96,6 +107,7 @@ sensor:
     name: "Instant BTU Usage"
     id: instant_btu_usage
     unit_of_measurement: "kbtu/h"
+    device_class: "power"
     accuracy_decimals: 3
     filters:
       - delta: 0.9
@@ -103,6 +115,7 @@ sensor:
     name: "Instant Gas Usage"
     id: gas_usage_m3_h
     unit_of_measurement: "m³/h"
+    icon: "mdi:water-boiler"
     accuracy_decimals: 3
   - platform: integration
     name: "Total Daily Gas"
@@ -125,6 +138,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     state_class: "measurement"
+    icon: "mdi:water-boiler"
     filters:
       - delta: 0.9
   - platform: template
@@ -133,6 +147,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     state_class: "measurement"
+    icon: "mdi:water-boiler"
     filters:
       - delta: 0.9
   - platform: template
@@ -141,6 +156,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     state_class: "measurement"
+    icon: "mdi:snowflake"
     filters:
       - delta: 0.9
 
