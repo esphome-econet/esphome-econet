@@ -106,6 +106,8 @@ class Econet : public Component, public uart::UARTDevice {
   void write_value_(const std::string &object, EconetDatapointType type, float value);
 
   std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(8);
+  std::vector<uint32_t> request_mod_interval_millis_ = std::vector<uint32_t>{8};
+  std::vector<uint32_t> request_mod_last_requested_ = std::vector<uint32_t>{8};
   uint8_t request_mods_{1};
   std::set<std::string> raw_datapoint_ids_;
   std::set<std::string> request_once_datapoint_ids_;
