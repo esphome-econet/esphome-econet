@@ -7,15 +7,34 @@ substitutions:
 packages:
   econet: !include econet_hvac.yaml
 
+econet:
+  on_datapoint_update:
+    - sensor_datapoint: HWSTATUS
+      datapoint_type: raw
+      then:
+        - lambda: |-
+            id(airhandler_cfm).publish_state((x[13] << 8) + x[14]);
+            id(airhandler_rpm).publish_state((x[17] << 8) + x[18]);
+            id(lh_lh).publish_state((x[129] << 8) + x[130]);
+            id(hh_lh).publish_state((x[132] << 8) + x[133]);
+            id(heat_capacity).publish_state(x[11]);
+            id(cool_stage).publish_state(x[12]);
+            id(heat_stage).publish_state(x[26]);
+            id(static_pressure).publish_state(((x[15] << 8) + x[16]) / 5280.0);
+            id(return_air_temperature).publish_state(((x[50] << 8) + x[51]) / 10.0);
+            id(flame_sensor).publish_state(x[33] / 10.0);
+
 sensor:
   - platform: econet
-    name: "Register Air Temperature"
-    id: register_air_temperature
+    name: "Supply Air Temperature"
+    id: supply_air_temperature
     sensor_datapoint: FURNSTMP
     device_class: "temperature"
     unit_of_measurement: "°F"
     state_class: "measurement"
     entity_category: "diagnostic"
+    filters:
+      - delta: 0.9
   - platform: econet
     name: "Return Air Temperature"
     id: return_air_temperature
@@ -24,3 +43,129 @@ sensor:
     unit_of_measurement: "°F"
     state_class: "measurement"
     entity_category: "diagnostic"
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: "Flame Sensor"
+    id: flame_sensor
+    device_class: "current"
+    entity_category: "diagnostic"
+    accuracy_decimals: 1
+    unit_of_measurement: "uA"
+    filters:
+      - delta: 0.09
+  - platform: econet
+    name: "Furnace AFUE"
+    id: furnace_afue
+    sensor_datapoint: FURNAFUE
+    entity_category: "diagnostic"
+    icon: "mdi:fire-circle"
+    request_once: true
+  - platform: econet
+    name: "Furnace High Heat BTU Output"
+    id: furnace_hh_btus
+    sensor_datapoint: FURNHBTU
+    entity_category: "diagnostic"
+    unit_of_measurement: "btu/h"
+    device_class: "power"
+    request_once: true
+  - platform: econet
+    name: "Furnace Low Heat BTU Output"
+    id: furnace_lh_btus
+    sensor_datapoint: FURNLBTU
+    entity_category: "diagnostic"
+    unit_of_measurement: "btu/h"
+    device_class: "power"
+    request_once: true
+  - platform: template
+    name: "Lifetime Hours - Low Heat"
+    unit_of_measurement: "h"
+    device_class: "duration"
+    id: lh_lh
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: "Lifetime Hours - High Heat"
+    unit_of_measurement: "h"
+    device_class: "duration"
+    id: hh_lh
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: "Instant BTU Output"
+    id: instant_btu_output
+    unit_of_measurement: "kbtu/h"
+    device_class: "power"
+    accuracy_decimals: 3
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: "Instant BTU Usage"
+    id: instant_btu_usage
+    unit_of_measurement: "kbtu/h"
+    device_class: "power"
+    accuracy_decimals: 3
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: "Instant Gas Usage"
+    id: gas_usage_m3_h
+    unit_of_measurement: "m³/h"
+    icon: "mdi:meter-gas"
+    accuracy_decimals: 3
+  - platform: integration
+    name: "Total Daily Gas"
+    sensor: gas_usage_m3_h
+    time_unit: h
+    state_class: total_increasing
+    device_class: gas
+    accuracy_decimals: 5
+    unit_of_measurement: "m³"
+  - platform: econet
+    name: "Indoor KW"
+    id: indoor_kw
+    sensor_datapoint: INDOORKW
+    entity_category: "diagnostic"
+    state_class: "measurement"
+    device_class: energy
+  - platform: template
+    name: "Heating Capacity"
+    id: heat_capacity
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    state_class: "measurement"
+    icon: "mdi:gas-burner"
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: "Heating Stage"
+    id: heat_stage
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    state_class: "measurement"
+    icon: "mdi:gas-burner"
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: "Cooling Stage"
+    id: cool_stage
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    state_class: "measurement"
+    icon: "mdi:snowflake"
+    filters:
+      - delta: 0.9
+
+interval:
+  - interval: 5s
+    then:
+      - lambda: |-
+            float furnace_kbtus = id(furnace_hh_btus).state / 1000.0 * id(heat_capacity).state / 100.0;
+            float furnace_eff = id(furnace_afue).state / 100.0;
+            id(instant_btu_output).publish_state(furnace_kbtus);
+            id(instant_btu_usage).publish_state(furnace_kbtus / furnace_eff);
+            id(gas_usage_m3_h).publish_state(furnace_kbtus / furnace_eff / 35.300 );

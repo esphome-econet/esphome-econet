@@ -9,13 +9,15 @@ packages:
 
 sensor:
   - platform: econet
-    name: "Register Air Temperature"
-    id: register_air_temperature
+    name: "Supply Air Temperature"
+    id: supply_air_temperature
     sensor_datapoint: TEMP_LAT
     device_class: "temperature"
     unit_of_measurement: "°F"
     state_class: "measurement"
     entity_category: "diagnostic"
+    filters:
+      - delta: 0.9
   - platform: econet
     name: "Return Air Temperature"
     id: return_air_temperature
@@ -24,6 +26,8 @@ sensor:
     unit_of_measurement: "°F"
     state_class: "measurement"
     entity_category: "diagnostic"
+    filters:
+      - delta: 0.9
 
 binary_sensor:
   - platform: econet
