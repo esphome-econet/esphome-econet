@@ -367,6 +367,7 @@ void Econet::read_buffer_(int bytes_available) {
 
 void Econet::loop() {
   const uint32_t now = millis();
+  loop_now_ = now;
 
   if ((now - this->last_read_data_ > RECEIVE_TIMEOUT) && !rx_message_.empty()) {
     ESP_LOGW(TAG, "Ignoring partially received message due to timeout");
@@ -392,13 +393,7 @@ void Econet::loop() {
     return;
   }
 
-  // Quickly send writes or reads from the Home Assistant service but delay regular reads.
-  if (!pending_writes_.empty() || !datapoint_ids_for_read_service_.empty() ||
-      (now - this->last_request_ > this->update_interval_millis_ / request_mods_)) {
-    ESP_LOGI(TAG, "request ms=%d", now);
-    this->last_request_ = now;
-    this->make_request_();
-  }
+  this->make_request_();
 }
 
 void Econet::write_value_(const std::string &object, EconetDatapointType type, float value) {
@@ -426,17 +421,19 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
 }
 
 void Econet::request_strings_() {
-  const uint32_t now2 = millis();
   std::vector<std::string> objects;
   if (!datapoint_ids_for_read_service_.empty()) {
     objects.push_back(datapoint_ids_for_read_service_.front());
     datapoint_ids_for_read_service_.pop();
   } else {
-    uint8_t request_mod = read_requests_++ % request_mods_;
-    if ((now2 - request_mod_last_requested_[request_mod]) > request_mod_interval_millis_[request_mod]) {
-      std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
-                back_inserter(objects));
-      request_mod_last_requested_[request_mod] = now2;
+    for (int j = 0; j < request_mods_; j++) {
+      uint8_t request_mod = read_requests_++ % request_mods_;
+      if ((this->loop_now_ - request_mod_last_requested_[request_mod]) > request_mod_interval_millis_[request_mod]) {
+        std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
+                  back_inserter(objects));
+        request_mod_last_requested_[request_mod] = this->loop_now_;
+        break;
+      }
     }
   }
   std::vector<std::string>::iterator iter;
@@ -546,11 +543,6 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
   if (request_mod >= 0 && request_mod < request_datapoint_ids_.size()) {
     request_datapoint_ids_[request_mod].insert(datapoint_id);
     request_mods_ = std::max(request_mods_, (uint8_t) (request_mod + 1));
-    if (request_mod == 1 || request_mod == 2 || request_mod == 3) {
-      request_mod_interval_millis_[request_mod] = 30000;
-    } else {
-      request_mod_interval_millis_[request_mod] = update_interval_millis_;
-    }
     request_mod_last_requested_[request_mod] = 0;
     if (request_once) {
       request_once_datapoint_ids_.insert(datapoint_id);

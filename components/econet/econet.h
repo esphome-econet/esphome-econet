@@ -74,7 +74,17 @@ class Econet : public Component, public uart::UARTDevice {
 
   void set_src_address(uint32_t address) { src_adr_ = address; }
   void set_dst_address(uint32_t address) { dst_adr_ = address; }
-  void set_update_interval(uint32_t interval_millis) { update_interval_millis_ = interval_millis; }
+  void set_mod_req_updates_(std::vector<uint8_t> keys, std::vector<uint32_t> values) {
+    for (auto i = 0; i < keys.size(); i++) {
+      request_mod_interval_millis_[keys[i]] = values[i];
+    }
+  }
+  void set_update_interval(uint32_t interval_millis) {
+    update_interval_millis_ = interval_millis;
+    for (auto i = 0; i < this->request_mod_interval_millis_.size(); i++) {
+      request_mod_interval_millis_[i] = update_interval_millis_;
+    }
+  }
   void set_flow_control_pin(GPIOPin *flow_control_pin) { this->flow_control_pin_ = flow_control_pin; }
 
   void set_float_datapoint_value(const std::string &datapoint_id, float value);
@@ -116,6 +126,7 @@ class Econet : public Component, public uart::UARTDevice {
   std::queue<std::string> datapoint_ids_for_read_service_;
 
   uint32_t read_requests_{0};
+  uint32_t loop_now_{0};
   uint32_t last_request_{0};
   uint32_t last_read_data_{0};
   std::vector<uint8_t> rx_message_;
