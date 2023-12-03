@@ -9,7 +9,7 @@ substitutions:
   board: esp32dev
   github_ref: main
   external_components_source: github://esphome-econet/esphome-econet@${github_ref}
-  econet_alarm_update_interval: "30000"
+  econet_alarm_update_interval: 30s
   logger_level: WARN
   econet_update_interval: 30s
 

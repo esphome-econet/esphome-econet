@@ -54,7 +54,7 @@ def request_mod(value):
 
 def ensure_option_map(value):
     cv.check_not_templatable(value)
-    options_map_schema = cv.Schema({cv.uint8_t: cv.uint32_t})
+    options_map_schema = cv.Schema({cv.uint8_t: cv.positive_time_period_milliseconds})
     value = options_map_schema(value)
     all_values = list(value.keys())
     unique_values = set(value.keys())
