@@ -26,6 +26,7 @@ jobs:
           bump: ${{ inputs.bump }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prefix: "v"
+          dry_run: true
       - uses: actions/checkout@v4.1.1
         with:
           token: ${{ secrets.ESPHOME_ECONET_TEST_SECRET }}
