@@ -77,7 +77,7 @@ econet:
   update_interval: ${econet_update_interval}
   request_mod_update_intervals:
     1: ${econet_alarm_update_interval}
-    2: ${econet_alarm_update_interval}
+    2: ${econet_alarm_history_update_interval}
     3: ${econet_alarm_history_update_interval}
   src_address: 0x340
 
