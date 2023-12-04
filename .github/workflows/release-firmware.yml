@@ -1,0 +1,53 @@
+---
+name: Release Firmware
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        type: choice
+        default: "patch"
+        required: true
+        description: "The type of semantic version increment to make."
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  update-version-strings:
+    name: Update Version Strings
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Generate Release Version
+        id: generate_release_version
+        uses: zwaldowski/semver-release-action@v3
+        with:
+          bump: ${{ inputs.bump }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prefix: "v"
+          dry_run: true
+      - uses: actions/checkout@v4.1.1
+        with:
+          token: ${{ secrets.ESPHOME_ECONET_TEST_SECRET }}
+      - name: Update Project Version String
+        uses: mikefarah/yq@v4.40.3
+        with:
+          cmd: >
+            yq -i
+            '
+              .esphome.project.version = "${{ steps.generate_release_version.outputs.version_tag }}"
+            '
+            econet_base.yaml
+      - name: Commit Changes
+        uses: stefanzweifel/git-auto-commit-action@v5.0.0
+        with:
+          commit_message: "Automated project versioning update"
+          push_options: '--force'
+      - name: Create Release
+        uses: ncipollo/release-action@v1.13.0
+        with:
+          generateReleaseNotes: true
+          tag: ${{ steps.generate_release_version.outputs.version_tag }}
