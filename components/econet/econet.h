@@ -11,6 +11,8 @@
 namespace esphome {
 namespace econet {
 
+static const uint8_t MAX_REQUEST_MODS = 8;
+
 class ReadRequest {
  public:
   uint32_t dst_adr;
@@ -41,6 +43,7 @@ struct EconetDatapoint {
   };
   std::string value_string;
   std::vector<uint8_t> value_raw;
+  uint32_t last_received;
 };
 inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
   if (lhs.type != rhs.type) {
@@ -77,13 +80,19 @@ class Econet : public Component, public uart::UARTDevice {
   void set_mod_req_updates_(std::vector<uint8_t> keys, std::vector<uint32_t> values) {
     for (auto i = 0; i < keys.size(); i++) {
       request_mod_interval_millis_[keys[i]] = values[i];
+      request_mod_last_requested_[i] = i * values[i] / MAX_REQUEST_MODS;
+      min_update_interval_millis_ = std::min(min_update_interval_millis_, values[i]);
     }
+    min_delay_between_read_requests_ = update_interval_millis_ / MAX_REQUEST_MODS;
   }
   void set_update_interval(uint32_t interval_millis) {
     update_interval_millis_ = interval_millis;
+    min_update_interval_millis_ = interval_millis;
     for (auto i = 0; i < this->request_mod_interval_millis_.size(); i++) {
       request_mod_interval_millis_[i] = update_interval_millis_;
+      request_mod_last_requested_[i] = i * update_interval_millis_ / MAX_REQUEST_MODS;
     }
+    min_delay_between_read_requests_ = std::max(interval_millis / MAX_REQUEST_MODS, (uint32_t) 200);
   }
   void set_flow_control_pin(GPIOPin *flow_control_pin) { this->flow_control_pin_ = flow_control_pin; }
 
@@ -99,6 +108,9 @@ class Econet : public Component, public uart::UARTDevice {
 
  protected:
   uint32_t update_interval_millis_{30000};
+  uint32_t min_update_interval_millis_{30000};
+  uint32_t min_delay_between_read_requests_{30000 / MAX_REQUEST_MODS};
+
   std::vector<EconetDatapointListener> listeners_;
   ReadRequest read_req_;
   void set_datapoint_(const std::string &datapoint_id, const EconetDatapoint &value);
@@ -115,9 +127,9 @@ class Econet : public Component, public uart::UARTDevice {
   void request_strings_();
   void write_value_(const std::string &object, EconetDatapointType type, float value);
 
-  std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(8);
-  std::vector<uint32_t> request_mod_interval_millis_ = std::vector<uint32_t>{8};
-  std::vector<uint32_t> request_mod_last_requested_ = std::vector<uint32_t>{8};
+  std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(MAX_REQUEST_MODS);
+  std::vector<uint32_t> request_mod_interval_millis_ = std::vector<uint32_t>{MAX_REQUEST_MODS, update_interval_millis_};
+  std::vector<uint32_t> request_mod_last_requested_ = std::vector<uint32_t>{MAX_REQUEST_MODS, 0};
   uint8_t request_mods_{1};
   std::set<std::string> raw_datapoint_ids_;
   std::set<std::string> request_once_datapoint_ids_;
@@ -128,6 +140,7 @@ class Econet : public Component, public uart::UARTDevice {
   uint32_t read_requests_{0};
   uint32_t loop_now_{0};
   uint32_t last_request_{0};
+  uint32_t last_read_request_{0};
   uint32_t last_read_data_{0};
   std::vector<uint8_t> rx_message_;
   std::vector<uint8_t> tx_message_;

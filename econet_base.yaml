@@ -9,9 +9,10 @@ substitutions:
   board: esp32dev
   github_ref: main
   external_components_source: github://esphome-econet/esphome-econet@${github_ref}
-  econet_alarm_update_interval: 30s
   logger_level: WARN
   econet_update_interval: 30s
+  econet_alarm_update_interval: 30s
+  econet_alarm_history_update_interval: 60s
 
 esphome:
   name: ${name}
@@ -74,11 +75,12 @@ econet:
   id: econet_id
   uart_id: econet_uart
   update_interval: ${econet_update_interval}
-  src_address: 0x340
   request_mod_update_intervals:
     1: ${econet_alarm_update_interval}
     2: ${econet_alarm_update_interval}
-    3: ${econet_alarm_update_interval}
+    3: ${econet_alarm_history_update_interval}
+  src_address: 0x340
+
 
 sensor:
   - platform: econet

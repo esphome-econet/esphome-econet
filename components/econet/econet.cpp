@@ -133,6 +133,8 @@ void Econet::make_request_() {
         ESP_LOGW(TAG, "Unexpected pending write: datapoint %s", kv->first.c_str());
         break;
     }
+
+    this->last_request_ = loop_now_;
     pending_writes_.erase(kv->first);
     return;
   }
@@ -426,14 +428,17 @@ void Econet::request_strings_() {
     objects.push_back(datapoint_ids_for_read_service_.front());
     datapoint_ids_for_read_service_.pop();
   } else {
-    for (int j = 0; j < request_mods_; j++) {
-      uint8_t request_mod = read_requests_++ % request_mods_;
-      if ((this->loop_now_ - request_mod_last_requested_[request_mod]) > request_mod_interval_millis_[request_mod]) {
-        std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
-                  back_inserter(objects));
-        request_mod_last_requested_[request_mod] = this->loop_now_;
-        break;
+    // Impose a longer delay restriction for general periodically requested messages
+    if (loop_now_ - last_read_request_ > min_delay_between_read_requests_) {
+      for (int j = 0; j < request_mods_; j++) {
+        if ((this->loop_now_ - request_mod_last_requested_[j]) > request_mod_interval_millis_[j]) {
+          std::copy(request_datapoint_ids_[j].begin(), request_datapoint_ids_[j].end(), back_inserter(objects));
+          request_mod_last_requested_[j] = loop_now_;
+          break;
+        }
       }
+    } else {
+      return;
     }
   }
   std::vector<std::string>::iterator iter;
@@ -447,6 +452,9 @@ void Econet::request_strings_() {
   if (objects.empty()) {
     return;
   }
+
+  last_request_ = loop_now_;
+  last_read_request_ = loop_now_;
 
   std::vector<uint8_t> data;
 
@@ -543,7 +551,6 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
   if (request_mod >= 0 && request_mod < request_datapoint_ids_.size()) {
     request_datapoint_ids_[request_mod].insert(datapoint_id);
     request_mods_ = std::max(request_mods_, (uint8_t) (request_mod + 1));
-    request_mod_last_requested_[request_mod] = 0;
     if (request_once) {
       request_once_datapoint_ids_.insert(datapoint_id);
     }

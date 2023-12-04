@@ -46,15 +46,21 @@ def assign_declare_id(value):
     return value
 
 
-def request_mod(value):
-    if isinstance(value, str) and value.lower() == "none":
-        return -1
+def valid_request_mod(value):
     return cv.int_range(min=0, max=7)(value)
 
 
-def ensure_option_map(value):
+def request_mod(value):
+    if isinstance(value, str) and value.lower() == "none":
+        return -1
+    return valid_request_mod(value)
+
+
+def request_mod_interval_validator(value):
     cv.check_not_templatable(value)
-    options_map_schema = cv.Schema({cv.uint8_t: cv.positive_time_period_milliseconds})
+    options_map_schema = cv.Schema(
+        {valid_request_mod: cv.positive_time_period_milliseconds}
+    )
     value = options_map_schema(value)
     all_values = list(value.keys())
     unique_values = set(value.keys())
@@ -83,7 +89,7 @@ CONFIG_SCHEMA = (
                 extra_validators=assign_declare_id,
             ),
             cv.Optional(CONF_FLOW_CONTROL_PIN): pins.gpio_output_pin_schema,
-            cv.Optional(CONF_REQUEST_INTERVAL): ensure_option_map,
+            cv.Optional(CONF_REQUEST_INTERVAL): request_mod_interval_validator,
         }
     )
     .extend(cv.polling_component_schema("30s"))
