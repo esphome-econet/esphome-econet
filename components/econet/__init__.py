@@ -107,16 +107,17 @@ ECONET_CLIENT_SCHEMA = cv.Schema(
 
 
 async def to_code(config):
-    options_map = config[CONF_REQUEST_INTERVAL]
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
     cg.add(var.set_src_address(config[CONF_SRC_ADDRESS]))
     cg.add(var.set_dst_address(config[CONF_DST_ADDRESS]))
     if CONF_REQUEST_INTERVAL in config:
+        request_mod_interval_map = config[CONF_REQUEST_INTERVAL]
         cg.add(
             var.set_mod_req_updates_(
-                list(options_map.keys()), list(options_map.values())
+                list(request_mod_interval_map.keys()),
+                list(request_mod_interval_map.values()),
             )
         )
     if CONF_FLOW_CONTROL_PIN in config:
