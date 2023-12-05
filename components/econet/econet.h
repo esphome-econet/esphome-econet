@@ -134,7 +134,6 @@ class Econet : public Component, public uart::UARTDevice {
   std::map<std::string, EconetDatapoint> pending_writes_;
   std::queue<std::string> datapoint_ids_for_read_service_;
 
-  uint32_t read_requests_{0};
   uint32_t loop_now_{0};
   uint32_t last_request_{0};
   uint32_t last_read_request_{0};
