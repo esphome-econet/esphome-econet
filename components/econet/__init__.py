@@ -18,7 +18,7 @@ CONF_ON_DATAPOINT_UPDATE = "on_datapoint_update"
 CONF_DATAPOINT_TYPE = "datapoint_type"
 CONF_REQUEST_MOD = "request_mod"
 CONF_REQUEST_ONCE = "request_once"
-CONF_REQUEST_INTERVAL = "request_mod_update_intervals"
+CONF_REQUEST_MOD_UPDATE_INTERVALS = "request_mod_update_intervals"
 
 econet_ns = cg.esphome_ns.namespace("econet")
 Econet = econet_ns.class_("Econet", cg.Component, uart.UARTDevice)
@@ -46,20 +46,20 @@ def assign_declare_id(value):
     return value
 
 
-def valid_request_mod(value):
+def validate_request_mod_range(value):
     return cv.int_range(min=0, max=7)(value)
 
 
 def request_mod(value):
     if isinstance(value, str) and value.lower() == "none":
         return -1
-    return valid_request_mod(value)
+    return validate_request_mod_range(value)
 
 
-def request_mod_interval_validator(value):
+def validate_request_mod_update_intervals(value):
     cv.check_not_templatable(value)
     options_map_schema = cv.Schema(
-        {valid_request_mod: cv.positive_time_period_milliseconds}
+        {validate_request_mod_range: cv.positive_time_period_milliseconds}
     )
     value = options_map_schema(value)
     all_values = list(value.keys())
@@ -89,7 +89,9 @@ CONFIG_SCHEMA = (
                 extra_validators=assign_declare_id,
             ),
             cv.Optional(CONF_FLOW_CONTROL_PIN): pins.gpio_output_pin_schema,
-            cv.Optional(CONF_REQUEST_INTERVAL): request_mod_interval_validator,
+            cv.Optional(
+                CONF_REQUEST_MOD_UPDATE_INTERVALS
+            ): validate_request_mod_update_intervals,
         }
     )
     .extend(cv.polling_component_schema("30s"))
@@ -112,10 +114,10 @@ async def to_code(config):
     await uart.register_uart_device(var, config)
     cg.add(var.set_src_address(config[CONF_SRC_ADDRESS]))
     cg.add(var.set_dst_address(config[CONF_DST_ADDRESS]))
-    if CONF_REQUEST_INTERVAL in config:
-        request_mod_interval_map = config[CONF_REQUEST_INTERVAL]
+    if CONF_REQUEST_MOD_UPDATE_INTERVALS in config:
+        request_mod_interval_map = config[CONF_REQUEST_MOD_UPDATE_INTERVALS]
         cg.add(
-            var.set_mod_req_updates_(
+            var.set_mod_req_updates(
                 list(request_mod_interval_map.keys()),
                 list(request_mod_interval_map.values()),
             )

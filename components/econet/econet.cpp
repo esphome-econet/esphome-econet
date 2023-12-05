@@ -429,16 +429,18 @@ void Econet::request_strings_() {
     datapoint_ids_for_read_service_.pop();
   } else {
     // Impose a longer delay restriction for general periodically requested messages
-    if (loop_now_ - last_read_request_ > min_delay_between_read_requests_) {
-      for (int j = 0; j < request_mods_; j++) {
-        if ((this->loop_now_ - request_mod_last_requested_[j]) > request_mod_interval_millis_[j]) {
-          std::copy(request_datapoint_ids_[j].begin(), request_datapoint_ids_[j].end(), back_inserter(objects));
-          request_mod_last_requested_[j] = loop_now_;
-          break;
-        }
-      }
-    } else {
+
+    if (loop_now_ - last_read_request_ < min_delay_between_read_requests_) {
       return;
+    }
+    for (int request_mod = 0; request_mod < request_mods_; request_mod++) {
+      if ((this->loop_now_ - request_mod_last_requested_[request_mod]) >
+          request_mod_update_interval_millis_[request_mod]) {
+        std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
+                  back_inserter(objects));
+        request_mod_last_requested_[request_mod] = loop_now_;
+        break;
+      }
     }
   }
   std::vector<std::string>::iterator iter;
@@ -453,7 +455,6 @@ void Econet::request_strings_() {
     return;
   }
 
-  last_request_ = loop_now_;
   last_read_request_ = loop_now_;
 
   std::vector<uint8_t> data;
@@ -474,6 +475,8 @@ void Econet::request_strings_() {
 }
 
 void Econet::transmit_message_(uint8_t command, const std::vector<uint8_t> &data) {
+  last_request_ = loop_now_;
+
   tx_message_.clear();
 
   address_to_bytes(dst_adr_, &tx_message_);
@@ -551,6 +554,7 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
   if (request_mod >= 0 && request_mod < request_datapoint_ids_.size()) {
     request_datapoint_ids_[request_mod].insert(datapoint_id);
     request_mods_ = std::max(request_mods_, (uint8_t) (request_mod + 1));
+    min_delay_between_read_requests_ = std::max(min_update_interval_millis_ / request_mods_, (uint32_t) 200);
     if (request_once) {
       request_once_datapoint_ids_.insert(datapoint_id);
     }
