@@ -151,12 +151,12 @@ sensor:
     filters:
       - delta: 0.9
   - platform: template
-    name: "Cooling Stage"
+    name: "Compressor Stage"
     id: cool_stage
     entity_category: "diagnostic"
     accuracy_decimals: 0
     state_class: "measurement"
-    icon: "mdi:snowflake"
+    icon: "mdi:sun-snowflake-variant"
     filters:
       - delta: 0.9
 
