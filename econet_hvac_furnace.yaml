@@ -18,7 +18,7 @@ econet:
             id(lh_lh).publish_state((x[129] << 8) + x[130]);
             id(hh_lh).publish_state((x[132] << 8) + x[133]);
             id(heat_capacity).publish_state(x[11]);
-            id(cool_stage).publish_state(x[12]);
+            id(compressor_stage).publish_state(x[12]);
             id(heat_stage).publish_state(x[26]);
             id(static_pressure).publish_state(((x[15] << 8) + x[16]) / 5280.0);
             id(return_air_temperature).publish_state(((x[50] << 8) + x[51]) / 10.0);
@@ -151,12 +151,12 @@ sensor:
     filters:
       - delta: 0.9
   - platform: template
-    name: "Cooling Stage"
-    id: cool_stage
+    name: "Compressor Stage"
+    id: compressor_stage
     entity_category: "diagnostic"
     accuracy_decimals: 0
     state_class: "measurement"
-    icon: "mdi:snowflake"
+    icon: "mdi:sun-snowflake-variant"
     filters:
       - delta: 0.9
 
