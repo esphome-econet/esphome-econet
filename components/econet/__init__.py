@@ -62,10 +62,6 @@ def validate_request_mod_update_intervals(value):
         {validate_request_mod_range: cv.positive_time_period_milliseconds}
     )
     value = options_map_schema(value)
-    all_values = list(value.keys())
-    unique_values = set(value.keys())
-    if len(all_values) != len(unique_values):
-        raise cv.Invalid("Mapping values must be unique.")
     return value
 
 

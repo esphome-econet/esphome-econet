@@ -78,16 +78,23 @@ class Econet : public Component, public uart::UARTDevice {
   void set_dst_address(uint32_t address) { dst_adr_ = address; }
   void set_mod_req_updates(std::vector<uint8_t> keys, std::vector<uint32_t> values) {
     for (auto i = 0; i < keys.size(); i++) {
+      request_mod_update_interval_millis_map_[keys[i]] = values[i];
       request_mod_update_interval_millis_[keys[i]] = values[i];
-      min_update_interval_millis_ = std::min(min_update_interval_millis_, values[i]);
     }
+    update_interval_millis_helpers();
   }
   void set_update_interval(uint32_t interval_millis) {
     update_interval_millis_ = interval_millis;
-    min_update_interval_millis_ = interval_millis;
-    for (auto i = 0; i < this->request_mod_update_interval_millis_.size(); i++) {
+    update_interval_millis_helpers();
+  }
+  void update_interval_millis_helpers() {
+    min_update_interval_millis_ = update_interval_millis_;
+    for (auto i = 0; i < MAX_REQUEST_MODS; i++) {
       request_mod_update_interval_millis_[i] = update_interval_millis_;
-      request_mod_last_requested_[i] = i * update_interval_millis_ / MAX_REQUEST_MODS;
+    }
+    for (auto &[key, value] : this->request_mod_update_interval_millis_map_) {
+      request_mod_update_interval_millis_[key] = value;
+      min_update_interval_millis_ = std::min(min_update_interval_millis_, value);
     }
   }
   void set_flow_control_pin(GPIOPin *flow_control_pin) { this->flow_control_pin_ = flow_control_pin; }
@@ -105,7 +112,7 @@ class Econet : public Component, public uart::UARTDevice {
  protected:
   uint32_t update_interval_millis_{30000};
   uint32_t min_update_interval_millis_{30000};
-  uint32_t min_delay_between_read_requests_{200};
+  uint32_t min_delay_between_read_requests_{30000};
 
   std::vector<EconetDatapointListener> listeners_;
   ReadRequest read_req_;
@@ -124,6 +131,7 @@ class Econet : public Component, public uart::UARTDevice {
   void write_value_(const std::string &object, EconetDatapointType type, float value);
 
   std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(MAX_REQUEST_MODS);
+  std::map<uint8_t, uint32_t> request_mod_update_interval_millis_map_;
   std::vector<uint32_t> request_mod_update_interval_millis_ =
       std::vector<uint32_t>{MAX_REQUEST_MODS, update_interval_millis_};
   std::vector<uint32_t> request_mod_last_requested_ = std::vector<uint32_t>{MAX_REQUEST_MODS, 0};
