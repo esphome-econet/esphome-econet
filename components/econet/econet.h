@@ -92,9 +92,9 @@ class Econet : public Component, public uart::UARTDevice {
     for (auto i = 0; i < MAX_REQUEST_MODS; i++) {
       request_mod_update_interval_millis_[i] = update_interval_millis_;
     }
-    for (auto &[key, value] : this->request_mod_update_interval_millis_map_) {
-      request_mod_update_interval_millis_[key] = value;
-      min_update_interval_millis_ = std::min(min_update_interval_millis_, value);
+    for (auto &kv : this->request_mod_update_interval_millis_map_) {
+      request_mod_update_interval_millis_[kv.first] = kv.second;
+      min_update_interval_millis_ = std::min(min_update_interval_millis_, kv.second);
     }
   }
   void set_flow_control_pin(GPIOPin *flow_control_pin) { this->flow_control_pin_ = flow_control_pin; }
