@@ -59,6 +59,7 @@ void extract_obj_names(const uint8_t *pdata, uint8_t data_len, std::vector<std::
   while (start < endp) {
     const uint8_t *end = std::min(start + OBJ_NAME_SIZE, endp);
     std::string s((const char *) start, end - start);
+    s.erase(remove(s.begin(), s.end(), '\00'), s.end());
     obj_names->push_back(s);
     start = end + 2;
   }
