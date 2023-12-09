@@ -18,6 +18,7 @@ CONF_ON_DATAPOINT_UPDATE = "on_datapoint_update"
 CONF_DATAPOINT_TYPE = "datapoint_type"
 CONF_REQUEST_MOD = "request_mod"
 CONF_REQUEST_ONCE = "request_once"
+CONF_REQUEST_MOD_UPDATE_INTERVALS = "request_mod_update_intervals"
 
 econet_ns = cg.esphome_ns.namespace("econet")
 Econet = econet_ns.class_("Econet", cg.Component, uart.UARTDevice)
@@ -45,10 +46,23 @@ def assign_declare_id(value):
     return value
 
 
+def validate_request_mod_range(value):
+    return cv.int_range(min=0, max=7)(value)
+
+
 def request_mod(value):
     if isinstance(value, str) and value.lower() == "none":
         return -1
-    return cv.int_range(min=0, max=7)(value)
+    return validate_request_mod_range(value)
+
+
+def validate_request_mod_update_intervals(value):
+    cv.check_not_templatable(value)
+    options_map_schema = cv.Schema(
+        {validate_request_mod_range: cv.positive_time_period_milliseconds}
+    )
+    value = options_map_schema(value)
+    return value
 
 
 CONFIG_SCHEMA = (
@@ -71,6 +85,9 @@ CONFIG_SCHEMA = (
                 extra_validators=assign_declare_id,
             ),
             cv.Optional(CONF_FLOW_CONTROL_PIN): pins.gpio_output_pin_schema,
+            cv.Optional(
+                CONF_REQUEST_MOD_UPDATE_INTERVALS
+            ): validate_request_mod_update_intervals,
         }
     )
     .extend(cv.polling_component_schema("30s"))
@@ -93,6 +110,14 @@ async def to_code(config):
     await uart.register_uart_device(var, config)
     cg.add(var.set_src_address(config[CONF_SRC_ADDRESS]))
     cg.add(var.set_dst_address(config[CONF_DST_ADDRESS]))
+    if CONF_REQUEST_MOD_UPDATE_INTERVALS in config:
+        request_mod_update_intervals = config[CONF_REQUEST_MOD_UPDATE_INTERVALS]
+        cg.add(
+            var.set_request_mod_update_intervals(
+                list(request_mod_update_intervals.keys()),
+                list(request_mod_update_intervals.values()),
+            )
+        )
     if CONF_FLOW_CONTROL_PIN in config:
         pin = await gpio_pin_expression(config[CONF_FLOW_CONTROL_PIN])
         cg.add(var.set_flow_control_pin(pin))

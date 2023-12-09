@@ -368,6 +368,7 @@ void Econet::read_buffer_(int bytes_available) {
 
 void Econet::loop() {
   const uint32_t now = millis();
+  loop_now_ = now;
 
   if ((now - this->last_read_data_ > RECEIVE_TIMEOUT) && !rx_message_.empty()) {
     ESP_LOGW(TAG, "Ignoring partially received message due to timeout");
@@ -393,13 +394,7 @@ void Econet::loop() {
     return;
   }
 
-  // Quickly send writes or reads from the Home Assistant service but delay regular reads.
-  if (!pending_writes_.empty() || !datapoint_ids_for_read_service_.empty() ||
-      (now - this->last_request_ > this->update_interval_millis_ / request_mods_)) {
-    ESP_LOGI(TAG, "request ms=%d", now);
-    this->last_request_ = now;
-    this->make_request_();
-  }
+  this->make_request_();
 }
 
 void Econet::write_value_(const std::string &object, EconetDatapointType type, float value) {
@@ -432,9 +427,18 @@ void Econet::request_strings_() {
     objects.push_back(datapoint_ids_for_read_service_.front());
     datapoint_ids_for_read_service_.pop();
   } else {
-    uint8_t request_mod = read_requests_++ % request_mods_;
-    std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
-              back_inserter(objects));
+    // Impose a longer delay restriction for general periodically requested messages
+    if (loop_now_ - last_read_request_ < min_delay_between_read_requests_) {
+      return;
+    }
+    for (int request_mod = 0; request_mod < request_mods_; request_mod++) {
+      if ((loop_now_ - request_mod_last_requested_[request_mod]) >= request_mod_update_interval_millis_[request_mod]) {
+        std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
+                  back_inserter(objects));
+        request_mod_last_requested_[request_mod] = loop_now_;
+        break;
+      }
+    }
   }
   std::vector<std::string>::iterator iter;
   for (iter = objects.begin(); iter != objects.end();) {
@@ -447,6 +451,8 @@ void Econet::request_strings_() {
   if (objects.empty()) {
     return;
   }
+
+  last_read_request_ = loop_now_;
 
   std::vector<uint8_t> data;
 
@@ -466,6 +472,8 @@ void Econet::request_strings_() {
 }
 
 void Econet::transmit_message_(uint8_t command, const std::vector<uint8_t> &data) {
+  last_request_ = loop_now_;
+
   tx_message_.clear();
 
   address_to_bytes(dst_adr_, &tx_message_);
@@ -543,6 +551,7 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
   if (request_mod >= 0 && request_mod < request_datapoint_ids_.size()) {
     request_datapoint_ids_[request_mod].insert(datapoint_id);
     request_mods_ = std::max(request_mods_, (uint8_t) (request_mod + 1));
+    min_delay_between_read_requests_ = std::max(min_update_interval_millis_ / request_mods_, REQUEST_DELAY);
     if (request_once) {
       request_once_datapoint_ids_.insert(datapoint_id);
     }
