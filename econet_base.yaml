@@ -81,7 +81,6 @@ econet:
     3: ${econet_alarm_history_update_interval}
   src_address: 0x340
 
-
 sensor:
   - platform: econet
     name: "Active Alerts"

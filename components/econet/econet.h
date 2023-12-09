@@ -76,26 +76,15 @@ class Econet : public Component, public uart::UARTDevice {
 
   void set_src_address(uint32_t address) { src_adr_ = address; }
   void set_dst_address(uint32_t address) { dst_adr_ = address; }
-  void set_mod_req_updates(std::vector<uint8_t> keys, std::vector<uint32_t> values) {
-    for (auto i = 0; i < keys.size(); i++) {
-      request_mod_update_interval_millis_map_[keys[i]] = values[i];
-      request_mod_update_interval_millis_[keys[i]] = values[i];
+  void set_request_mod_update_intervals(std::vector<uint8_t> request_mods, std::vector<uint32_t> update_intervals) {
+    for (auto i = 0; i < request_mods.size(); i++) {
+      request_mod_update_interval_millis_map_[request_mods[i]] = update_intervals[i];
     }
-    update_interval_millis_helpers();
+    update_intervals_();
   }
   void set_update_interval(uint32_t interval_millis) {
     update_interval_millis_ = interval_millis;
-    update_interval_millis_helpers();
-  }
-  void update_interval_millis_helpers() {
-    min_update_interval_millis_ = update_interval_millis_;
-    for (auto i = 0; i < MAX_REQUEST_MODS; i++) {
-      request_mod_update_interval_millis_[i] = update_interval_millis_;
-    }
-    for (auto &kv : this->request_mod_update_interval_millis_map_) {
-      request_mod_update_interval_millis_[kv.first] = kv.second;
-      min_update_interval_millis_ = std::min(min_update_interval_millis_, kv.second);
-    }
+    update_intervals_();
   }
   void set_flow_control_pin(GPIOPin *flow_control_pin) { this->flow_control_pin_ = flow_control_pin; }
 
@@ -111,8 +100,11 @@ class Econet : public Component, public uart::UARTDevice {
 
  protected:
   uint32_t update_interval_millis_{30000};
-  uint32_t min_update_interval_millis_{30000};
-  uint32_t min_delay_between_read_requests_{30000};
+  std::map<uint8_t, uint32_t> request_mod_update_interval_millis_map_;
+  std::vector<uint32_t> request_mod_update_interval_millis_ =
+      std::vector<uint32_t>{MAX_REQUEST_MODS, update_interval_millis_};
+  uint32_t min_update_interval_millis_{update_interval_millis_};
+  uint32_t min_delay_between_read_requests_{update_interval_millis_};
 
   std::vector<EconetDatapointListener> listeners_;
   ReadRequest read_req_;
@@ -130,10 +122,18 @@ class Econet : public Component, public uart::UARTDevice {
   void request_strings_();
   void write_value_(const std::string &object, EconetDatapointType type, float value);
 
+  void update_intervals_() {
+    min_update_interval_millis_ = update_interval_millis_;
+    for (auto i = 0; i < MAX_REQUEST_MODS; i++) {
+      request_mod_update_interval_millis_[i] = update_interval_millis_;
+    }
+    for (auto &kv : this->request_mod_update_interval_millis_map_) {
+      request_mod_update_interval_millis_[kv.first] = kv.second;
+      min_update_interval_millis_ = std::min(min_update_interval_millis_, kv.second);
+    }
+  }
+
   std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(MAX_REQUEST_MODS);
-  std::map<uint8_t, uint32_t> request_mod_update_interval_millis_map_;
-  std::vector<uint32_t> request_mod_update_interval_millis_ =
-      std::vector<uint32_t>{MAX_REQUEST_MODS, update_interval_millis_};
   std::vector<uint32_t> request_mod_last_requested_ = std::vector<uint32_t>{MAX_REQUEST_MODS, 0};
   uint8_t request_mods_{1};
   std::set<std::string> raw_datapoint_ids_;

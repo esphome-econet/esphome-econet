@@ -111,11 +111,11 @@ async def to_code(config):
     cg.add(var.set_src_address(config[CONF_SRC_ADDRESS]))
     cg.add(var.set_dst_address(config[CONF_DST_ADDRESS]))
     if CONF_REQUEST_MOD_UPDATE_INTERVALS in config:
-        request_mod_interval_map = config[CONF_REQUEST_MOD_UPDATE_INTERVALS]
+        request_mod_update_intervals = config[CONF_REQUEST_MOD_UPDATE_INTERVALS]
         cg.add(
-            var.set_mod_req_updates(
-                list(request_mod_interval_map.keys()),
-                list(request_mod_interval_map.values()),
+            var.set_request_mod_update_intervals(
+                list(request_mod_update_intervals.keys()),
+                list(request_mod_update_intervals.values()),
             )
         )
     if CONF_FLOW_CONTROL_PIN in config:
