@@ -43,6 +43,7 @@ struct EconetDatapoint {
   };
   std::string value_string;
   std::vector<uint8_t> value_raw;
+  uint32_t src_adr;
 };
 inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
   if (lhs.type != rhs.type) {
@@ -116,7 +117,7 @@ class Econet : public Component, public uart::UARTDevice {
   void parse_message_(bool is_tx);
   void parse_rx_message_();
   void parse_tx_message_();
-  void handle_response_(const std::string &datapoint_id, const uint8_t *p, uint8_t len);
+  void handle_response_(const std::string &datapoint_id, const uint8_t *p, uint8_t len, uint32_t src_adr);
 
   void transmit_message_(uint8_t command, const std::vector<uint8_t> &data);
   void request_strings_();
