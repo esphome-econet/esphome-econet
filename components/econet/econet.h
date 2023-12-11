@@ -43,7 +43,6 @@ struct EconetDatapoint {
   };
   std::string value_string;
   std::vector<uint8_t> value_raw;
-  uint32_t src_adr;
 };
 inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
   if (lhs.type != rhs.type) {
@@ -66,6 +65,7 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
 
 struct EconetDatapointListener {
   std::string datapoint_id;
+  uint32_t src_adr;
   std::function<void(EconetDatapoint)> on_datapoint;
 };
 
@@ -93,7 +93,8 @@ class Econet : public Component, public uart::UARTDevice {
   void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value);
 
   void register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
-                         const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false);
+                         const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false,
+                         uint32_t src_adr = 0);
 
   void homeassistant_read(std::string datapoint_id);
   void homeassistant_write(std::string datapoint_id, uint8_t value);
