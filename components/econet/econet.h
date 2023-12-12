@@ -96,7 +96,7 @@ class Econet : public Component, public uart::UARTDevice {
                          const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false,
                          uint32_t src_adr = 0);
 
-  void homeassistant_read(std::string datapoint_id);
+  void homeassistant_read(std::string datapoint_id, uint32_t address = 0);
   void homeassistant_write(std::string datapoint_id, uint8_t value);
   void homeassistant_write(std::string datapoint_id, float value);
 
@@ -120,7 +120,7 @@ class Econet : public Component, public uart::UARTDevice {
   void parse_tx_message_();
   void handle_response_(const std::string &datapoint_id, const uint8_t *p, uint8_t len, uint32_t src_adr);
 
-  void transmit_message_(uint8_t command, const std::vector<uint8_t> &data);
+  void transmit_message_(uint8_t command, const std::vector<uint8_t> &data, uint32_t dst_adr = 0, uint32_t src_adr = 0);
   void request_strings_();
   void write_value_(const std::string &object, EconetDatapointType type, float value);
 
@@ -142,7 +142,7 @@ class Econet : public Component, public uart::UARTDevice {
   std::set<std::string> request_once_datapoint_ids_;
   std::map<std::string, EconetDatapoint> datapoints_;
   std::map<std::string, EconetDatapoint> pending_writes_;
-  std::queue<std::string> datapoint_ids_for_read_service_;
+  std::queue<std::pair<std::string, uint32_t>> datapoint_ids_for_read_service_;
 
   uint32_t loop_now_{0};
   uint32_t last_request_{0};
