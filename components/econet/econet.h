@@ -162,11 +162,13 @@ class EconetClient {
   void set_econet_parent(Econet *parent) { this->parent_ = parent; }
   void set_request_mod(int8_t request_mod) { this->request_mod_ = request_mod; }
   void set_request_once(bool request_once) { this->request_once_ = request_once; }
+  void set_src_adr(uint32_t src_adr) { this->src_adr_ = src_adr; }
 
  protected:
   Econet *parent_;
   int8_t request_mod_{0};
   bool request_once_{false};
+  uint32_t src_adr_{0};
 };
 
 }  // namespace econet
