@@ -437,6 +437,7 @@ void Econet::request_strings_() {
       if ((loop_now_ - request_mod_last_requested_[request_mod]) >= request_mod_update_interval_millis_[request_mod]) {
         std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
                   back_inserter(objects));
+        dst_adr = request_mod_addresses_[request_mod];
         request_mod_last_requested_[request_mod] = loop_now_;
         break;
       }
