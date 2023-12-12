@@ -423,8 +423,10 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
 
 void Econet::request_strings_() {
   std::vector<std::string> objects;
+  uint32_t dst_adr = dst_adr_;
   if (!datapoint_ids_for_read_service_.empty()) {
-    objects.push_back(datapoint_ids_for_read_service_.front());
+    objects.push_back(datapoint_ids_for_read_service_.front().first);
+    dst_adr = datapoint_ids_for_read_service_.front().second;
     datapoint_ids_for_read_service_.pop();
   } else {
     // Impose a longer delay restriction for general periodically requested messages
@@ -468,16 +470,22 @@ void Econet::request_strings_() {
 
   join_obj_names(objects, &data);
 
-  transmit_message_(READ_COMMAND, data);
+  transmit_message_(READ_COMMAND, data, dst_adr);
 }
 
-void Econet::transmit_message_(uint8_t command, const std::vector<uint8_t> &data) {
+void Econet::transmit_message_(uint8_t command, const std::vector<uint8_t> &data, uint32_t dst_adr, uint32_t src_adr) {
+  if (dst_adr == 0) {
+    dst_adr = dst_adr_;
+  }
+  if (src_adr == 0) {
+    src_adr = src_adr_;
+  }
   last_request_ = loop_now_;
 
   tx_message_.clear();
 
-  address_to_bytes(dst_adr_, &tx_message_);
-  address_to_bytes(src_adr_, &tx_message_);
+  address_to_bytes(dst_adr, &tx_message_);
+  address_to_bytes(src_adr, &tx_message_);
 
   tx_message_.push_back(data.size());
   tx_message_.push_back(0);
@@ -579,7 +587,10 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
 
 // Called from a Home Assistant exposed service to read a datapoint.
 // Fires a Home Assistant event: "esphome.econet_event" with the response.
-void Econet::homeassistant_read(std::string datapoint_id) {
+void Econet::homeassistant_read(std::string datapoint_id, uint32_t address) {
+  if (address == 0) {
+    address = src_adr_;
+  }
   register_listener(datapoint_id, -1, true, [this, datapoint_id](const EconetDatapoint &datapoint) {
     std::map<std::string, std::string> data;
     data["datapoint_id"] = datapoint_id;
@@ -607,9 +618,8 @@ void Econet::homeassistant_read(std::string datapoint_id) {
     }
     capi_.fire_homeassistant_event("esphome.econet_event", data);
   });
-  datapoint_ids_for_read_service_.push(datapoint_id);
+  datapoint_ids_for_read_service_.push(std::pair<std::string, uint32_t>(datapoint_id, address));
 }
-
 void Econet::homeassistant_write(std::string datapoint_id, uint8_t value) {
   set_datapoint_(datapoint_id, EconetDatapoint{.type = EconetDatapointType::ENUM_TEXT, .value_enum = value});
 }
