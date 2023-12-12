@@ -65,6 +65,7 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
 
 struct EconetDatapointListener {
   std::string datapoint_id;
+  uint32_t src_adr;
   std::function<void(EconetDatapoint)> on_datapoint;
 };
 
@@ -92,7 +93,8 @@ class Econet : public Component, public uart::UARTDevice {
   void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value);
 
   void register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
-                         const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false);
+                         const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false,
+                         uint32_t src_adr = 0);
 
   void homeassistant_read(std::string datapoint_id, uint32_t address = 0);
   void homeassistant_write(std::string datapoint_id, uint8_t value);
@@ -109,14 +111,14 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<EconetDatapointListener> listeners_;
   ReadRequest read_req_;
   void set_datapoint_(const std::string &datapoint_id, const EconetDatapoint &value);
-  void send_datapoint_(const std::string &datapoint_id, const EconetDatapoint &value);
+  void send_datapoint_(const std::string &datapoint_id, uint32_t src_adr, const EconetDatapoint &value);
 
   void make_request_();
   void read_buffer_(int bytes_available);
   void parse_message_(bool is_tx);
   void parse_rx_message_();
   void parse_tx_message_();
-  void handle_response_(const std::string &datapoint_id, const uint8_t *p, uint8_t len);
+  void handle_response_(const std::string &datapoint_id, const uint8_t *p, uint8_t len, uint32_t src_adr);
 
   void transmit_message_(uint8_t command, const std::vector<uint8_t> &data, uint32_t dst_adr = 0, uint32_t src_adr = 0);
   void request_strings_();

@@ -81,6 +81,7 @@ CONFIG_SCHEMA = (
                     cv.Optional(CONF_DATAPOINT_TYPE, default=DPTYPE_RAW): cv.one_of(
                         *DATAPOINT_TRIGGERS, lower=True
                     ),
+                    cv.Optional(CONF_SRC_ADDRESS, default=0): cv.uint32_t,
                 },
                 extra_validators=assign_declare_id,
             ),
@@ -127,6 +128,7 @@ async def to_code(config):
             var,
             conf[CONF_SENSOR_DATAPOINT],
             conf[CONF_REQUEST_MOD],
+            conf[CONF_SRC_ADDRESS],
         )
         await automation.build_automation(
             trigger, [(DATAPOINT_TYPES[conf[CONF_DATAPOINT_TYPE]], "x")], conf
