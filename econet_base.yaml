@@ -45,7 +45,7 @@ api:
         datapoint_id: string
         address: int
       then:
-        - lambda: id(econet_id).homeassistant_read_from_address(datapoint_id,address);
+        - lambda: id(econet_id).homeassistant_read(datapoint_id, address);
     - service: write_enum
       variables:
         datapoint_id: string

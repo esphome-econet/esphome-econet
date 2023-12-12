@@ -583,40 +583,10 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
 
 // Called from a Home Assistant exposed service to read a datapoint.
 // Fires a Home Assistant event: "esphome.econet_event" with the response.
-void Econet::homeassistant_read(std::string datapoint_id) {
-  register_listener(datapoint_id, -1, true, [this, datapoint_id](const EconetDatapoint &datapoint) {
-    std::map<std::string, std::string> data;
-    data["datapoint_id"] = datapoint_id;
-    switch (datapoint.type) {
-      case EconetDatapointType::FLOAT:
-        data["type"] = "FLOAT";
-        data["value"] = std::to_string(datapoint.value_float);
-        break;
-      case EconetDatapointType::ENUM_TEXT:
-        data["type"] = "ENUM_TEXT";
-        data["value"] = std::to_string(datapoint.value_enum);
-        data["value_string"] = datapoint.value_string;
-        break;
-      case EconetDatapointType::TEXT:
-        data["type"] = "TEXT";
-        data["value_string"] = datapoint.value_string;
-        break;
-      case EconetDatapointType::RAW:
-        data["type"] = "RAW";
-        data["value_raw"] = format_hex_pretty(datapoint.value_raw).c_str();
-        break;
-      case EconetDatapointType::UNSUPPORTED:
-        data["type"] = "UNSUPPORTED";
-        break;
-    }
-    capi_.fire_homeassistant_event("esphome.econet_event", data);
-  });
-  datapoint_ids_for_read_service_.push(std::pair<std::string, uint32_t>(datapoint_id, src_adr_));
-}
-
-// Called from a Home Assistant exposed service to read a datapoint.
-// Fires a Home Assistant event: "esphome.econet_event" with the response.
-void Econet::homeassistant_read_from_address(std::string datapoint_id, uint32_t address) {
+void Econet::homeassistant_read(std::string datapoint_id, uint32_t address) {
+  if (address == 0) {
+    address = src_adr_;
+  }
   register_listener(datapoint_id, -1, true, [this, datapoint_id](const EconetDatapoint &datapoint) {
     std::map<std::string, std::string> data;
     data["datapoint_id"] = datapoint_id;

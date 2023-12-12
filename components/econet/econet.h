@@ -94,8 +94,7 @@ class Econet : public Component, public uart::UARTDevice {
   void register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
                          const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false);
 
-  void homeassistant_read(std::string datapoint_id);
-  void homeassistant_read_from_address(std::string datapoint_id, uint32_t address);
+  void homeassistant_read(std::string datapoint_id, uint32_t address = 0);
   void homeassistant_write(std::string datapoint_id, uint8_t value);
   void homeassistant_write(std::string datapoint_id, float value);
 
