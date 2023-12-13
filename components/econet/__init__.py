@@ -68,8 +68,8 @@ def validate_request_mod_update_intervals(value):
 
 def validate_request_mod_addresses(value):
     cv.check_not_templatable(value)
-    options_map_schema2 = cv.Schema({validate_request_mod_range: cv.uint32_t})
-    value = options_map_schema2(value)
+    options_map_schema = cv.Schema({validate_request_mod_range: cv.uint32_t})
+    value = options_map_schema(value)
     return value
 
 
