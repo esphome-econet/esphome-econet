@@ -109,10 +109,10 @@ class Econet : public Component, public uart::UARTDevice {
  protected:
   uint32_t update_interval_millis_{30000};
   std::map<uint8_t, uint32_t> request_mod_addresses_map_;
-  std::vector<uint32_t> request_mod_addresses_ = std::vector<uint32_t>{MAX_REQUEST_MODS, 0};
+  std::vector<uint32_t> request_mod_addresses_ = std::vector<uint32_t>(MAX_REQUEST_MODS, 0);
   std::map<uint8_t, uint32_t> request_mod_update_interval_millis_map_;
   std::vector<uint32_t> request_mod_update_interval_millis_ =
-      std::vector<uint32_t>{MAX_REQUEST_MODS, update_interval_millis_};
+      std::vector<uint32_t>(MAX_REQUEST_MODS, update_interval_millis_);
   uint32_t min_update_interval_millis_{update_interval_millis_};
   uint32_t min_delay_between_read_requests_{update_interval_millis_};
 
