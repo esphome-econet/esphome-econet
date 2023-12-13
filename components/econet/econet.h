@@ -136,7 +136,7 @@ class Econet : public Component, public uart::UARTDevice {
     for (auto i = 0; i < MAX_REQUEST_MODS; i++) {
       request_mod_addresses_[i] = 0;
     }
-    for (auto &kv : this->request_mod_update_interval_millis_map_) {
+    for (auto &kv : this->request_mod_addresses_map_) {
       request_mod_addresses_[kv.first] = kv.second;
     }
   }
