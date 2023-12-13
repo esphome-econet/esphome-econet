@@ -78,10 +78,12 @@ class Econet : public Component, public uart::UARTDevice {
   void set_src_address(uint32_t address) { src_adr_ = address; }
   void set_dst_address(uint32_t address) { dst_adr_ = address; }
   void set_request_mod_addresses(std::vector<uint8_t> request_mods, std::vector<uint32_t> addresses) {
-    for (auto i = 0; i < request_mods.size(); i++) {
-      request_mod_addresses_map_[request_mods[i]] = addresses[i];
+    for (auto i = 0; i < MAX_REQUEST_MODS; i++) {
+      request_mod_addresses_[i] = 0;
     }
-    update_addresses_();
+    for (auto i = 0; i < request_mods.size(); i++) {
+      request_mod_addresses_[request_mods[i]] = addresses[i];
+    }
   }
   void set_request_mod_update_intervals(std::vector<uint8_t> request_mods, std::vector<uint32_t> update_intervals) {
     for (auto i = 0; i < request_mods.size(); i++) {
@@ -108,7 +110,6 @@ class Econet : public Component, public uart::UARTDevice {
 
  protected:
   uint32_t update_interval_millis_{30000};
-  std::map<uint8_t, uint32_t> request_mod_addresses_map_;
   std::vector<uint32_t> request_mod_addresses_ = std::vector<uint32_t>(MAX_REQUEST_MODS, 0);
   std::map<uint8_t, uint32_t> request_mod_update_interval_millis_map_;
   std::vector<uint32_t> request_mod_update_interval_millis_ =
@@ -131,15 +132,6 @@ class Econet : public Component, public uart::UARTDevice {
   void transmit_message_(uint8_t command, const std::vector<uint8_t> &data, uint32_t dst_adr = 0, uint32_t src_adr = 0);
   void request_strings_();
   void write_value_(const std::string &object, EconetDatapointType type, float value);
-
-  void update_addresses_() {
-    for (auto i = 0; i < MAX_REQUEST_MODS; i++) {
-      request_mod_addresses_[i] = 0;
-    }
-    for (auto &kv : this->request_mod_addresses_map_) {
-      request_mod_addresses_[kv.first] = kv.second;
-    }
-  }
 
   void update_intervals_() {
     min_update_interval_millis_ = update_interval_millis_;

@@ -85,9 +85,6 @@ econet:
     1: ${econet_alarm_update_interval}
     2: ${econet_alarm_history_update_interval}
     3: ${econet_alarm_history_update_interval}
-#    5: 30s
-  request_mod_addresses:
-    5: 448
   src_address: 0x340
 
 sensor:
