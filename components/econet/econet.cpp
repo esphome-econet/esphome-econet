@@ -122,10 +122,7 @@ void Econet::make_request_() {
   if (!pending_writes_.empty()) {
     const auto &kv = pending_writes_.begin();
     const auto &dpp = kv->first;
-
     uint32_t address = dpp.second;
-    ESP_LOGI(TAG, "Write to address is %d", address);
-
     switch (kv->second.type) {
       case EconetDatapointType::FLOAT:
         this->write_value_(dpp.first, EconetDatapointType::FLOAT, kv->second.value_float, address);
@@ -521,14 +518,12 @@ void Econet::transmit_message_(uint8_t command, const std::vector<uint8_t> &data
 
 void Econet::set_float_datapoint_value(const std::string &datapoint_id, float value, uint32_t address) {
   ESP_LOGD(TAG, "Setting datapoint %s to %f", datapoint_id.c_str(), value);
-  ESP_LOGI(TAG, "Set float datapoint address is %d", address);
   this->set_datapoint_(datapoint_id, EconetDatapoint{.type = EconetDatapointType::FLOAT, .value_float = value},
                        address);
 }
 
 void Econet::set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value, uint32_t address) {
   ESP_LOGD(TAG, "Setting datapoint %s to %u", datapoint_id.c_str(), value);
-  ESP_LOGI(TAG, "Set enum datapoint address is %d", address);
   this->set_datapoint_(datapoint_id, EconetDatapoint{.type = EconetDatapointType::ENUM_TEXT, .value_enum = value},
                        address);
 }
@@ -537,7 +532,6 @@ void Econet::set_datapoint_(const std::string &datapoint_id, const EconetDatapoi
   if (address == 0) {
     address = dst_adr_;
   }
-  ESP_LOGI(TAG, "Set datapoint address is %d", address);
   if (datapoints_.count(datapoint_id) == 0) {
     ESP_LOGW(TAG, "Setting unknown datapoint %s", datapoint_id.c_str());
   } else {
