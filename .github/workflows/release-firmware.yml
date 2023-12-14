@@ -31,7 +31,7 @@ jobs:
           dry_run: true
       - uses: actions/checkout@v4.1.1
         with:
-          token: ${{ secrets.ESPHOME_ECONET_TEST_SECRET }}
+          token: ${{ secrets.RELEASE_AUTOMATION_ACTION }}
       - name: Update Project Version String
         uses: mikefarah/yq@v4.40.3
         with:
