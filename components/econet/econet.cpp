@@ -468,7 +468,7 @@ void Econet::request_strings_() {
   std::vector<uint8_t> data;
 
   // Read Class
-  if (objects.size() == 1 && raw_datapoint_ids_.count(objects[0]) == 1) {
+  if (objects.size() == 1 && raw_datapoint_ids_.count(std::pair<std::string, uint32_t>(objects[0], dst_adr)) == 1) {
     data.push_back(1);
   } else {
     data.push_back(2);
@@ -618,7 +618,7 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
     }
   }
   if (is_raw_datapoint) {
-    raw_datapoint_ids_.insert(datapoint_id);
+    raw_datapoint_ids_.insert(std::pair<std::string, uint32_t>(datapoint_id, src_adr));
   }
   auto listener = EconetDatapointListener{
       .datapoint_id = datapoint_id,
