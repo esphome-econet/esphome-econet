@@ -438,6 +438,7 @@ void Econet::request_strings_() {
         std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
                   back_inserter(objects));
         request_mod_last_requested_[request_mod] = loop_now_;
+        dst_adr = request_mod_addresses_[request_mod];
         break;
       }
     }

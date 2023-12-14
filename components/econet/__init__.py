@@ -19,6 +19,7 @@ CONF_DATAPOINT_TYPE = "datapoint_type"
 CONF_REQUEST_MOD = "request_mod"
 CONF_REQUEST_ONCE = "request_once"
 CONF_REQUEST_MOD_UPDATE_INTERVALS = "request_mod_update_intervals"
+CONF_REQUEST_MOD_ADDRESSES = "request_mod_addresses"
 
 econet_ns = cg.esphome_ns.namespace("econet")
 Econet = econet_ns.class_("Econet", cg.Component, uart.UARTDevice)
@@ -65,6 +66,13 @@ def validate_request_mod_update_intervals(value):
     return value
 
 
+def validate_request_mod_addresses(value):
+    cv.check_not_templatable(value)
+    options_map_schema = cv.Schema({validate_request_mod_range: cv.uint32_t})
+    value = options_map_schema(value)
+    return value
+
+
 CONFIG_SCHEMA = (
     cv.Schema(
         {
@@ -89,6 +97,7 @@ CONFIG_SCHEMA = (
             cv.Optional(
                 CONF_REQUEST_MOD_UPDATE_INTERVALS
             ): validate_request_mod_update_intervals,
+            cv.Optional(CONF_REQUEST_MOD_ADDRESSES): validate_request_mod_addresses,
         }
     )
     .extend(cv.polling_component_schema("30s"))
@@ -118,6 +127,14 @@ async def to_code(config):
             var.set_request_mod_update_intervals(
                 list(request_mod_update_intervals.keys()),
                 list(request_mod_update_intervals.values()),
+            )
+        )
+    if CONF_REQUEST_MOD_ADDRESSES in config:
+        request_mod_addresses = config[CONF_REQUEST_MOD_ADDRESSES]
+        cg.add(
+            var.set_request_mod_addresses(
+                list(request_mod_addresses.keys()),
+                list(request_mod_addresses.values()),
             )
         )
     if CONF_FLOW_CONTROL_PIN in config:
