@@ -97,8 +97,8 @@ class Econet : public Component, public uart::UARTDevice {
   }
   void set_flow_control_pin(GPIOPin *flow_control_pin) { this->flow_control_pin_ = flow_control_pin; }
 
-  void set_float_datapoint_value(const std::string &datapoint_id, float value);
-  void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value);
+  void set_float_datapoint_value(const std::string &datapoint_id, float value, uint32_t address = 0);
+  void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value, uint32_t address = 0);
 
   void register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
                          const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false,
@@ -119,7 +119,7 @@ class Econet : public Component, public uart::UARTDevice {
 
   std::vector<EconetDatapointListener> listeners_;
   ReadRequest read_req_;
-  void set_datapoint_(const std::string &datapoint_id, const EconetDatapoint &value);
+  void set_datapoint_(const std::string &datapoint_id, const EconetDatapoint &value, uint32_t address = 0);
   void send_datapoint_(const std::string &datapoint_id, uint32_t src_adr, const EconetDatapoint &value);
 
   void make_request_();
@@ -131,7 +131,7 @@ class Econet : public Component, public uart::UARTDevice {
 
   void transmit_message_(uint8_t command, const std::vector<uint8_t> &data, uint32_t dst_adr = 0, uint32_t src_adr = 0);
   void request_strings_();
-  void write_value_(const std::string &object, EconetDatapointType type, float value);
+  void write_value_(const std::string &object, EconetDatapointType type, float value, uint32_t address = 0);
 
   void update_intervals_() {
     min_update_interval_millis_ = update_interval_millis_;
@@ -150,7 +150,7 @@ class Econet : public Component, public uart::UARTDevice {
   std::set<std::string> raw_datapoint_ids_;
   std::set<std::string> request_once_datapoint_ids_;
   std::map<std::string, EconetDatapoint> datapoints_;
-  std::map<std::string, EconetDatapoint> pending_writes_;
+  std::map<std::pair<std::string, uint32_t>, EconetDatapoint> pending_writes_;
   std::queue<std::pair<std::string, uint32_t>> datapoint_ids_for_read_service_;
 
   uint32_t loop_now_{0};
