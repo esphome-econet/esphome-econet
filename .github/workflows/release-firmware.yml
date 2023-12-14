@@ -5,10 +5,14 @@ on:
   workflow_dispatch:
     inputs:
       bump:
-        type: string
+        type: choice
         default: "patch"
         required: true
-        description: "The type of semantic version increment to make. One of major, premajor, minor, preminor, patch, prepatch, or prerelease."
+        description: "The type of semantic version increment to make."
+        options:
+          - patch
+          - minor
+          - major
 
 jobs:
   update-version-strings:
