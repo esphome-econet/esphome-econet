@@ -450,9 +450,10 @@ void Econet::request_strings_() {
   }
   std::vector<std::string>::iterator iter;
   for (iter = objects.begin(); iter != objects.end();) {
-    if (request_once_datapoint_ids_.count(*iter) == 1 &&
+    if (request_once_datapoint_ids_.count(std::pair<std::string, uint32_t>(*iter, dst_adr)) == 1 &&
         datapoints_.count(std::pair<std::string, uint32_t>(*iter, dst_adr)) == 1) {
       iter = objects.erase(iter);
+
     } else {
       ++iter;
     }
@@ -612,7 +613,7 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
     request_mods_ = std::max(request_mods_, (uint8_t) (request_mod + 1));
     min_delay_between_read_requests_ = std::max(min_update_interval_millis_ / request_mods_, REQUEST_DELAY);
     if (request_once) {
-      request_once_datapoint_ids_.insert(datapoint_id);
+      request_once_datapoint_ids_.insert(std::pair<std::string, uint32_t>(datapoint_id, src_adr));
     }
   }
   if (is_raw_datapoint) {
