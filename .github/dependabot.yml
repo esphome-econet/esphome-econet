@@ -9,6 +9,8 @@ updates:
     open-pull-requests-limit: 10
     groups:
       github-actions:
+        patterns:
+          - "*"
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
