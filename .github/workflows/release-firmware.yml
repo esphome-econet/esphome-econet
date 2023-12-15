@@ -18,8 +18,6 @@ jobs:
   update-version-strings:
     name: Update Version Strings
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Generate Release Version
         id: generate_release_version
@@ -51,3 +49,4 @@ jobs:
         with:
           generateReleaseNotes: true
           tag: ${{ steps.generate_release_version.outputs.version_tag }}
+          token: ${{ secrets.RELEASE_AUTOMATION_ACTION }}
