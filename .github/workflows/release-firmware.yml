@@ -31,7 +31,7 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_AUTOMATION_ACTION }}
       - name: Update Project Version String
-        uses: mikefarah/yq@v4.40.3
+        uses: mikefarah/yq@v4.40.5
         with:
           cmd: >
             yq -i
