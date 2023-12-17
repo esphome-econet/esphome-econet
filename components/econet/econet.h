@@ -27,6 +27,21 @@ class ReadRequest {
   std::vector<std::string> obj_names;
 };
 
+struct EconetDatapointID {
+  std::string name;
+  uint32_t address;
+};
+inline bool operator==(const EconetDatapointID &lhs, const EconetDatapointID &rhs) {
+  return lhs.name == rhs.name && lhs.address == lhs.address;
+}
+inline bool operator<(const EconetDatapointID &lhs, const EconetDatapointID &rhs) {
+  if ((lhs.name < rhs.name) || ((lhs.name == rhs.name) && (lhs.address < rhs.address))) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 enum class EconetDatapointType : uint8_t {
   FLOAT = 0,
   TEXT = 1,
@@ -147,11 +162,11 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(MAX_REQUEST_MODS);
   std::vector<uint32_t> request_mod_last_requested_ = std::vector<uint32_t>{MAX_REQUEST_MODS, 0};
   uint8_t request_mods_{1};
-  std::set<std::pair<std::string, uint32_t>> raw_datapoint_ids_;
-  std::set<std::pair<std::string, uint32_t>> request_once_datapoint_ids_;
-  std::map<std::pair<std::string, uint32_t>, EconetDatapoint> datapoints_;
-  std::map<std::pair<std::string, uint32_t>, EconetDatapoint> pending_writes_;
-  std::queue<std::pair<std::string, uint32_t>> datapoint_ids_for_read_service_;
+  std::set<EconetDatapointID> raw_datapoint_ids_;
+  std::set<EconetDatapointID> request_once_datapoint_ids_;
+  std::map<EconetDatapointID, EconetDatapoint> datapoints_;
+  std::map<EconetDatapointID, EconetDatapoint> pending_writes_;
+  std::queue<EconetDatapointID> datapoint_ids_for_read_service_;
 
   uint32_t loop_now_{0};
   uint32_t last_request_{0};

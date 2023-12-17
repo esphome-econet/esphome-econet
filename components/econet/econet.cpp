@@ -123,18 +123,18 @@ void Econet::make_request_() {
   if (!pending_writes_.empty()) {
     const auto &kv = pending_writes_.begin();
     const auto &dpp = kv->first;
-    uint32_t address = dpp.second;
+    uint32_t address = dpp.address;
     switch (kv->second.type) {
       case EconetDatapointType::FLOAT:
-        this->write_value_(dpp.first, EconetDatapointType::FLOAT, kv->second.value_float, address);
+        this->write_value_(dpp.name, EconetDatapointType::FLOAT, kv->second.value_float, address);
         break;
       case EconetDatapointType::ENUM_TEXT:
-        this->write_value_(dpp.first, EconetDatapointType::ENUM_TEXT, kv->second.value_enum, address);
+        this->write_value_(dpp.name, EconetDatapointType::ENUM_TEXT, kv->second.value_enum, address);
         break;
       case EconetDatapointType::TEXT:
       case EconetDatapointType::RAW:
       case EconetDatapointType::UNSUPPORTED:
-        ESP_LOGW(TAG, "Unexpected pending write: datapoint %s", dpp.first.c_str());
+        ESP_LOGW(TAG, "Unexpected pending write: datapoint %s", dpp.name.c_str());
         break;
     }
     pending_writes_.erase(kv);
@@ -431,8 +431,8 @@ void Econet::request_strings_() {
   std::vector<std::string> objects;
   uint32_t dst_adr = dst_adr_;
   if (!datapoint_ids_for_read_service_.empty()) {
-    objects.push_back(datapoint_ids_for_read_service_.front().first);
-    dst_adr = datapoint_ids_for_read_service_.front().second;
+    objects.push_back(datapoint_ids_for_read_service_.front().name);
+    dst_adr = datapoint_ids_for_read_service_.front().address;
     datapoint_ids_for_read_service_.pop();
   } else {
     // Impose a longer delay restriction for general periodically requested messages
@@ -451,8 +451,8 @@ void Econet::request_strings_() {
   }
   std::vector<std::string>::iterator iter;
   for (iter = objects.begin(); iter != objects.end();) {
-    if (request_once_datapoint_ids_.count(std::pair<std::string, uint32_t>(*iter, dst_adr)) == 1 &&
-        datapoints_.count(std::pair<std::string, uint32_t>(*iter, dst_adr)) == 1) {
+    if (request_once_datapoint_ids_.count(EconetDatapointID{.name = *iter, .address = dst_adr}) == 1 &&
+        datapoints_.count(EconetDatapointID{.name = *iter, .address = dst_adr}) == 1) {
       iter = objects.erase(iter);
 
     } else {
@@ -468,7 +468,7 @@ void Econet::request_strings_() {
   std::vector<uint8_t> data;
 
   // Read Class
-  if (objects.size() == 1 && raw_datapoint_ids_.count(std::pair<std::string, uint32_t>(objects[0], dst_adr)) == 1) {
+  if (objects.size() == 1 && raw_datapoint_ids_.count(EconetDatapointID{.name = objects[0], .address = dst_adr}) == 1) {
     data.push_back(1);
   } else {
     data.push_back(2);
@@ -536,8 +536,8 @@ void Econet::set_datapoint_(const std::string &datapoint_id, const EconetDatapoi
   if (address == 0) {
     address = dst_adr_;
   }
-  std::pair<std::string, uint32_t> specific(datapoint_id, address);
-  std::pair<std::string, uint32_t> any(datapoint_id, 0);
+  auto specific = EconetDatapointID{.name = datapoint_id, .address = address};
+  auto any = EconetDatapointID{.name = datapoint_id, .address = 0};
   bool send_specific = true;
   bool send_any = true;
   if (datapoints_.count(specific) == 0) {
@@ -562,7 +562,7 @@ void Econet::set_datapoint_(const std::string &datapoint_id, const EconetDatapoi
     }
   }
   if (send_specific) {
-    pending_writes_[std::pair<std::string, uint32_t>(datapoint_id, address)] = value;
+    pending_writes_[specific] = value;
     send_datapoint_(datapoint_id, address, value);
   } else if (send_any) {
     send_datapoint_(datapoint_id, address, value);
@@ -570,8 +570,8 @@ void Econet::set_datapoint_(const std::string &datapoint_id, const EconetDatapoi
 }
 
 void Econet::send_datapoint_(const std::string &datapoint_id, uint32_t src_adr, const EconetDatapoint &value) {
-  std::pair<std::string, uint32_t> specific(datapoint_id, src_adr);
-  std::pair<std::string, uint32_t> any(datapoint_id, 0);
+  auto specific = EconetDatapointID{.name = datapoint_id, .address = src_adr};
+  auto any = EconetDatapointID{.name = datapoint_id, .address = 0};
   bool send_specific = true;
   bool send_any = true;
   if (datapoints_.count(specific) == 1) {
@@ -614,11 +614,11 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
     request_mods_ = std::max(request_mods_, (uint8_t) (request_mod + 1));
     min_delay_between_read_requests_ = std::max(min_update_interval_millis_ / request_mods_, REQUEST_DELAY);
     if (request_once) {
-      request_once_datapoint_ids_.insert(std::pair<std::string, uint32_t>(datapoint_id, src_adr));
+      request_once_datapoint_ids_.insert(EconetDatapointID{.name = datapoint_id, .address = src_adr});
     }
   }
   if (is_raw_datapoint) {
-    raw_datapoint_ids_.insert(std::pair<std::string, uint32_t>(datapoint_id, src_adr));
+    raw_datapoint_ids_.insert(EconetDatapointID{.name = datapoint_id, .address = src_adr});
   }
   auto listener = EconetDatapointListener{
       .datapoint_id = datapoint_id,
@@ -629,7 +629,7 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
 
   // Run through existing datapoints
   for (auto &kv : this->datapoints_) {
-    if (kv.first.first == datapoint_id && (kv.first.second == src_adr || kv.first.second == 0)) {
+    if (kv.first.name == datapoint_id && (kv.first.address == src_adr || kv.first.address == 0)) {
       func(kv.second);
     }
   }
@@ -668,7 +668,7 @@ void Econet::homeassistant_read(std::string datapoint_id, uint32_t address) {
     }
     capi_.fire_homeassistant_event("esphome.econet_event", data);
   });
-  datapoint_ids_for_read_service_.push(std::pair<std::string, uint32_t>(datapoint_id, address));
+  datapoint_ids_for_read_service_.push(EconetDatapointID{.name = datapoint_id, .address = address});
 }
 void Econet::homeassistant_write(std::string datapoint_id, uint8_t value) {
   set_datapoint_(datapoint_id, EconetDatapoint{.type = EconetDatapointType::ENUM_TEXT, .value_enum = value});
