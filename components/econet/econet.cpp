@@ -97,22 +97,22 @@ void Econet::dump_config() {
   for (auto &kv : this->datapoints_) {
     switch (kv.second.type) {
       case EconetDatapointType::FLOAT:
-        ESP_LOGCONFIG(TAG, "  Datapoint %s: float value (value: %f)", kv.first.first.c_str(), kv.second.value_float);
+        ESP_LOGCONFIG(TAG, "  Datapoint %s: float value (value: %f)", kv.first.name.c_str(), kv.second.value_float);
         break;
       case EconetDatapointType::TEXT:
-        ESP_LOGCONFIG(TAG, "  Datapoint %s: text value (value: %s)", kv.first.first.c_str(),
+        ESP_LOGCONFIG(TAG, "  Datapoint %s: text value (value: %s)", kv.first.name.c_str(),
                       kv.second.value_string.c_str());
         break;
       case EconetDatapointType::ENUM_TEXT:
-        ESP_LOGCONFIG(TAG, "  Datapoint %s: enum value (value: %d : %s)", kv.first.first.c_str(), kv.second.value_enum,
+        ESP_LOGCONFIG(TAG, "  Datapoint %s: enum value (value: %d : %s)", kv.first.name.c_str(), kv.second.value_enum,
                       kv.second.value_string.c_str());
         break;
       case EconetDatapointType::RAW:
-        ESP_LOGCONFIG(TAG, "  Datapoint %s: raw value (value: %s)", kv.first.first.c_str(),
+        ESP_LOGCONFIG(TAG, "  Datapoint %s: raw value (value: %s)", kv.first.name.c_str(),
                       format_hex_pretty(kv.second.value_raw).c_str());
         break;
       case EconetDatapointType::UNSUPPORTED:
-        ESP_LOGCONFIG(TAG, "  Datapoint %s: UNSUPPORTED", kv.first.first.c_str());
+        ESP_LOGCONFIG(TAG, "  Datapoint %s: UNSUPPORTED", kv.first.name.c_str());
         break;
     }
   }
