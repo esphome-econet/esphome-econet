@@ -36,7 +36,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Download built firmwares
-        uses: actions/download-artifact@v3.0.2
+        uses: actions/download-artifact@v4.0.0
         with:
           path: firmwares
       - name: Dump Files
@@ -49,7 +49,7 @@ jobs:
         run: |-
           jq -s '{"name": "esphome-econet", "new_install_improv_wait_time": 15, "new_install_prompt_erase": false, "version": "${{ github.ref_name }}", "home_assistant_domain": "esphome", "builds":.}' firmwares/*/econet-${{ matrix.appliance.shorthand }}-*/manifest.json > output/econet-${{ matrix.appliance.shorthand }}.json
       - name: Upload artifact
-        uses: actions/upload-artifact@v3.1.3
+        uses: actions/upload-artifact@v4.0.0
         with:
           name: econet-${{ matrix.appliance.shorthand }}
           path: output
@@ -63,7 +63,7 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4.1.1
       - name: Download built firmwares
-        uses: actions/download-artifact@v3.0.2
+        uses: actions/download-artifact@v4.0.0
         with:
           path: firmwares
       - name: Dump Files
