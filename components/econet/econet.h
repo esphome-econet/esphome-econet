@@ -27,6 +27,21 @@ class ReadRequest {
   std::vector<std::string> obj_names;
 };
 
+struct EconetDatapointID {
+  std::string name;
+  uint32_t address;
+};
+inline bool operator==(const EconetDatapointID &lhs, const EconetDatapointID &rhs) {
+  return lhs.name == rhs.name && lhs.address == lhs.address;
+}
+inline bool operator<(const EconetDatapointID &lhs, const EconetDatapointID &rhs) {
+  if ((lhs.name < rhs.name) || ((lhs.name == rhs.name) && (lhs.address < rhs.address))) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 enum class EconetDatapointType : uint8_t {
   FLOAT = 0,
   TEXT = 1,
@@ -64,8 +79,7 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
 }
 
 struct EconetDatapointListener {
-  std::string datapoint_id;
-  uint32_t src_adr;
+  EconetDatapointID datapoint_id;
   std::function<void(EconetDatapoint)> on_datapoint;
 };
 
@@ -97,8 +111,8 @@ class Econet : public Component, public uart::UARTDevice {
   }
   void set_flow_control_pin(GPIOPin *flow_control_pin) { this->flow_control_pin_ = flow_control_pin; }
 
-  void set_float_datapoint_value(const std::string &datapoint_id, float value);
-  void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value);
+  void set_float_datapoint_value(const std::string &datapoint_id, float value, uint32_t address = 0);
+  void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value, uint32_t address = 0);
 
   void register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
                          const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false,
@@ -119,19 +133,19 @@ class Econet : public Component, public uart::UARTDevice {
 
   std::vector<EconetDatapointListener> listeners_;
   ReadRequest read_req_;
-  void set_datapoint_(const std::string &datapoint_id, const EconetDatapoint &value);
-  void send_datapoint_(const std::string &datapoint_id, uint32_t src_adr, const EconetDatapoint &value);
+  void set_datapoint_(EconetDatapointID datapoint_id, const EconetDatapoint &value);
+  void send_datapoint_(EconetDatapointID datapoint_id, const EconetDatapoint &value);
 
   void make_request_();
   void read_buffer_(int bytes_available);
   void parse_message_(bool is_tx);
   void parse_rx_message_();
   void parse_tx_message_();
-  void handle_response_(const std::string &datapoint_id, const uint8_t *p, uint8_t len, uint32_t src_adr);
+  void handle_response_(EconetDatapointID datapoint_id, const uint8_t *p, uint8_t len);
 
   void transmit_message_(uint8_t command, const std::vector<uint8_t> &data, uint32_t dst_adr = 0, uint32_t src_adr = 0);
   void request_strings_();
-  void write_value_(const std::string &object, EconetDatapointType type, float value);
+  void write_value_(const std::string &object, EconetDatapointType type, float value, uint32_t address = 0);
 
   void update_intervals_() {
     min_update_interval_millis_ = update_interval_millis_;
@@ -147,11 +161,11 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(MAX_REQUEST_MODS);
   std::vector<uint32_t> request_mod_last_requested_ = std::vector<uint32_t>{MAX_REQUEST_MODS, 0};
   uint8_t request_mods_{1};
-  std::set<std::string> raw_datapoint_ids_;
-  std::set<std::string> request_once_datapoint_ids_;
-  std::map<std::string, EconetDatapoint> datapoints_;
-  std::map<std::string, EconetDatapoint> pending_writes_;
-  std::queue<std::pair<std::string, uint32_t>> datapoint_ids_for_read_service_;
+  std::set<EconetDatapointID> raw_datapoint_ids_;
+  std::set<EconetDatapointID> request_once_datapoint_ids_;
+  std::map<EconetDatapointID, EconetDatapoint> datapoints_;
+  std::map<EconetDatapointID, EconetDatapoint> pending_writes_;
+  std::queue<EconetDatapointID> datapoint_ids_for_read_service_;
 
   uint32_t loop_now_{0};
   uint32_t last_request_{0};
