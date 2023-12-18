@@ -27,7 +27,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prefix: "v"
           dry_run: true
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.RELEASE_AUTOMATION_ACTION }}
       - name: Update Project Version String
@@ -40,12 +40,12 @@ jobs:
             '
             econet_base.yaml
       - name: Commit Changes
-        uses: stefanzweifel/git-auto-commit-action@v5.0.0
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Automated project versioning update"
           push_options: '--force'
       - name: Create Release
-        uses: ncipollo/release-action@v1.13.0
+        uses: ncipollo/release-action@v1
         with:
           generateReleaseNotes: true
           tag: ${{ steps.generate_release_version.outputs.version_tag }}
