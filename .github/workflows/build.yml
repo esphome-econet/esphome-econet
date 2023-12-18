@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Force Manifest to Build Local Code
-        uses: mikefarah/yq@v4
+        uses: mikefarah/yq@v4.40.5
         with:
           cmd: >
             yq -P -i
