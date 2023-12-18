@@ -21,7 +21,7 @@ jobs:
     needs: build
     if: failure()
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v4
       - name: Create Issue on Failure
         uses: JasonEtco/create-an-issue@v2
         env:
