@@ -36,9 +36,9 @@ jobs:
             shorthand: tlwh
       fail-fast: true
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@v4
       - name: Force Manifest to Build Local Code
-        uses: mikefarah/yq@v4.40.5
+        uses: mikefarah/yq@v4
         with:
           cmd: >
             yq -P -i
@@ -50,7 +50,7 @@ jobs:
             build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Build Firmware
         id: esphome-build
-        uses: esphome/build-action@v1.8.0
+        uses: esphome/build-action@v1
         with:
           yaml_file: build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Copy firmware and manifest
@@ -60,7 +60,7 @@ jobs:
           mv ${{ steps.esphome-build.outputs.name }} output/
       - name: Upload artifact
         if: ${{ inputs.upload-artifacts }}
-        uses: actions/upload-artifact@v4.0.0
+        uses: actions/upload-artifact@v4
         with:
           name: econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}
           path: output
