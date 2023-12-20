@@ -7,6 +7,7 @@ from .. import (
     CONF_ECONET_ID,
     CONF_REQUEST_MOD,
     CONF_REQUEST_ONCE,
+    CONF_SRC_ADDRESS,
     ECONET_CLIENT_SCHEMA,
     EconetClient,
     econet_ns,
@@ -53,3 +54,4 @@ async def to_code(config):
     cg.add(var.set_request_mod(config[CONF_REQUEST_MOD]))
     cg.add(var.set_request_once(config[CONF_REQUEST_ONCE]))
     cg.add(var.set_select_id(config[CONF_ENUM_DATAPOINT]))
+    cg.add(var.set_src_adr(config[CONF_SRC_ADDRESS]))

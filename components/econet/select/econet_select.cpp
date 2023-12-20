@@ -8,7 +8,8 @@ static const char *const TAG = "econet.select";
 
 void EconetSelect::setup() {
   this->parent_->register_listener(
-      this->select_id_, this->request_mod_, this->request_once_, [this](const EconetDatapoint &datapoint) {
+      this->select_id_, this->request_mod_, this->request_once_,
+      [this](const EconetDatapoint &datapoint) {
         uint8_t enum_value = datapoint.value_enum;
         ESP_LOGV(TAG, "MCU reported select %s value %u", this->select_id_.c_str(), enum_value);
         auto mappings = this->mappings_;
@@ -20,7 +21,8 @@ void EconetSelect::setup() {
         size_t mapping_idx = std::distance(mappings.cbegin(), it);
         auto value = this->at(mapping_idx);
         this->publish_state(value.value());
-      });
+      },
+      false, this->src_adr_);
 }
 
 void EconetSelect::control(const std::string &value) {
@@ -28,7 +30,7 @@ void EconetSelect::control(const std::string &value) {
   if (idx.has_value()) {
     uint8_t mapping = this->mappings_.at(idx.value());
     ESP_LOGV(TAG, "Setting %s datapoint value to %u:%s", this->select_id_.c_str(), mapping, value.c_str());
-    this->parent_->set_enum_datapoint_value(this->select_id_, mapping);
+    this->parent_->set_enum_datapoint_value(this->select_id_, mapping, this->src_adr_);
     return;
   }
   ESP_LOGW(TAG, "Invalid value %s", value.c_str());
