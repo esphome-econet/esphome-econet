@@ -8,6 +8,8 @@ packages:
   econet: !include econet_hvac.yaml
 
 econet:
+  request_mod_addresses:
+    5: 448
   on_datapoint_update:
     - sensor_datapoint: HWSTATUS
       datapoint_type: raw
@@ -26,6 +28,22 @@ econet:
             id(static_pressure).publish_state(((x[15] << 8) + x[16]) / 5280.0);
             id(return_air_temperature).publish_state(((x[50] << 8) + x[51]) / 10.0);
             id(flame_sensor).publish_state(x[33] / 10.0);
+    - sensor_datapoint: HRHEEMID
+      request_mod: 5
+      src_address: 448
+      datapoint_type: raw
+      then:
+        - lambda: |-
+            if (x.size() <= 52) {
+                return;
+            }
+            std::string str(x.begin(), x.end());
+            std::string model = str.substr(4, 24);
+            model.erase(remove(model.begin(), model.end(), '\00'), model.end());
+            id(hw_model_num).publish_state(model);
+            std::string serial = str.substr(28, 24);
+            serial.erase(remove(serial.begin(), serial.end(), '\00'), serial.end());
+            id(hw_serial_num).publish_state(serial);
 
 sensor:
   - platform: econet
@@ -162,6 +180,16 @@ sensor:
     icon: "mdi:sun-snowflake-variant"
     filters:
       - delta: 0.9
+
+text_sensor:
+  - platform: template
+    name: "HW Model Num"
+    id: hw_model_num
+    entity_category: "diagnostic"
+  - platform: template
+    name: "HW Serial Num"
+    id: hw_serial_num
+    entity_category: "diagnostic"
 
 interval:
   - interval: 5s
