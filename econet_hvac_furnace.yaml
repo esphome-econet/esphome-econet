@@ -13,18 +13,19 @@ econet:
       datapoint_type: raw
       then:
         - lambda: |-
-            if(x.size() >= 133) {
-                id(airhandler_cfm).publish_state((x[13] << 8) + x[14]);
-                id(airhandler_rpm).publish_state((x[17] << 8) + x[18]);
-                id(lh_lh).publish_state((x[129] << 8) + x[130]);
-                id(hh_lh).publish_state((x[132] << 8) + x[133]);
-                id(heat_capacity).publish_state(x[11]);
-                id(compressor_stage).publish_state(x[12]);
-                id(heat_stage).publish_state(x[26]);
-                id(static_pressure).publish_state(((x[15] << 8) + x[16]) / 5280.0);
-                id(return_air_temperature).publish_state(((x[50] << 8) + x[51]) / 10.0);
-                id(flame_sensor).publish_state(x[33] / 10.0);
+            if(x.size() <= 133) {
+                return;
             }
+            id(airhandler_cfm).publish_state((x[13] << 8) + x[14]);
+            id(airhandler_rpm).publish_state((x[17] << 8) + x[18]);
+            id(lh_lh).publish_state((x[129] << 8) + x[130]);
+            id(hh_lh).publish_state((x[132] << 8) + x[133]);
+            id(heat_capacity).publish_state(x[11]);
+            id(compressor_stage).publish_state(x[12]);
+            id(heat_stage).publish_state(x[26]);
+            id(static_pressure).publish_state(((x[15] << 8) + x[16]) / 5280.0);
+            id(return_air_temperature).publish_state(((x[50] << 8) + x[51]) / 10.0);
+            id(flame_sensor).publish_state(x[33] / 10.0);
 
 sensor:
   - platform: econet
