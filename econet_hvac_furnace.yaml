@@ -13,6 +13,9 @@ econet:
       datapoint_type: raw
       then:
         - lambda: |-
+            if(x.size() <= 133) {
+                return;
+            }
             id(airhandler_cfm).publish_state((x[13] << 8) + x[14]);
             id(airhandler_rpm).publish_state((x[17] << 8) + x[18]);
             id(lh_lh).publish_state((x[129] << 8) + x[130]);
