@@ -31,7 +31,7 @@ econet:
       datapoint_type: raw
       then:
         - lambda: |-
-            if(x.size() <= 52) {
+            if (x.size() <= 52) {
                 return;
             }
             std::string str(x.begin(), x.end());
