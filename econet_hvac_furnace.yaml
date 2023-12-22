@@ -35,10 +35,10 @@ econet:
                 return;
             }
             std::string str(x.begin(), x.end());
-            std::string model = str.substr(4,24);
+            std::string model = str.substr(4, 24);
             model.erase(remove(model.begin(), model.end(), '\00'), model.end());
             id(hw_model_num).publish_state(model);
-            std::string serial = str.substr(28,24);
+            std::string serial = str.substr(28, 24);
             serial.erase(remove(serial.begin(), serial.end(), '\00'), serial.end());
             id(hw_serial_num).publish_state(serial);
 
