@@ -12,7 +12,7 @@ namespace econet {
 class EconetRawDatapointUpdateTrigger : public Trigger<std::vector<uint8_t>> {
  public:
   explicit EconetRawDatapointUpdateTrigger(Econet *parent, const std::string &sensor_id, int8_t request_mod,
-                                           uint32_t src_adr);
+                                           bool request_once, uint32_t src_adr);
 };
 
 }  // namespace econet
