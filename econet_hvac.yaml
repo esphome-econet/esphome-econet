@@ -18,7 +18,7 @@ climate:
       min_temperature: "10"
       max_temperature: "32.2222"
       temperature_step: 1.0f
-    current_temperature_datapoint: SPT_STAT
+    current_temperature_datapoint: SPT
     target_temperature_low_datapoint: HEATSETP
     target_temperature_high_datapoint: COOLSETP
     mode_datapoint: STATMODE
