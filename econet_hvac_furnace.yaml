@@ -14,6 +14,7 @@ econet:
   on_datapoint_update:
     - sensor_datapoint: HWSTATUS
       datapoint_type: raw
+      src_address: 448
       then:
         - lambda: |-
             if(x.size() <= 133) {
