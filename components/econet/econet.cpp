@@ -440,12 +440,14 @@ void Econet::request_strings_() {
     if (loop_now_ - last_read_request_ < min_delay_between_read_requests_) {
       return;
     }
-    for (int request_mod = 0; request_mod < request_mods_; request_mod++) {
-      if ((loop_now_ - request_mod_last_requested_[request_mod]) >= request_mod_update_interval_millis_[request_mod]) {
-        std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
+    std::set<uint8_t>::iterator request_mod;
+    for (request_mod = request_mods_.begin(); request_mod != request_mods_.end(); ++request_mod) {
+      if ((loop_now_ - request_mod_last_requested_[*request_mod]) >=
+          request_mod_update_interval_millis_[*request_mod]) {
+        std::copy(request_datapoint_ids_[*request_mod].begin(), request_datapoint_ids_[*request_mod].end(),
                   back_inserter(objects));
-        request_mod_last_requested_[request_mod] = loop_now_;
-        dst_adr = request_mod_addresses_[request_mod];
+        request_mod_last_requested_[*request_mod] = loop_now_;
+        dst_adr = request_mod_addresses_[*request_mod];
         break;
       }
     }
@@ -614,8 +616,8 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
                                uint32_t src_adr) {
   if (request_mod >= 0 && request_mod < request_datapoint_ids_.size()) {
     request_datapoint_ids_[request_mod].insert(datapoint_id);
-    request_mods_ = std::max(request_mods_, (uint8_t) (request_mod + 1));
-    min_delay_between_read_requests_ = std::max(min_update_interval_millis_ / request_mods_, REQUEST_DELAY);
+    request_mods_.insert(request_mod);
+    min_delay_between_read_requests_ = std::max(min_update_interval_millis_ / request_mods_.size(), REQUEST_DELAY);
     if (request_once) {
       request_once_datapoint_ids_.insert(EconetDatapointID{.name = datapoint_id, .address = src_adr});
     }
