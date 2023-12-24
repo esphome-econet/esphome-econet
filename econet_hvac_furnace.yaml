@@ -10,6 +10,7 @@ packages:
 econet:
   request_mod_addresses:
     5: 448
+    6: 448
   on_datapoint_update:
     - sensor_datapoint: HWSTATUS
       datapoint_type: raw
@@ -45,6 +46,23 @@ econet:
             std::string serial = str.substr(28, 24);
             serial.erase(remove(serial.begin(), serial.end(), '\00'), serial.end());
             id(hw_serial_num).publish_state(serial);
+    - sensor_datapoint: HWELL_ID
+      request_mod: 6
+      request_once: true
+      src_address: 448
+      datapoint_type: raw
+      then:
+        - lambda: |-
+            if (x.size() <= 52) {
+                return;
+            }
+            std::string str(x.begin(), x.end());
+            std::string sw1 = str.substr(4, 24);
+            sw1.erase(remove(sw1.begin(), sw1.end(), '\00'), sw1.end());
+            id(hw_sw1).publish_state(sw1);
+            std::string sw2 = str.substr(28, 24);
+            sw2.erase(remove(sw2.begin(), sw2.end(), '\00'), sw2.end());
+            id(hw_sw2).publish_state(sw2);
 
 sensor:
   - platform: econet
@@ -190,6 +208,14 @@ text_sensor:
   - platform: template
     name: "HW Serial Num"
     id: hw_serial_num
+    entity_category: "diagnostic"
+  - platform: template
+    name: "HW SW1"
+    id: hw_sw1
+    entity_category: "diagnostic"
+  - platform: template
+    name: "HW SW2"
+    id: hw_sw2
     entity_category: "diagnostic"
 
 interval:
