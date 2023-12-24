@@ -59,10 +59,10 @@ econet:
             std::string str(x.begin(), x.end());
             std::string sw1 = str.substr(4, 24);
             sw1.erase(remove(sw1.begin(), sw1.end(), '\00'), sw1.end());
-            id(hw_sw1).publish_state(sw1);
+            id(furnace_sw).publish_state(sw1);
             std::string sw2 = str.substr(28, 24);
             sw2.erase(remove(sw2.begin(), sw2.end(), '\00'), sw2.end());
-            id(hw_sw2).publish_state(sw2);
+            id(furnace_sw2).publish_state(sw2);
 
 sensor:
   - platform: econet
@@ -202,21 +202,22 @@ sensor:
 
 text_sensor:
   - platform: template
-    name: "HW Model Num"
+    name: "Furnace Model Number"
     id: hw_model_num
     entity_category: "diagnostic"
   - platform: template
-    name: "HW Serial Num"
+    name: "Furnace Serial Number"
     id: hw_serial_num
     entity_category: "diagnostic"
   - platform: template
-    name: "HW SW1"
-    id: hw_sw1
+    name: "Furnace SW Version"
+    id: furnace_sw
     entity_category: "diagnostic"
   - platform: template
-    name: "HW SW2"
-    id: hw_sw2
+    name: "Furnace SW Version 2"
+    id: furnace_sw2
     entity_category: "diagnostic"
+    disabled_by_default: true
 
 interval:
   - interval: 5s
