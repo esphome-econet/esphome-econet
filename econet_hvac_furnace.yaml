@@ -30,6 +30,7 @@ econet:
             id(flame_sensor).publish_state(x[33] / 10.0);
     - sensor_datapoint: HRHEEMID
       request_mod: 5
+      request_once: true
       src_address: 448
       datapoint_type: raw
       then:
