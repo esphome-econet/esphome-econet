@@ -440,8 +440,7 @@ void Econet::request_strings_() {
     if (loop_now_ - last_read_request_ < min_delay_between_read_requests_) {
       return;
     }
-    std::set<uint8_t>::iterator request_mod;
-    for (request_mod = request_mods_.begin(); request_mod != request_mods_.end(); ++request_mod) {
+    for (auto request_mod = request_mods_.begin(); request_mod != request_mods_.end(); ++request_mod) {
       if ((loop_now_ - request_mod_last_requested_[*request_mod]) >=
           request_mod_update_interval_millis_[*request_mod]) {
         std::copy(request_datapoint_ids_[*request_mod].begin(), request_datapoint_ids_[*request_mod].end(),
