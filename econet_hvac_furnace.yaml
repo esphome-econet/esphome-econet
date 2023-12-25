@@ -3,18 +3,19 @@ substitutions:
   name: "econet-hvac_furnace"
   friendly_name: "Rheem HVAC"
   device_description: "Rheem HVAC"
+  furnace_address: "448"
 
 packages:
   econet: !include econet_hvac.yaml
 
 econet:
   request_mod_addresses:
-    5: 448
-    6: 448
+    5: ${furnace_address}
+    6: ${furnace_address}
   on_datapoint_update:
     - sensor_datapoint: HWSTATUS
       datapoint_type: raw
-      src_address: 448
+      src_address: ${furnace_address}
       then:
         - lambda: |-
             if(x.size() <= 133) {
@@ -33,7 +34,7 @@ econet:
     - sensor_datapoint: HRHEEMID
       request_mod: 5
       request_once: true
-      src_address: 448
+      src_address: ${furnace_address}
       datapoint_type: raw
       then:
         - lambda: |-
@@ -50,7 +51,7 @@ econet:
     - sensor_datapoint: HWELL_ID
       request_mod: 6
       request_once: true
-      src_address: 448
+      src_address: ${furnace_address}
       datapoint_type: raw
       then:
         - lambda: |-
