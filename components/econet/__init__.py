@@ -48,7 +48,7 @@ def assign_declare_id(value):
 
 
 def validate_request_mod_range(value):
-    return cv.int_range(min=0, max=7)(value)
+    return cv.int_range(min=0, max=15)(value)
 
 
 def request_mod(value):
