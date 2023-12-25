@@ -219,17 +219,7 @@ text_sensor:
     id: furnace_sw2
     entity_category: "diagnostic"
     disabled_by_default: true
-  - id: !extend sw_version
-    name: "Thermostat SW Version"
-    src_address: 896
-  - platform: econet
-    name: "WiFi SW Version"
-    id: wifi_sw_version
-    sensor_datapoint: SW_VERSN
-    src_address: 832
-    request_mod: none
-    icon: "mdi:information-box"
-    entity_category: "diagnostic"
+
 interval:
   - interval: 5s
     then:
