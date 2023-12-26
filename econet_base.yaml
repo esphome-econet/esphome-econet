@@ -13,6 +13,7 @@ substitutions:
   econet_update_interval: 30s
   econet_alarm_update_interval: 30s
   econet_alarm_history_update_interval: 60s
+  wifi_module_address: "0x340"
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
@@ -74,7 +75,7 @@ econet:
     1: ${econet_alarm_update_interval}
     2: ${econet_alarm_history_update_interval}
     3: ${econet_alarm_history_update_interval}
-  src_address: 0x340
+  src_address: ${wifi_module_address}
 sensor:
   - platform: econet
     name: "Active Alerts"

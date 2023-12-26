@@ -3,12 +3,14 @@ substitutions:
   name: "econet-hvac"
   friendly_name: "Rheem HVAC"
   device_description: "Rheem HVAC"
+  thermostat_address: "0x380"
+  wifi_module_address: "0x340"
 
 packages:
   econet: !include econet_base.yaml
 
 econet:
-  dst_address: 0x380
+  dst_address: ${thermostat_address}
 
 climate:
   - platform: econet
@@ -84,6 +86,17 @@ text_sensor:
     name: "Auto Mode"
     id: auto_mode
     sensor_datapoint: AUTOMODE
+  - id: !extend sw_version
+    name: "Thermostat SW Version"
+    src_address: ${thermostat_address}
+  - platform: econet
+    name: "WiFi SW Version"
+    id: wifi_sw_version
+    sensor_datapoint: SW_VERSN
+    src_address: ${wifi_module_address}
+    request_mod: none
+    icon: "mdi:information-box"
+    entity_category: "diagnostic"
 
 number:
   - platform: econet
