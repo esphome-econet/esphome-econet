@@ -33,6 +33,7 @@ void EconetClimate::dump_config() {
 climate::ClimateTraits EconetClimate::traits() {
   auto traits = climate::ClimateTraits();
   traits.set_supports_current_temperature(!current_temperature_id_.empty());
+  traits.set_supports_current_humidity(!current_humidity_id_.empty());
   traits.set_supports_two_point_target_temperature(!target_temperature_high_id_.empty());
   if (!mode_id_.empty()) {
     traits.set_supported_modes(map_values_as_set(modes_));
@@ -52,6 +53,15 @@ void EconetClimate::setup() {
         current_temperature_id_, request_mod_, request_once_,
         [this](const EconetDatapoint &datapoint) {
           current_temperature = fahrenheit_to_celsius(datapoint.value_float);
+          publish_state();
+        },
+        false, this->src_adr_);
+  }
+  if (!current_humidity_id_.empty()) {
+    parent_->register_listener(
+        current_humidity_id_, request_mod_, request_once_,
+        [this](const EconetDatapoint &datapoint) {
+          current_humidity = datapoint.value_float;
           publish_state();
         },
         false, this->src_adr_);

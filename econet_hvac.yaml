@@ -40,6 +40,7 @@ climate:
       3: "Speed 3 (Medium)"
       4: "Speed 4 (Medium High)"
       5: "Speed 5 (High)"
+    current_humidity_datapoint: RELH7005
 
 sensor:
   - platform: econet
