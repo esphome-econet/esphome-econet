@@ -4,6 +4,7 @@ substitutions:
   friendly_name: "Tankless Water Heater"
   device_description: "Rheem Tankless Water Heater"
   econet_update_interval: 5s
+  tankless_kbtus_per_m3: "35.300" # Natural Gas = approx 35.300, Propane = approx 88.852
 
 packages:
   econet: !include econet_base.yaml
@@ -94,3 +95,22 @@ sensor:
       return max((id(temp_out).state - id(temp_in).state) * id(flow_rate).state * 8.334 * 60 / 0.92 / 1000, 0.0);
     # yamllint enable rule:line-length
     update_interval: ${econet_update_interval}
+  - platform: template
+    name: "Gas Usage"
+    id: gas_usage_m3_h
+    unit_of_measurement: "m³/h"
+    accuracy_decimals: 3
+  - platform: template
+    name: "Total Gas Usage"
+    id: total_gas_usage
+    unit_of_measurement: "m³"
+    accuracy_decimals: 5
+    state_class: total_increasing
+    device_class: gas
+
+interval:
+  - interval: 5s
+    then:
+      - lambda: |-
+            id(gas_usage_m3_h).publish_state(id(instant_btus).state / ${tankless_kbtus_per_m3});
+            id(total_gas_usage).publish_state(id(btus).state / ${tankless_kbtus_per_m3});
