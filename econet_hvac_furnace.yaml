@@ -4,6 +4,7 @@ substitutions:
   friendly_name: "Rheem HVAC"
   device_description: "Rheem HVAC"
   furnace_address: "448"
+  furnace_kbtus_per_m3: "35.300" # Natural Gas = approx 35.300, Propane = approx 88.852
 
 packages:
   econet: !include econet_hvac.yaml
@@ -356,4 +357,4 @@ interval:
             float furnace_eff = id(furnace_afue).state / 100.0;
             id(instant_btu_output).publish_state(furnace_kbtus);
             id(instant_btu_usage).publish_state(furnace_kbtus / furnace_eff);
-            id(gas_usage_m3_h).publish_state(furnace_kbtus / furnace_eff / 35.300 );
+            id(gas_usage_m3_h).publish_state(furnace_kbtus / furnace_eff / ${furnace_kbtus_per_m3} );
