@@ -41,6 +41,7 @@ climate:
       4: "Speed 4 (Medium High)"
       5: "Speed 5 (High)"
     current_humidity_datapoint: RELH7005
+    target_dehumidification_level_datapoint: DHUMSETP
 
 sensor:
   - platform: econet

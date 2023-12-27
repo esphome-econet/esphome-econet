@@ -34,6 +34,7 @@ climate::ClimateTraits EconetClimate::traits() {
   auto traits = climate::ClimateTraits();
   traits.set_supports_current_temperature(!current_temperature_id_.empty());
   traits.set_supports_current_humidity(!current_humidity_id_.empty());
+  traits.set_supports_target_humidity(!target_dehumidification_level_id_.empty());
   traits.set_supports_two_point_target_temperature(!target_temperature_high_id_.empty());
   if (!mode_id_.empty()) {
     traits.set_supported_modes(map_values_as_set(modes_));
@@ -62,6 +63,15 @@ void EconetClimate::setup() {
         current_humidity_id_, request_mod_, request_once_,
         [this](const EconetDatapoint &datapoint) {
           current_humidity = datapoint.value_float;
+          publish_state();
+        },
+        false, this->src_adr_);
+  }
+  if (!target_dehumidification_level_id_.empty()) {
+    parent_->register_listener(
+        target_dehumidification_level_id_, request_mod_, request_once_,
+        [this](const EconetDatapoint &datapoint) {
+          target_humidity = datapoint.value_float;
           publish_state();
         },
         false, this->src_adr_);
@@ -228,6 +238,10 @@ void EconetClimate::control(const climate::ClimateCall &call) {
         }
       }
     }
+  }
+  if (call.get_target_humidity().has_value() && !target_dehumidification_level_id_.empty()) {
+    parent_->set_float_datapoint_value(target_dehumidification_level_id_, call.get_target_humidity().value(),
+                                       this->src_adr_);
   }
 }
 
