@@ -49,6 +49,7 @@ sensor:
   - platform: econet
     name: "Airhandler CFM"
     id: airhandler_cfm
+    icon: "mdi:fan"
     sensor_datapoint: F_ACTCFM
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -56,6 +57,7 @@ sensor:
       - delta: 9.9
   - platform: econet
     name: "Airhandler RPM"
+    icon: "mdi:fan"
     id: airhandler_rpm
     sensor_datapoint: F_ACTRPM
     state_class: "measurement"
@@ -65,6 +67,7 @@ sensor:
   - platform: econet
     name: "Static Pressure"
     id: static_pressure
+    icon: "mdi:air-filter"
     sensor_datapoint: STATIC_P
     accuracy_decimals: 6
     unit_of_measurement: "in"
@@ -85,10 +88,12 @@ text_sensor:
   - platform: econet
     name: "Operating Mode"
     id: operating_mode
+    icon: "mdi:hvac"
     sensor_datapoint: HVACMODE
   - platform: econet
     name: "Auto Mode"
     id: auto_mode
+    icon: "mdi:hvac"
     sensor_datapoint: AUTOMODE
   - id: !extend sw_version
     name: "Thermostat SW Version"
