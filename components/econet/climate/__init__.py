@@ -26,6 +26,7 @@ CONF_CUSTOM_FAN_MODE_NO_SCHEDULE_DATAPOINT = "custom_fan_mode_no_schedule_datapo
 CONF_FOLLOW_SCHEDULE_DATAPOINT = "follow_schedule_datapoint"
 CONF_MODES = "modes"
 CONF_CURRENT_HUMIDITY_DATAPOINT = "current_humidity_datapoint"
+CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT = "target_dehumidification_level_datapoint"
 
 EconetClimate = econet_ns.class_(
     "EconetClimate", climate.Climate, cg.Component, EconetClient
@@ -73,6 +74,9 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_CUSTOM_PRESETS, default={}): ensure_option_map,
             cv.Optional(CONF_CUSTOM_FAN_MODES, default={}): ensure_option_map,
             cv.Optional(CONF_CURRENT_HUMIDITY_DATAPOINT, default=""): cv.string,
+            cv.Optional(
+                CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT, default=""
+            ): cv.string,
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
@@ -128,3 +132,8 @@ async def to_code(config):
         )
     )
     cg.add(var.set_current_humidity_id(config[CONF_CURRENT_HUMIDITY_DATAPOINT]))
+    cg.add(
+        var.set_target_dehumidification_level_id(
+            config[CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT]
+        )
+    )

@@ -20,6 +20,8 @@ climate:
       min_temperature: "10"
       max_temperature: "32.2222"
       temperature_step: 1.0f
+      min_humidity: 10
+      max_humidity: 80
     current_temperature_datapoint: SPT
     target_temperature_low_datapoint: HEATSETP
     target_temperature_high_datapoint: COOLSETP
@@ -41,6 +43,7 @@ climate:
       4: "Speed 4 (Medium High)"
       5: "Speed 5 (High)"
     current_humidity_datapoint: RELH7005
+    target_dehumidification_level_datapoint: DHUMSETP
 
 sensor:
   - platform: econet
@@ -98,17 +101,6 @@ text_sensor:
     request_mod: none
     icon: "mdi:information-box"
     entity_category: "diagnostic"
-
-number:
-  - platform: econet
-    name: "Dehumidification Setting Control"
-    id: dehumidification_setting_control
-    number_datapoint: DHUMSETP
-    min_value: 10
-    max_value: 80
-    step: 1
-    mode: "slider"
-    icon: "mdi:air-humidifier-off"
 
 switch:
   - platform: econet
