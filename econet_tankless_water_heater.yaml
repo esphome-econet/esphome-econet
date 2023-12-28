@@ -108,6 +108,10 @@ sensor:
     state_class: total_increasing
     device_class: gas
 
+switch:
+  - id: !remove alarm_beep
+  - id: !remove screen_lock
+
 interval:
   - interval: 5s
     then:
