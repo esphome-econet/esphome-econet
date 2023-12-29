@@ -54,6 +54,10 @@ sensor:
     accuracy_decimals: 3
     entity_category: "diagnostic"
     icon: "mdi:flash"
+    on_value:
+      then:
+        - lambda: |-
+            id(total_gas_usage).publish_state(id(btus).state / ${tankless_kbtus_per_m3});
   - platform: econet
     name: "Water Used"
     id: water_used
@@ -96,11 +100,6 @@ sensor:
     # yamllint enable rule:line-length
     update_interval: ${econet_update_interval}
   - platform: template
-    name: "Gas Usage"
-    id: gas_usage_m3_h
-    unit_of_measurement: "m³/h"
-    accuracy_decimals: 3
-  - platform: template
     name: "Total Gas Usage"
     id: total_gas_usage
     unit_of_measurement: "m³"
@@ -111,10 +110,3 @@ sensor:
 switch:
   - id: !remove alarm_beep
   - id: !remove screen_lock
-
-interval:
-  - interval: 5s
-    then:
-      - lambda: |-
-            id(gas_usage_m3_h).publish_state(id(instant_btus).state / ${tankless_kbtus_per_m3});
-            id(total_gas_usage).publish_state(id(btus).state / ${tankless_kbtus_per_m3});
