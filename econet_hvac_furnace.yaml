@@ -125,7 +125,7 @@ sensor:
     sensor_datapoint: FURNHBTU
     entity_category: "diagnostic"
     unit_of_measurement: "btu/h"
-    device_class: "power"
+    icon: "mdi:gas-burner"
     request_once: true
   - platform: econet
     name: "Furnace Low Heat BTU Output"
@@ -133,7 +133,7 @@ sensor:
     sensor_datapoint: FURNLBTU
     entity_category: "diagnostic"
     unit_of_measurement: "btu/h"
-    device_class: "power"
+    icon: "mdi:gas-burner"
     request_once: true
   - platform: template
     name: "Two Week Cycles - Low Heat"
@@ -266,7 +266,7 @@ sensor:
     name: "Instant BTU Output"
     id: instant_btu_output
     unit_of_measurement: "kbtu/h"
-    device_class: "power"
+    icon: "mdi:gas-burner"
     accuracy_decimals: 3
     filters:
       - delta: 0.9
@@ -274,7 +274,7 @@ sensor:
     name: "Instant BTU Usage"
     id: instant_btu_usage
     unit_of_measurement: "kbtu/h"
-    device_class: "power"
+    icon: "mdi:gas-burner"
     accuracy_decimals: 3
     filters:
       - delta: 0.9
@@ -297,8 +297,9 @@ sensor:
     id: indoor_kw
     sensor_datapoint: INDOORKW
     entity_category: "diagnostic"
-    state_class: "measurement"
+    state_class: "total_increasing"
     device_class: energy
+    unit_of_measurement: "kWh"
   - platform: template
     name: "Heating Capacity"
     id: heat_capacity
