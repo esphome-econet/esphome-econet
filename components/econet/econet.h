@@ -32,7 +32,7 @@ struct EconetDatapointID {
   uint32_t address;
 };
 inline bool operator==(const EconetDatapointID &lhs, const EconetDatapointID &rhs) {
-  return lhs.name == rhs.name && lhs.address == lhs.address;
+  return lhs.name == rhs.name && lhs.address == rhs.address;
 }
 inline bool operator<(const EconetDatapointID &lhs, const EconetDatapointID &rhs) {
   if ((lhs.name < rhs.name) || ((lhs.name == rhs.name) && (lhs.address < rhs.address))) {
