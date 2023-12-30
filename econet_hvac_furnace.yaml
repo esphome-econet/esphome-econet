@@ -117,6 +117,8 @@ sensor:
     id: furnace_afue
     sensor_datapoint: FURNAFUE
     entity_category: "diagnostic"
+    accuracy_decimals: 0
+    unit_of_measurement: "%"
     icon: "mdi:fire-circle"
     request_once: true
   - platform: econet
