@@ -107,7 +107,7 @@ sensor:
     id: flame_sensor
     device_class: "current"
     entity_category: "diagnostic"
-    accuracy_decimals: 1
+    accuracy_decimals: 4
     unit_of_measurement: "mA"
     filters:
       - delta: 0.09
