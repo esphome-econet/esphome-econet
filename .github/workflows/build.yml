@@ -2,7 +2,6 @@
 name: Build Firmware
 
 on:
-  pull_request:
   workflow_call:
     inputs:
       upload-artifacts:
@@ -10,10 +9,14 @@ on:
         required: false
         default: false
         description: "Set to true to have this workflow upload resulting firmware artifacts."
-  workflow_dispatch:
+      force-verbose-logging:
+        type: boolean
+        required: false
+        default: false
+        description: "Set to true to have this workflow for verbose logging, useful for catching build failures in logging code."
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -46,6 +49,16 @@ jobs:
               .substitutions.external_components_source = "../components" |
               .packages.econet = "../econet_${{ matrix.appliance.name }}.yaml" |
               .packages.econet   tag = "!include"
+            '
+            build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
+      - name: Force Verbose Logging
+        if: ${{ inputs.force-verbose-logging }}
+        uses: mikefarah/yq@v4.40.5
+        with:
+          cmd: >
+            yq -P -i
+            '
+              .substitutions.logger_level = "VERY_VERBOSE"
             '
             build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Build Firmware
