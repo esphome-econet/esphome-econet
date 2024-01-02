@@ -19,8 +19,8 @@ econet:
       src_address: ${furnace_address}
       then:
         - lambda: |-
-            if(x.size() <= 138) {
-                return;
+            if (x.size() <= 138) {
+              return;
             }
             id(airhandler_cfm).publish_state((x[13] << 8) + x[14]);
             id(airhandler_rpm).publish_state((x[17] << 8) + x[18]);
@@ -54,7 +54,7 @@ econet:
       then:
         - lambda: |-
             if (x.size() <= 52) {
-                return;
+              return;
             }
             std::string str(x.begin(), x.end());
             std::string model = str.substr(4, 24);
@@ -71,7 +71,7 @@ econet:
       then:
         - lambda: |-
             if (x.size() <= 52) {
-                return;
+              return;
             }
             std::string str(x.begin(), x.end());
             std::string sw1 = str.substr(4, 24);
@@ -357,8 +357,8 @@ interval:
   - interval: 5s
     then:
       - lambda: |-
-            float furnace_kbtus = id(furnace_hh_btus).state / 1000.0 * id(heat_capacity).state / 100.0;
-            float furnace_eff = id(furnace_afue).state / 100.0;
-            id(instant_btu_output).publish_state(furnace_kbtus);
-            id(instant_btu_usage).publish_state(furnace_kbtus / furnace_eff);
-            id(gas_usage_m3_h).publish_state(furnace_kbtus / furnace_eff / ${furnace_kbtus_per_m3} );
+          float furnace_kbtus = id(furnace_hh_btus).state / 1000.0 * id(heat_capacity).state / 100.0;
+          float furnace_eff = id(furnace_afue).state / 100.0;
+          id(instant_btu_output).publish_state(furnace_kbtus);
+          id(instant_btu_usage).publish_state(furnace_kbtus / furnace_eff);
+          id(gas_usage_m3_h).publish_state(furnace_kbtus / furnace_eff / ${furnace_kbtus_per_m3});
