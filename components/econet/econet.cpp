@@ -578,7 +578,7 @@ void Econet::send_datapoint_(const EconetDatapointID &datapoint_id, const Econet
   if (datapoints_.count(specific) == 1) {
     EconetDatapoint old_value = datapoints_[specific];
     if (old_value == value) {
-      ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", specific.datapoint_id.name.c_str());
+      ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", specific.name.c_str());
       send_specific = false;
     }
   }
@@ -594,7 +594,7 @@ void Econet::send_datapoint_(const EconetDatapointID &datapoint_id, const Econet
   if (datapoints_.count(any) == 1) {
     EconetDatapoint old_value = datapoints_[any];
     if (old_value == value) {
-      ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", any.datapoint_id.name.c_str());
+      ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", any.name.c_str());
       send_any = false;
     }
   }
