@@ -293,7 +293,7 @@ void Econet::parse_message_(bool is_tx) {
 // For TEXT it's some predefined number of bytes depending on the requested object padded with trailing whitespace.
 // For ENUM_TEXT it's 1 byte for the enum value, followed by one byte for the length of the enum text, and finally
 // followed by the bytes of the enum text padded with trailing whitespace.
-void Econet::handle_response_(EconetDatapointID datapoint_id, const uint8_t *p, uint8_t len) {
+void Econet::handle_response_(const EconetDatapointID &datapoint_id, const uint8_t *p, uint8_t len) {
   EconetDatapointType item_type = EconetDatapointType(p[0] & 0x7F);
   switch (item_type) {
     case EconetDatapointType::FLOAT: {
@@ -440,13 +440,12 @@ void Econet::request_strings_() {
     if (loop_now_ - last_read_request_ < min_delay_between_read_requests_) {
       return;
     }
-    for (auto request_mod = request_mods_.begin(); request_mod != request_mods_.end(); ++request_mod) {
-      if ((loop_now_ - request_mod_last_requested_[*request_mod]) >=
-          request_mod_update_interval_millis_[*request_mod]) {
-        std::copy(request_datapoint_ids_[*request_mod].begin(), request_datapoint_ids_[*request_mod].end(),
+    for (auto request_mod : request_mods_) {
+      if ((loop_now_ - request_mod_last_requested_[request_mod]) >= request_mod_update_interval_millis_[request_mod]) {
+        std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
                   back_inserter(objects));
-        request_mod_last_requested_[*request_mod] = loop_now_;
-        dst_adr = request_mod_addresses_[*request_mod];
+        request_mod_last_requested_[request_mod] = loop_now_;
+        dst_adr = request_mod_addresses_[request_mod];
         break;
       }
     }
@@ -534,11 +533,11 @@ void Econet::set_enum_datapoint_value(const std::string &datapoint_id, uint8_t v
                        EconetDatapoint{.type = EconetDatapointType::ENUM_TEXT, .value_enum = value});
 }
 
-void Econet::set_datapoint_(EconetDatapointID datapoint_id, const EconetDatapoint &value) {
-  if (datapoint_id.address == 0) {
-    datapoint_id.address = dst_adr_;
-  }
+void Econet::set_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value) {
   auto specific = datapoint_id;
+  if (specific.address == 0) {
+    specific.address = dst_adr_;
+  }
   auto any = EconetDatapointID{.name = datapoint_id.name, .address = 0};
   bool send_specific = true;
   bool send_any = true;
@@ -571,7 +570,7 @@ void Econet::set_datapoint_(EconetDatapointID datapoint_id, const EconetDatapoin
   }
 }
 
-void Econet::send_datapoint_(EconetDatapointID datapoint_id, const EconetDatapoint &value) {
+void Econet::send_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value) {
   auto specific = EconetDatapointID{.name = datapoint_id.name, .address = datapoint_id.address};
   auto any = EconetDatapointID{.name = datapoint_id.name, .address = 0};
   bool send_specific = true;
@@ -640,7 +639,7 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
 
 // Called from a Home Assistant exposed service to read a datapoint.
 // Fires a Home Assistant event: "esphome.econet_event" with the response.
-void Econet::homeassistant_read(std::string datapoint_id, uint32_t address) {
+void Econet::homeassistant_read(const std::string &datapoint_id, uint32_t address) {
   if (address == 0) {
     address = src_adr_;
   }
@@ -663,7 +662,7 @@ void Econet::homeassistant_read(std::string datapoint_id, uint32_t address) {
         break;
       case EconetDatapointType::RAW:
         data["type"] = "RAW";
-        data["value_raw"] = format_hex_pretty(datapoint.value_raw).c_str();
+        data["value_raw"] = format_hex_pretty(datapoint.value_raw);
         break;
       case EconetDatapointType::UNSUPPORTED:
         data["type"] = "UNSUPPORTED";
@@ -673,12 +672,13 @@ void Econet::homeassistant_read(std::string datapoint_id, uint32_t address) {
   });
   datapoint_ids_for_read_service_.push(EconetDatapointID{.name = datapoint_id, .address = address});
 }
-void Econet::homeassistant_write(std::string datapoint_id, uint8_t value) {
+
+void Econet::homeassistant_write(const std::string &datapoint_id, uint8_t value) {
   set_datapoint_(EconetDatapointID{.name = datapoint_id, .address = 0},
                  EconetDatapoint{.type = EconetDatapointType::ENUM_TEXT, .value_enum = value});
 }
 
-void Econet::homeassistant_write(std::string datapoint_id, float value) {
+void Econet::homeassistant_write(const std::string &datapoint_id, float value) {
   set_datapoint_(EconetDatapointID{.name = datapoint_id, .address = 0},
                  EconetDatapoint{.type = EconetDatapointType::FLOAT, .value_float = value});
 }

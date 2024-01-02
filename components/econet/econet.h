@@ -35,11 +35,7 @@ inline bool operator==(const EconetDatapointID &lhs, const EconetDatapointID &rh
   return lhs.name == rhs.name && lhs.address == rhs.address;
 }
 inline bool operator<(const EconetDatapointID &lhs, const EconetDatapointID &rhs) {
-  if ((lhs.name < rhs.name) || ((lhs.name == rhs.name) && (lhs.address < rhs.address))) {
-    return true;
-  } else {
-    return false;
-  }
+  return (lhs.name < rhs.name) || ((lhs.name == rhs.name) && (lhs.address < rhs.address));
 }
 
 enum class EconetDatapointType : uint8_t {
@@ -118,9 +114,9 @@ class Econet : public Component, public uart::UARTDevice {
                          const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false,
                          uint32_t src_adr = 0);
 
-  void homeassistant_read(std::string datapoint_id, uint32_t address = 0);
-  void homeassistant_write(std::string datapoint_id, uint8_t value);
-  void homeassistant_write(std::string datapoint_id, float value);
+  void homeassistant_read(const std::string &datapoint_id, uint32_t address = 0);
+  void homeassistant_write(const std::string &datapoint_id, uint8_t value);
+  void homeassistant_write(const std::string &datapoint_id, float value);
 
  protected:
   uint32_t update_interval_millis_{30000};
@@ -133,15 +129,15 @@ class Econet : public Component, public uart::UARTDevice {
 
   std::vector<EconetDatapointListener> listeners_;
   ReadRequest read_req_;
-  void set_datapoint_(EconetDatapointID datapoint_id, const EconetDatapoint &value);
-  void send_datapoint_(EconetDatapointID datapoint_id, const EconetDatapoint &value);
+  void set_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value);
+  void send_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value);
 
   void make_request_();
   void read_buffer_(int bytes_available);
   void parse_message_(bool is_tx);
   void parse_rx_message_();
   void parse_tx_message_();
-  void handle_response_(EconetDatapointID datapoint_id, const uint8_t *p, uint8_t len);
+  void handle_response_(const EconetDatapointID &datapoint_id, const uint8_t *p, uint8_t len);
 
   void transmit_message_(uint8_t command, const std::vector<uint8_t> &data, uint32_t dst_adr = 0, uint32_t src_adr = 0);
   void request_strings_();
