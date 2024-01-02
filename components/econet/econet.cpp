@@ -672,6 +672,7 @@ void Econet::homeassistant_read(const std::string &datapoint_id, uint32_t addres
   });
   datapoint_ids_for_read_service_.push(EconetDatapointID{.name = datapoint_id, .address = address});
 }
+
 void Econet::homeassistant_write(const std::string &datapoint_id, uint8_t value) {
   set_datapoint_(EconetDatapointID{.name = datapoint_id, .address = 0},
                  EconetDatapoint{.type = EconetDatapointType::ENUM_TEXT, .value_enum = value});
