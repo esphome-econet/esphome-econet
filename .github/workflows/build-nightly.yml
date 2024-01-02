@@ -13,6 +13,8 @@ concurrency:
 jobs:
   build:
     uses: ./.github/workflows/build.yml
+    with:
+      force-verbose-logging: true
   create-issue-on-failure:
     name: Create Issue on Failure
     runs-on: ubuntu-latest
