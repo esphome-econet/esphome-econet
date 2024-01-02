@@ -48,3 +48,4 @@ repos:
 ci:
   autoupdate_schedule: monthly
   skip: [no-commit-to-branch]
+  autoupdate_commit_msg: 'ci(pre-commit.ci): pre-commit autoupdate'
