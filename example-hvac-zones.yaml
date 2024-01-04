@@ -2,41 +2,46 @@
 substitutions:
   external_components_source: components  # Build with local code instead of pulling from Github
 
+# This removes the non-zone climate entity for zone1, to be replaced below.
+climate:
+  - id: !remove econet_climate
+
 packages:
   econet: !include
     file: econet_hvac_base.yaml
 
-  # for zones - include the econet hvac package above and the appropriate zones below
-  # if additional zones are needed, the thermostat address for each thermostat will need to be determined.
+  # Uncomment any zones as appropriate for your system.
   zone1: !include
     file: econet_hvac_zone_template.yaml
     vars:
-      zoneid: "1"
+      zonenumber: "1"
       zonename: "Zone1"
-      requestmod: 4
+      requestmod: 10
       thermostat_address: 0x380
+
   zone2: !include
     file: econet_hvac_zone_template.yaml
     vars:
-      zoneid: "2"
+      zonenumber: "2"
       zonename: "Zone2"
-      requestmod: 5
+      requestmod: 11
       thermostat_address: 0x680
+
   zone3: !include
     file: econet_hvac_zone_template.yaml
     vars:
-      zoneid: "3"
+      zonenumber: "3"
       zonename: "Zone3"
-      requestmod: 6
+      requestmod: 12
       thermostat_address: 0x681
-  # This configuration does not include a thermostat, just a damper.
+
+  # Comment out the bypass section if your system has a mechanical (non-electrical) for the bypass zone
   bypasszone: !include
     file: econet_hvac_zone_bypass.yaml
     vars:
-      zoneid: "6"
+      zonenumber: "6"
       zonename: "Zone6"
-      requestmod: 6
-
+      requestmod: 15
 
 wifi:
   ssid: !secret wifi_ssid
