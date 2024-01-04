@@ -14,7 +14,7 @@ packages:
       zonenumber: "1"
       zonename: "Zone1"
       requestmod: 10
-      thermostat_address: 0x380
+      zone_thermostat_address: 0x380
 
   zone2: !include
     file: econet_hvac_zone_template.yaml
@@ -22,7 +22,7 @@ packages:
       zonenumber: "2"
       zonename: "Zone2"
       requestmod: 11
-      thermostat_address: 0x680
+      zone_thermostat_address: 0x680
 
   zone3: !include
     file: econet_hvac_zone_template.yaml
@@ -30,7 +30,7 @@ packages:
       zonenumber: "3"
       zonename: "Zone3"
       requestmod: 12
-      thermostat_address: 0x681
+      zone_thermostat_address: 0x681
 
   # Comment out the bypass section if your system has a mechanical (non-electrical) for the bypass zone
   bypasszone: !include
