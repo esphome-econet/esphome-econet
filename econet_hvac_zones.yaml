@@ -7,9 +7,6 @@ climate:
   - id: !remove econet_climate
 
 packages:
-  econet: !include
-    file: econet_hvac_base.yaml
-
   # Uncomment any zones as appropriate for your system.
   zone1: !include
     file: econet_hvac_zone_template.yaml
