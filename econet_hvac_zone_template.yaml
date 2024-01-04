@@ -9,7 +9,8 @@ substitutions:
 text_sensor:
   - platform: econet
     name: HVAC Zone ${zonenumber} Name
-    sensor_datapoint: Z${zonenumber}__NAME
+    src_address: ${zone_thermostat_address}
+    sensor_datapoint: EQP_NAME
     request_mod: ${requestmod}
     request_once: true
 
@@ -61,6 +62,6 @@ binary_sensor:
     sensor_datapoint: ZON${zonenumber}ENAB
     icon: "mdi:heating-coil"
     entity_category: "diagnostic"
-    disabled_by_default: true
+#    disabled_by_default: true
     request_mod: ${requestmod}
     request_once: true
