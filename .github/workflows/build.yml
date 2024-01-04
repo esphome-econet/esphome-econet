@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Force Manifest to Build Local Code
-        uses: mikefarah/yq@v4.40.5
+        uses: mikefarah/yq@v4
         with:
           cmd: >
             yq -P -i
@@ -53,7 +53,7 @@ jobs:
             build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Force Verbose Logging
         if: ${{ inputs.force-verbose-logging }}
-        uses: mikefarah/yq@v4.40.5
+        uses: mikefarah/yq@v4
         with:
           cmd: >
             yq -P -i
