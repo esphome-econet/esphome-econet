@@ -20,7 +20,7 @@ packages:
       zonenumber: "1"
       zonename: "Zone1"
       zone_thermostat_requestmod: 10
-      primary_thermostat_requestmod: 6
+      primary_thermostat_requestmod: 10
       zone_thermostat_address: 0x380
 
 
@@ -30,7 +30,7 @@ packages:
       zonenumber: "2"
       zonename: "Zone2"
       zone_thermostat_requestmod: 11
-      primary_thermostat_requestmod: 6
+      primary_thermostat_requestmod: 10
       zone_thermostat_address: 0x680
 
   zone3: !include
@@ -39,7 +39,7 @@ packages:
       zonenumber: "3"
       zonename: "Zone3"
       zone_thermostat_requestmod: 12
-      primary_thermostat_requestmod: 6
+      primary_thermostat_requestmod: 10
       zone_thermostat_address: 0x681
 
   # Comment out the bypass section if your system has a mechanical (non-electrical) for the bypass zone
@@ -49,7 +49,7 @@ packages:
       zonenumber: "6"
       zonename: "Zone6"
       zone_thermostat_requestmod: 15
-      primary_thermostat_requestmod: 6
+      primary_thermostat_requestmod: 10
 
 wifi:
   ssid: !secret wifi_ssid
