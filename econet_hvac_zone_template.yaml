@@ -1,19 +1,24 @@
 ---
+substitutions:
+  primary_thermostat_address: "0x380"
+  wifi_module_address: "0x340"
+
 # packages:
 #   econet: !include econet_hvac_furnace.yaml
 
 text_sensor:
   - platform: econet
-    name: z${zoneid}name
-    sensor_datapoint: Z${zoneid}__NAME
-    request_mod: ${requestmod}
+    name: HVAC Zone ${zonenumber} Name
+    src_address: ${zone_thermostat_address}
+    sensor_datapoint: EQP_NAME
+    request_mod: ${zone_thermostat_requestmod}
     request_once: true
 
 climate:
   - platform: econet
-    id: econet_climate${zoneid}
-    name: HVAC Zone ${zoneid}
-    src_address: ${thermostat_address}
+    id: econet_climate_zone${zonenumber}
+    name: HVAC ${zonename} Climate
+    src_address: ${zone_thermostat_address}
     visual:
       min_temperature: "10"
       max_temperature: "32.2222"
@@ -42,27 +47,21 @@ climate:
 
 sensor:
   - platform: econet
-    name: Zone ${zoneid} CFM
-    sensor_datapoint: Z${zoneid}CFMDSP
-    request_mod: ${requestmod}
-    accuracy_decimals: 1
+    src_address: ${primary_thermostat_address}
+    name: HVAC ${zonename} CFM
+    sensor_datapoint: Z${zonenumber}CFMDSP
+    request_mod: ${primary_thermostat_requestmod}
     state_class: "measurement"
     entity_category: "diagnostic"
     unit_of_measurement: "cfm"
-  - platform: econet
-    name: Zone ${zoneid} humidity
-    sensor_datapoint: ZON${zoneid}HUMD
-    request_mod: ${requestmod}
-    accuracy_decimals: 1
-    state_class: "measurement"
-    entity_category: "diagnostic"
 
 binary_sensor:
   - platform: econet
-    name: zone {zoneid} enabled
-    sensor_datapoint: ZON${zoneid}ENAB
+    src_address: ${primary_thermostat_address}
+    name: HVAC Zone ${zonenumber} enabled
+    sensor_datapoint: ZON${zonenumber}ENAB
     icon: "mdi:heating-coil"
     entity_category: "diagnostic"
-    disabled_by_default: true
-    request_mod: ${requestmod}
+#    disabled_by_default: true
+    request_mod: ${primary_thermostat_requestmod}
     request_once: true

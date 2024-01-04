@@ -4,27 +4,26 @@
 
 text_sensor:
   - platform: econet
-    name: z${zoneid}name
-    sensor_datapoint: Z${zoneid}__NAME
-    request_mod: ${requestmod}
+    name: z${zonenumber}name
+    sensor_datapoint: Z${zonenumber}__NAME
+    request_mod: ${primary_thermostat_requestmod}
     request_once: true
 
 sensor:
   - platform: econet
-    name: Zone ${zoneid} CFM
-    sensor_datapoint: Z${zoneid}CFMDSP
-    request_mod: ${requestmod}
-    accuracy_decimals: 1
+    name: HVAC ${zonename} CFM
+    sensor_datapoint: Z${zonenumber}CFMDSP
+    request_mod: ${primary_thermostat_requestmod}
     state_class: "measurement"
     entity_category: "diagnostic"
     unit_of_measurement: "cfm"
 
 binary_sensor:
   - platform: econet
-    name: zone {zoneid} enabled
-    sensor_datapoint: ZON${zoneid}ENAB
+    name: zone {zonenumber} enabled
+    sensor_datapoint: ZON${zonenumber}ENAB
     icon: "mdi:heating-coil"
     entity_category: "diagnostic"
     disabled_by_default: true
-    request_mod: ${requestmod}
+    request_mod: ${primary_thermostat_requestmod}
     request_once: true
