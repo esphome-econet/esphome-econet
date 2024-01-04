@@ -13,7 +13,7 @@ on:
         type: boolean
         required: false
         default: false
-        description: "Set to true to have this workflow for verbose logging, useful for catching build failures in logging code."
+        description: "Set to true to have this workflow force verbose logging, useful for catching build failures in logging code."
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
