@@ -11,7 +11,7 @@ text_sensor:
     name: HVAC Zone ${zonenumber} Name
     src_address: ${zone_thermostat_address}
     sensor_datapoint: EQP_NAME
-    request_mod: ${requestmod}
+    request_mod: ${zone_thermostat_requestmod}
     request_once: true
 
 climate:
@@ -50,7 +50,7 @@ sensor:
     src_address: ${primary_thermostat_address}
     name: HVAC ${zonename} CFM
     sensor_datapoint: Z${zonenumber}CFMDSP
-    request_mod: ${requestmod}
+    request_mod: ${primary_thermostat_requestmod}
     state_class: "measurement"
     entity_category: "diagnostic"
     unit_of_measurement: "cfm"
@@ -63,5 +63,5 @@ binary_sensor:
     icon: "mdi:heating-coil"
     entity_category: "diagnostic"
 #    disabled_by_default: true
-    request_mod: ${requestmod}
+    request_mod: ${primary_thermostat_requestmod}
     request_once: true

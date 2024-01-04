@@ -6,6 +6,12 @@ substitutions:
 climate:
   - id: !remove econet_climate
 
+econet:
+  request_mod_addresses:
+    10: 0x380
+    11: 0x680
+    12: 0x681
+
 packages:
   # Uncomment any zones as appropriate for your system.
   zone1: !include
@@ -13,15 +19,18 @@ packages:
     vars:
       zonenumber: "1"
       zonename: "Zone1"
-      requestmod: 10
+      zone_thermostat_requestmod: 10
+      primary_thermostat_requestmod: 6
       zone_thermostat_address: 0x380
+
 
   zone2: !include
     file: econet_hvac_zone_template.yaml
     vars:
       zonenumber: "2"
       zonename: "Zone2"
-      requestmod: 11
+      zone_thermostat_requestmod: 11
+      primary_thermostat_requestmod: 6
       zone_thermostat_address: 0x680
 
   zone3: !include
@@ -29,7 +38,8 @@ packages:
     vars:
       zonenumber: "3"
       zonename: "Zone3"
-      requestmod: 12
+      zone_thermostat_requestmod: 12
+      primary_thermostat_requestmod: 6
       zone_thermostat_address: 0x681
 
   # Comment out the bypass section if your system has a mechanical (non-electrical) for the bypass zone
@@ -38,7 +48,8 @@ packages:
     vars:
       zonenumber: "6"
       zonename: "Zone6"
-      requestmod: 15
+      zone_thermostat_requestmod: 15
+      primary_thermostat_requestmod: 6
 
 wifi:
   ssid: !secret wifi_ssid
