@@ -15,9 +15,7 @@ from .. import (
 
 DEPENDENCIES = ["econet"]
 
-EconetSelect = econet_ns.class_(
-    "EconetSelect", select.Select, cg.Component, EconetClient
-)
+EconetSelect = econet_ns.class_("EconetSelect", select.Select, cg.Component, EconetClient)
 
 
 def ensure_option_map(value):

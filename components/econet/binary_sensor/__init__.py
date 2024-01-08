@@ -15,9 +15,7 @@ from .. import (
 
 DEPENDENCIES = ["econet"]
 
-EconetBinarySensor = econet_ns.class_(
-    "EconetBinarySensor", binary_sensor.BinarySensor, cg.Component, EconetClient
-)
+EconetBinarySensor = econet_ns.class_("EconetBinarySensor", binary_sensor.BinarySensor, cg.Component, EconetClient)
 
 CONFIG_SCHEMA = (
     binary_sensor.binary_sensor_schema(EconetBinarySensor)

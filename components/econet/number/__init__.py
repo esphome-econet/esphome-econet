@@ -21,9 +21,7 @@ from .. import (
 
 DEPENDENCIES = ["econet"]
 
-EconetNumber = econet_ns.class_(
-    "EconetNumber", number.Number, cg.Component, EconetClient
-)
+EconetNumber = econet_ns.class_("EconetNumber", number.Number, cg.Component, EconetClient)
 
 
 def validate_min_max(config):
