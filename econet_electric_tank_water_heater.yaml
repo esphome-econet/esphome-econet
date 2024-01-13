@@ -4,6 +4,8 @@ substitutions:
   friendly_name: "Water Heater"
   device_description: "Rheem Electric Tank Water Heater"
   sensor_power_filters_lambda: return x;
+  min_temperature: "43.33" # Celsius. 44.33C = 110F
+  max_temperature: "60" # Celsius. 60C = 140F
 
 packages:
   econet: !include econet_base.yaml
@@ -16,8 +18,8 @@ climate:
     id: econet_climate
     name: None
     visual:
-      min_temperature: "43.3333"
-      max_temperature: "60"
+      min_temperature: $min_temperature
+      max_temperature: $max_temperature
       temperature_step: 1.0f
     current_temperature_datapoint: UPHTRTMP
     target_temperature_datapoint: WHTRSETP

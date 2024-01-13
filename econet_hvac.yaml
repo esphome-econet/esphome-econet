@@ -5,6 +5,8 @@ substitutions:
   device_description: "Rheem HVAC"
   thermostat_address: "0x380"
   wifi_module_address: "0x340"
+  min_temperature: "10" # Celsius. 10C = 50F
+  max_temperature: "32.2222" # Celsius. 32.2222C ~= 90F
 
 packages:
   econet: !include econet_base.yaml
@@ -17,8 +19,8 @@ climate:
     id: econet_climate
     name: "HVAC"
     visual:
-      min_temperature: "10"
-      max_temperature: "32.2222"
+      min_temperature: $min_temperature
+      max_temperature: $max_temperature
       temperature_step: 1.0f
       min_humidity: 10
       max_humidity: 80

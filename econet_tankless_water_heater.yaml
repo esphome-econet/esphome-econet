@@ -5,6 +5,8 @@ substitutions:
   device_description: "Rheem Tankless Water Heater"
   econet_update_interval: 5s
   tankless_kbtus_per_m3: "35.300" # Natural Gas = approx 35.300, Propane = approx 88.852
+  min_temperature: "43.33" # Celsius. 44.33C = 110F
+  max_temperature: "60" # Celsius. 60C = 140F
 
 packages:
   econet: !include econet_base.yaml
@@ -17,8 +19,8 @@ climate:
     id: econet_climate
     name: None
     visual:
-      min_temperature: "43.3333"
-      max_temperature: "60"
+      min_temperature: $min_temperature
+      max_temperature: $max_temperature
       temperature_step: 1.0f
     current_temperature_datapoint: TEMP_OUT
     target_temperature_datapoint: WHTRSETP
