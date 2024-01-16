@@ -28,7 +28,9 @@ CONF_MODES = "modes"
 CONF_CURRENT_HUMIDITY_DATAPOINT = "current_humidity_datapoint"
 CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT = "target_dehumidification_level_datapoint"
 
-EconetClimate = econet_ns.class_("EconetClimate", climate.Climate, cg.Component, EconetClient)
+EconetClimate = econet_ns.class_(
+    "EconetClimate", climate.Climate, cg.Component, EconetClient
+)
 
 
 def ensure_climate_mode_map(value):
@@ -64,13 +66,17 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_MODE_DATAPOINT, default=""): cv.string,
             cv.Optional(CONF_CUSTOM_PRESET_DATAPOINT, default=""): cv.string,
             cv.Optional(CONF_CUSTOM_FAN_MODE_DATAPOINT, default=""): cv.string,
-            cv.Optional(CONF_CUSTOM_FAN_MODE_NO_SCHEDULE_DATAPOINT, default=""): cv.string,
+            cv.Optional(
+                CONF_CUSTOM_FAN_MODE_NO_SCHEDULE_DATAPOINT, default=""
+            ): cv.string,
             cv.Optional(CONF_FOLLOW_SCHEDULE_DATAPOINT, default=""): cv.string,
             cv.Optional(CONF_MODES, default={}): ensure_climate_mode_map,
             cv.Optional(CONF_CUSTOM_PRESETS, default={}): ensure_option_map,
             cv.Optional(CONF_CUSTOM_FAN_MODES, default={}): ensure_option_map,
             cv.Optional(CONF_CURRENT_HUMIDITY_DATAPOINT, default=""): cv.string,
-            cv.Optional(CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT, default=""): cv.string,
+            cv.Optional(
+                CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT, default=""
+            ): cv.string,
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
@@ -90,12 +96,22 @@ async def to_code(config):
     cg.add(var.set_src_adr(config[CONF_SRC_ADDRESS]))
     cg.add(var.set_current_temperature_id(config[CONF_CURRENT_TEMPERATURE_DATAPOINT]))
     cg.add(var.set_target_temperature_id(config[CONF_TARGET_TEMPERATURE_DATAPOINT]))
-    cg.add(var.set_target_temperature_low_id(config[CONF_TARGET_TEMPERATURE_LOW_DATAPOINT]))
-    cg.add(var.set_target_temperature_high_id(config[CONF_TARGET_TEMPERATURE_HIGH_DATAPOINT]))
+    cg.add(
+        var.set_target_temperature_low_id(config[CONF_TARGET_TEMPERATURE_LOW_DATAPOINT])
+    )
+    cg.add(
+        var.set_target_temperature_high_id(
+            config[CONF_TARGET_TEMPERATURE_HIGH_DATAPOINT]
+        )
+    )
     cg.add(var.set_mode_id(config[CONF_MODE_DATAPOINT]))
     cg.add(var.set_custom_preset_id(config[CONF_CUSTOM_PRESET_DATAPOINT]))
     cg.add(var.set_custom_fan_mode_id(config[CONF_CUSTOM_FAN_MODE_DATAPOINT]))
-    cg.add(var.set_custom_fan_mode_no_schedule_id(config[CONF_CUSTOM_FAN_MODE_NO_SCHEDULE_DATAPOINT]))
+    cg.add(
+        var.set_custom_fan_mode_no_schedule_id(
+            config[CONF_CUSTOM_FAN_MODE_NO_SCHEDULE_DATAPOINT]
+        )
+    )
     cg.add(var.set_follow_schedule_id(config[CONF_FOLLOW_SCHEDULE_DATAPOINT]))
     cg.add(
         var.set_modes(
@@ -116,4 +132,8 @@ async def to_code(config):
         )
     )
     cg.add(var.set_current_humidity_id(config[CONF_CURRENT_HUMIDITY_DATAPOINT]))
-    cg.add(var.set_target_dehumidification_level_id(config[CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT]))
+    cg.add(
+        var.set_target_dehumidification_level_id(
+            config[CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT]
+        )
+    )

@@ -15,7 +15,9 @@ from .. import (
 
 DEPENDENCIES = ["econet"]
 
-EconetTextSensor = econet_ns.class_("EconetTextSensor", text_sensor.TextSensor, cg.Component, EconetClient)
+EconetTextSensor = econet_ns.class_(
+    "EconetTextSensor", text_sensor.TextSensor, cg.Component, EconetClient
+)
 
 CONFIG_SCHEMA = (
     text_sensor.text_sensor_schema()

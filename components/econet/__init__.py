@@ -41,7 +41,9 @@ DATAPOINT_TRIGGERS = {
 
 def assign_declare_id(value):
     value = value.copy()
-    value[CONF_TRIGGER_ID] = cv.declare_id(DATAPOINT_TRIGGERS[value[CONF_DATAPOINT_TYPE]])(value[CONF_TRIGGER_ID].id)
+    value[CONF_TRIGGER_ID] = cv.declare_id(
+        DATAPOINT_TRIGGERS[value[CONF_DATAPOINT_TYPE]]
+    )(value[CONF_TRIGGER_ID].id)
     return value
 
 
@@ -57,7 +59,9 @@ def request_mod(value):
 
 def validate_request_mod_update_intervals(value):
     cv.check_not_templatable(value)
-    options_map_schema = cv.Schema({validate_request_mod_range: cv.positive_time_period_milliseconds})
+    options_map_schema = cv.Schema(
+        {validate_request_mod_range: cv.positive_time_period_milliseconds}
+    )
     value = options_map_schema(value)
     return value
 
@@ -77,17 +81,23 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_DST_ADDRESS, default="0"): cv.uint32_t,
             cv.Optional(CONF_ON_DATAPOINT_UPDATE): automation.validate_automation(
                 {
-                    cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(DATAPOINT_TRIGGERS[DPTYPE_RAW]),
+                    cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(
+                        DATAPOINT_TRIGGERS[DPTYPE_RAW]
+                    ),
                     cv.Required(CONF_SENSOR_DATAPOINT): cv.string,
                     cv.Optional(CONF_REQUEST_MOD, default="none"): request_mod,
                     cv.Optional(CONF_REQUEST_ONCE, default=False): cv.boolean,
-                    cv.Optional(CONF_DATAPOINT_TYPE, default=DPTYPE_RAW): cv.one_of(*DATAPOINT_TRIGGERS, lower=True),
+                    cv.Optional(CONF_DATAPOINT_TYPE, default=DPTYPE_RAW): cv.one_of(
+                        *DATAPOINT_TRIGGERS, lower=True
+                    ),
                     cv.Optional(CONF_SRC_ADDRESS, default=0): cv.uint32_t,
                 },
                 extra_validators=assign_declare_id,
             ),
             cv.Optional(CONF_FLOW_CONTROL_PIN): pins.gpio_output_pin_schema,
-            cv.Optional(CONF_REQUEST_MOD_UPDATE_INTERVALS): validate_request_mod_update_intervals,
+            cv.Optional(
+                CONF_REQUEST_MOD_UPDATE_INTERVALS
+            ): validate_request_mod_update_intervals,
             cv.Optional(CONF_REQUEST_MOD_ADDRESSES): validate_request_mod_addresses,
         }
     )
@@ -140,4 +150,6 @@ async def to_code(config):
             conf[CONF_REQUEST_ONCE],
             conf[CONF_SRC_ADDRESS],
         )
-        await automation.build_automation(trigger, [(DATAPOINT_TYPES[conf[CONF_DATAPOINT_TYPE]], "x")], conf)
+        await automation.build_automation(
+            trigger, [(DATAPOINT_TYPES[conf[CONF_DATAPOINT_TYPE]], "x")], conf
+        )

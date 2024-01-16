@@ -15,7 +15,9 @@ from .. import (
 
 DEPENDENCIES = ["econet"]
 
-EconetSwitch = econet_ns.class_("EconetSwitch", switch.Switch, cg.Component, EconetClient)
+EconetSwitch = econet_ns.class_(
+    "EconetSwitch", switch.Switch, cg.Component, EconetClient
+)
 
 CONFIG_SCHEMA = (
     switch.switch_schema(EconetSwitch)
