@@ -1,0 +1,31 @@
+[tool.codespell]
+# Check filename spelling in addition to file contents
+check-filenames = ''
+
+[tool.ruff]
+fix = true
+show-fixes = true
+select = [
+    "UP", # Repalces pyupgrade
+]
+ignore = [
+    # May conflict with the formatter, https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+    "W191",
+    "E111",
+    "E114",
+    "E117",
+    "D206",
+    "D300",
+    "Q000",
+    "Q001",
+    "Q002",
+    "Q003",
+    "COM812",
+    "COM819",
+    "ISC001",
+    "ISC002",
+]
+
+[tool.ruff.format]
+# Use `\n` line endings for all files
+line-ending = "lf"

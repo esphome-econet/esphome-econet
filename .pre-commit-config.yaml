@@ -2,25 +2,11 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
-  - repo: https://github.com/psf/black
-    rev: 23.12.1
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.11
     hooks:
-      - id: black
-        args:
-          - --safe
-          - --quiet
-  - repo: https://github.com/PyCQA/flake8
-    rev: 6.1.0
-    hooks:
-      - id: flake8
-        additional_dependencies:
-          - flake8-docstrings==1.7.0
-          - pydocstyle==6.3.0
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.0
-    hooks:
-      - id: pyupgrade
-        args: [--py39-plus]
+      - id: ruff
+      - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v17.0.6
     hooks:
