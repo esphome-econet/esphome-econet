@@ -7,9 +7,15 @@ packages:  # Change this file to the correct one(s) for your device
   # econet-hvac-furnace: !include econet_hvac_furnace.yaml
   # econet-hvac-air-handler: !include econet_hvac_air_handler.yaml
   # econet-hvac-odu: !include econet_hvac_odu.yaml  # Depends on econet_hvac_[furnace or air_handler].yaml
-  # econet-hvac-zones: !include econet_hvac_zones.yaml # Include this file if you have a zone system. Modify for actually-used zones.
   # econet-tlwh: !include econet_tankless_water_heater.yaml
   # econet-etwh: !include econet_electric_tank_water_heater.yaml
+  # for hvac zones, uncomment lines below as appropriate.  requires an econet-hvac-furnace or econet-hvac-air-handler
+  # econet-zone1: !include {file: econet_hvac_zone1.yaml, vars: {zonename: "Zone1Name"}} # zonename is required.
+  # econet-zone2: !include {file: econet_hvac_zone2.yaml, vars: {zonename: "Zone2Name"}} # zonename is required
+  # econet-zone3: !include {file: econet_hvac_zone3.yaml, vars: {zonename: "Zone3Name"}} # zonename is required
+  # econet-zone3-bypass: !include econet_hvac_zone3_electronicbypass.yaml
+  # zones 4, 5, 6 not yet supported.  only zone6 as bypass is supported.  if you have these zones, please file an issue
+  # econet-zone6-bypass: !include econet_hvac_zone6_electronicbypass.yaml
 
 wifi:
   ssid: !secret wifi_ssid

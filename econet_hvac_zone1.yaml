@@ -1,0 +1,17 @@
+---
+# This removes the non-zone climate entity for zone1, to be replaced below.
+climate:
+  - id: !remove econet_climate
+
+econet:
+  request_mod_addresses:
+    10: 0x380
+
+packages:
+  zone1: !include
+    file: econet_hvac_zone_template.yaml
+    vars:
+      zonenumber: "1"
+      zone_thermostat_requestmod: 10
+      primary_thermostat_requestmod: 10
+      zone_thermostat_address: 0x380

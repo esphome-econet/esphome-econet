@@ -8,7 +8,8 @@ substitutions:
 
 text_sensor:
   - platform: econet
-    name: HVAC Zone ${zonenumber} Name
+    id: econet_hvac_zone_${zonenumber}_name
+    name: Zone ${zonenumber} Name
     src_address: ${zone_thermostat_address}
     sensor_datapoint: EQP_NAME
     request_mod: ${zone_thermostat_requestmod}
@@ -17,7 +18,7 @@ text_sensor:
 climate:
   - platform: econet
     id: econet_climate_zone${zonenumber}
-    name: HVAC ${zonename} Climate
+    name: ${zonename} Climate
     src_address: ${zone_thermostat_address}
     visual:
       min_temperature: "10"
@@ -44,24 +45,4 @@ climate:
     current_humidity_datapoint: RELH7005
     target_dehumidification_level_datapoint: DHUMSETP
 
-
-sensor:
-  - platform: econet
-    src_address: ${primary_thermostat_address}
-    name: HVAC ${zonename} CFM
-    sensor_datapoint: Z${zonenumber}CFMDSP
-    request_mod: ${primary_thermostat_requestmod}
-    state_class: "measurement"
-    entity_category: "diagnostic"
-    unit_of_measurement: "cfm"
-
-binary_sensor:
-  - platform: econet
-    src_address: ${primary_thermostat_address}
-    name: HVAC Zone ${zonenumber} enabled
-    sensor_datapoint: ZON${zonenumber}ENAB
-    icon: "mdi:heating-coil"
-    entity_category: "diagnostic"
-#    disabled_by_default: true
-    request_mod: ${primary_thermostat_requestmod}
-    request_once: true
+<<: !include econet_hvac_zone_sensors_template.yaml

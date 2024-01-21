@@ -1,17 +1,8 @@
 ---
-# packages:
-#   econet: !include econet_hvac_furnace.yaml
-
-text_sensor:
-  - platform: econet
-    name: z${zonenumber}name
-    sensor_datapoint: Z${zonenumber}__NAME
-    request_mod: ${primary_thermostat_requestmod}
-    request_once: true
-
 sensor:
   - platform: econet
-    name: HVAC ${zonename} CFM
+    src_address: ${primary_thermostat_address}
+    name: ${zonename} CFM
     sensor_datapoint: Z${zonenumber}CFMDSP
     request_mod: ${primary_thermostat_requestmod}
     state_class: "measurement"
@@ -20,10 +11,10 @@ sensor:
 
 binary_sensor:
   - platform: econet
-    name: zone {zonenumber} enabled
+    src_address: ${primary_thermostat_address}
+    name: Zone ${zonenumber} enabled
     sensor_datapoint: ZON${zonenumber}ENAB
     icon: "mdi:heating-coil"
     entity_category: "diagnostic"
-    disabled_by_default: true
     request_mod: ${primary_thermostat_requestmod}
     request_once: true

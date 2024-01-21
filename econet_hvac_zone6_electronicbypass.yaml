@@ -1,0 +1,12 @@
+---
+econet:
+  request_mod_addresses:
+    10: 0x380
+
+packages:  # Comment out the bypass section if your system has a mechanical (non-electrical) for the bypass zone
+  bypasszone: !include
+    file: econet_hvac_zone_sensors_template.yaml
+    vars:
+      zonenumber: "6"
+      zonename: "Zone6"
+      primary_thermostat_requestmod: 10
