@@ -159,8 +159,8 @@ void Econet::parse_message_(bool is_tx) {
 
   ESP_LOGI(TAG, "%s %s", is_tx ? ">>>" : "<<<",
            format_hex_pretty(b, MSG_HEADER_SIZE + data_len + MSG_CRC_SIZE).c_str());
-  ESP_LOGI(TAG, "  Dst Adr : 0x%x", dst_adr);
-  ESP_LOGI(TAG, "  Src Adr : 0x%x", src_adr);
+  ESP_LOGI(TAG, "  Dst Adr : 0x%lx", dst_adr);
+  ESP_LOGI(TAG, "  Src Adr : 0x%lx", src_adr);
   ESP_LOGI(TAG, "  Command : %d", command);
   ESP_LOGI(TAG, "  Data    : %s", format_hex_pretty(pdata, data_len).c_str());
 
@@ -280,7 +280,7 @@ void Econet::parse_message_(bool is_tx) {
                pdata[5], pdata[4], pdata[3], pdata[2]);
     } else if (type == 9) {
       if (this->dst_adr_ != src_adr) {
-        ESP_LOGW(TAG, "Using 0x%x as dst_address from now on. File an issue if you see this more than once.", src_adr);
+        ESP_LOGW(TAG, "Using 0x%lx as dst_address from now on. File an issue if you see this more than once.", src_adr);
         this->dst_adr_ = src_adr;
       }
     }
@@ -384,7 +384,7 @@ void Econet::loop() {
   int bytes_available = this->available();
   if (bytes_available > 0) {
     this->last_read_data_ = now;
-    ESP_LOGI(TAG, "Read %d. ms=%d", bytes_available, now);
+    ESP_LOGI(TAG, "Read %d. ms=%ld", bytes_available, now);
     this->read_buffer_(bytes_available);
     return;
   }
