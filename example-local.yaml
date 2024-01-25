@@ -1,6 +1,12 @@
 ---
 substitutions:
   external_components_source: components  # Build with local code instead of pulling from Github
+  zone1name: Zone1Name #zone names are required for hvac zone control
+  zone2name: Zone2Name
+  zone3name: Zone3Name #rename to "Bypass" if using zone3 as bypass
+  zone4name: Zone4Name
+  zone5name: Zone5Name
+  zone6name: Zone6Name #rename to "Bypass" if using zone6 as bypass
 
 packages:  # Change this file to the correct one(s) for your device
   econet-hpwh: !include econet_heatpump_water_heater.yaml
@@ -10,12 +16,14 @@ packages:  # Change this file to the correct one(s) for your device
   # econet-tlwh: !include econet_tankless_water_heater.yaml
   # econet-etwh: !include econet_electric_tank_water_heater.yaml
   # for hvac zones, uncomment lines below as appropriate.  requires an econet-hvac-furnace or econet-hvac-air-handler
-  # econet-zone1: !include {file: econet_hvac_zone1.yaml, vars: {zonename: "Zone1Name"}} # zonename is required.
-  # econet-zone2: !include {file: econet_hvac_zone2.yaml, vars: {zonename: "Zone2Name"}} # zonename is required
-  # econet-zone3: !include {file: econet_hvac_zone3.yaml, vars: {zonename: "Zone3Name"}} # zonename is required
-  # econet-zone3-bypass: !include econet_hvac_zone3_electronicbypass.yaml
+  # econet-zonecontrolboard123: !include econet_hvac_zone123status.yaml #include if using zones 1,2, or 3
+  # econet-zonecontrolboard456: !include econet_hvac_zone456status.yaml #include if using zones 4,5, or 6
+  # econet-zone1: !include {file: econet_hvac_zone1.yaml, vars: {zonename: '${zone1name}'}}
+  # econet-zone2: !include {file: econet_hvac_zone2.yaml, vars: {zonename: '${zone2name}'}}
+  # econet-zone3: !include {file: econet_hvac_zone3.yaml, vars: {zonename: '${zone3name}'}}
+  # econet-zone3-bypass: !include {file: econet_hvac_zone3_electronicbypass.yaml, vars: {zonename: ${zone3name}}}
   # zones 4, 5, 6 not yet supported.  only zone6 as bypass is supported.  if you have these zones, please file an issue
-  # econet-zone6-bypass: !include econet_hvac_zone6_electronicbypass.yaml
+  # econet-zone6-bypass: !include {file: econet_hvac_zone6_electronicbypass.yaml, vars: {zonename: '${zone6name}'}}
 
 wifi:
   ssid: !secret wifi_ssid

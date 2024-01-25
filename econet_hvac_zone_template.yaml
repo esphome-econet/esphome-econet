@@ -1,23 +1,20 @@
 ---
 substitutions:
   primary_thermostat_address: "0x380"
-  wifi_module_address: "0x340"
-
-# packages:
-#   econet: !include econet_hvac_furnace.yaml
 
 text_sensor:
   - platform: econet
-    id: econet_hvac_zone_${zonenumber}_name
-    name: Zone ${zonenumber} Name
+    id: zone${zonenumber}_equipment_name
+    name: Zone${zonenumber} Equipment Name
     src_address: ${zone_thermostat_address}
     sensor_datapoint: EQP_NAME
     request_mod: ${zone_thermostat_requestmod}
+    entity_category: "diagnostic"
     request_once: true
 
 climate:
   - platform: econet
-    id: econet_climate_zone${zonenumber}
+    id: zone${zonenumber}_climate
     name: ${zonename} Climate
     src_address: ${zone_thermostat_address}
     visual:

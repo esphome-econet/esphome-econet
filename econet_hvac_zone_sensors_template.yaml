@@ -2,19 +2,10 @@
 sensor:
   - platform: econet
     src_address: ${primary_thermostat_address}
+    id: zone${zonenumber}_cfm
     name: ${zonename} CFM
     sensor_datapoint: Z${zonenumber}CFMDSP
     request_mod: ${primary_thermostat_requestmod}
     state_class: "measurement"
     entity_category: "diagnostic"
     unit_of_measurement: "cfm"
-
-binary_sensor:
-  - platform: econet
-    src_address: ${primary_thermostat_address}
-    name: Zone ${zonenumber} enabled
-    sensor_datapoint: ZON${zonenumber}ENAB
-    icon: "mdi:heating-coil"
-    entity_category: "diagnostic"
-    request_mod: ${primary_thermostat_requestmod}
-    request_once: true
