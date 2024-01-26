@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: [esp32, esp8266]
+        platform: [esp32, esp32s3, esp8266]
         appliance:
           - name: electric_tank_water_heater
             shorthand: etwh
