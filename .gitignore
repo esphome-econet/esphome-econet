@@ -132,3 +132,6 @@ sdkconfig.*
 !sdkconfig.defaults
 
 .tests/
+
+# ESPHome-Econet Ignores
+build-yaml/.gitignore
