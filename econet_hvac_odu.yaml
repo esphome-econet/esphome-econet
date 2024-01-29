@@ -234,3 +234,14 @@ sensor:
     request_mod: none
     accuracy_decimals: 1
     entity_category: "diagnostic"
+  - platform: econet
+    name: "ODU KW Hours"
+    id: odu_kwh
+    sensor_datapoint: ODU__KWH
+    request_mod: none
+    entity_category: "diagnostic"
+    state_class: "total_increasing"
+    device_class: energy
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 1
+
