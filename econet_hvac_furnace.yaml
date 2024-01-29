@@ -137,6 +137,10 @@ sensor:
     unit_of_measurement: "%"
     icon: "mdi:fire-circle"
     request_once: true
+    filters:
+      - lambda: |-  # Some furnaces seem to report waste rather than efficiency; this normalizes things to traditional AFUE
+          if (x < 50) return 100-x;
+          return x;
   - platform: econet
     name: "Furnace High Heat BTU Output"
     id: furnace_hh_btus
