@@ -13,6 +13,7 @@ econet:
   request_mod_addresses:
     5: ${furnace_address}
     6: ${furnace_address}
+    7: 1024
   on_datapoint_update:
     - sensor_datapoint: HWSTATUS
       datapoint_type: raw
