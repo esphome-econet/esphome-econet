@@ -269,5 +269,3 @@ text_sensor:
     src_address: 896
     icon: "mdi:information-box"
     entity_category: "diagnostic"
-
-
