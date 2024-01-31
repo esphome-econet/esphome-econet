@@ -1,4 +1,11 @@
 ---
+substitutions:
+  odu_address: "1024"
+
+econet:
+  request_mod_addresses:
+    7: ${odu_address}
+    
 sensor:
   - platform: econet
     name: "ODU Outside Air Temperature"
@@ -253,19 +260,23 @@ text_sensor:
     id: odu_model_no
     request_once: true
     request_mod: 7
-    src_address: 1024
+    src_address: ${odu_address}
+    icon: "mdi:information-box"
+    entity_category: "diagnostic"
   - platform: econet
     name: "ODU Serial Number"
     sensor_datapoint: PRODSERN
     id: odu_Serial_no
     request_once: true
     request_mod: 7
-    src_address: 1024
+    src_address: ${odu_address}
+    icon: "mdi:information-box"
+    entity_category: "diagnostic"
   - platform: econet
     name: "ODU Software Version"
     id: odu_sw_version
     sensor_datapoint: ODUSWVER
     request_once: true
-    src_address: 896
+    src_address: ${thermoatat_address}
     icon: "mdi:information-box"
     entity_category: "diagnostic"
