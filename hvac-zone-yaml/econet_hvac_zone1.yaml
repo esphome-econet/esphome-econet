@@ -11,6 +11,7 @@ packages:
   zone1: !include
     file: econet_hvac_zone_template.yaml
     vars:
+      zonename: ${zone1name}
       zonenumber: "1"
       zone_thermostat_requestmod: 10
       primary_thermostat_requestmod: 10

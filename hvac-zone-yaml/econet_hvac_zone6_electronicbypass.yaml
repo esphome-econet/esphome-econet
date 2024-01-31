@@ -7,5 +7,6 @@ packages:  # Comment out the bypass section if your system has a mechanical (non
   bypasszone: !include
     file: econet_hvac_zone_sensors_template.yaml
     vars:
+      zonename: ${zone6name}
       zonenumber: "6"
       primary_thermostat_requestmod: 10
