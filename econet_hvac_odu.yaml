@@ -5,7 +5,7 @@ substitutions:
 econet:
   request_mod_addresses:
     7: ${odu_address}
-    
+
 sensor:
   - platform: econet
     name: "ODU Outside Air Temperature"
