@@ -93,13 +93,6 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
-    name: "ODU Defrost"
-    id: odu_defrost
-    sensor_datapoint: ODU_DEFR
-    request_mod: none
-    accuracy_decimals: 1
-    entity_category: "diagnostic"
-  - platform: econet
     name: "ODU Low Cool Two Week Hours"
     id: odu_low_cool_two_week_hours
     sensor_datapoint: ODURCS1H
@@ -252,6 +245,15 @@ sensor:
     device_class: energy
     unit_of_measurement: "kWh"
     accuracy_decimals: 1
+
+binary_sensor:
+  - platform: econet
+    name: "ODU Defrost"
+    id: odu_defrost
+    sensor_datapoint: ODU_DEFR
+    request_mod: none
+    device_class: running
+    entity_category: "diagnostic"
 
 text_sensor:
   - platform: econet
