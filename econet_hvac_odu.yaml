@@ -277,6 +277,6 @@ text_sensor:
     id: odu_sw_version
     sensor_datapoint: ODUSWVER
     request_once: true
-    src_address: ${thermoatat_address}
+    src_address: ${thermostat_address}
     icon: "mdi:information-box"
     entity_category: "diagnostic"
