@@ -254,7 +254,7 @@ binary_sensor:
     request_mod: none
     device_class: running
     entity_category: "diagnostic"
-    
+
 text_sensor:
   - platform: econet
     name: "ODU Model Number"
