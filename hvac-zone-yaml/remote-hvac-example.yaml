@@ -1,0 +1,42 @@
+---
+substitutions:
+#  external_components_source: components  # Build with local code instead of pulling from Github
+  zone1name: Zone1Name-test #zone names required for hvac zone control
+  zone2name: Zone2Name-test
+  zone3name: Zone3Name-test
+  zone4name: Zone4Name-test
+  zone5name: Zone5Name-test
+  zone6name: Zone6Name-test
+  devicename: esphome-econet
+  friendly_name: HVAC
+  logger_level: VERBOSE
+
+esphome:
+  name: $devicename
+  platform: esp32
+  board: esp32dev
+  name_add_mac_suffix: false
+
+packages:
+  econet:
+    url: https://github.com/esphome-econet/esphome-econet
+    files: [
+        # for hvac zones, uncomment lines below as appropriate.  requires an econet-hvac-furnace or econet-hvac-air-handler
+      econet_hvac_furnace.yaml,
+      # econet_hvac_air_handler.yaml,
+      # econet_hvac_odu.yaml,  # Depends on econet_hvac_[furnace or air_handler].yaml
+      hvac-zone-yaml/econet_hvac_zone123status.yaml, #include if using zones 1,2, or 3
+      hvac-zone-yaml/econet_hvac_zone456status.yaml, #include if using zones 4,5, or 6
+      hvac-zone-yaml/econet_hvac_zone1.yaml,
+      hvac-zone-yaml/econet_hvac_zone2.yaml,
+      hvac-zone-yaml/econet_hvac_zone3.yaml,
+      # , hvac-zone-yaml/econet_hvac_zone3_electronicbypass.yaml,
+      # zones 4, 5, 6 not yet supported.  only zone6 as bypass is supported.  if you have these zones, please file an issue
+      hvac-zone-yaml/econet_hvac_zone6_electronicbypass.yaml
+    ]
+
+# If you have UNSUPPORTED sensors add something like the following to disable them
+# sensor:
+#   - id: !extend hot_water
+#     request_mod: none
+#     internal: true

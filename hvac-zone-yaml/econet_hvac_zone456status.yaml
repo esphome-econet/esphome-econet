@@ -1,0 +1,46 @@
+---
+substitutions:
+  zone_controlboard2_address: '0x541'
+
+econet:
+  on_datapoint_update:
+    - sensor_datapoint: ZONESTAT
+      datapoint_type: raw
+      src_address: ${zone_controlboard2_address}
+      then:
+        - lambda: |-
+            if (x.size() <= 14) {
+              return;
+            }
+            id(zone4_percent_open).publish_state((x[11] *100/35));
+            id(zone5_percent_open).publish_state((x[12] *100/35));
+            id(zone6_percent_open).publish_state((x[13] *100/35));
+
+sensor:
+  - platform: template
+    name: ${zone4name} Percent Open
+    id: zone4_percent_open
+    unit_of_measurement: "%"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: ${zone5name} Percent Open
+    id: zone5_percent_open
+    unit_of_measurement: "%"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    filters:
+      - delta: 0.9
+  - platform: template
+    name: ${zone6name} Percent Open
+    id: zone6_percent_open
+    unit_of_measurement: "%"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+    accuracy_decimals: 0
+    filters:
+      - delta: 0.9

@@ -1,0 +1,15 @@
+---
+econet:
+  request_mod_addresses:
+    10: 0x380
+    12: 0x681
+
+packages:
+  zone3: !include
+    file: econet_hvac_zone_template.yaml
+    vars:
+      zonename: ${zone3name}
+      zonenumber: "3"
+      zone_thermostat_requestmod: 12
+      primary_thermostat_requestmod: 10
+      zone_thermostat_address: 0x681
