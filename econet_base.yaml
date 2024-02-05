@@ -23,7 +23,7 @@ esphome:
   board: $board
   project:
     name: "esphome-econet.esphome-econet"
-    version: v1.17.0
+    version: v1.17.1
 preferences:
   flash_write_interval: "24h"
 wifi:
