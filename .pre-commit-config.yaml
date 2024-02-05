@@ -3,7 +3,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.11
+    rev: v0.2.0
     hooks:
       - id: ruff
       - id: ruff-format
@@ -16,7 +16,7 @@ repos:
     hooks:
       - id: yamllint
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: v0.11.0
+    rev: v0.12.1
     hooks:
       - id: markdownlint-cli2
   - repo: https://github.com/codespell-project/codespell
