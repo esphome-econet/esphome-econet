@@ -245,15 +245,22 @@ sensor:
     device_class: energy
     unit_of_measurement: "kWh"
     accuracy_decimals: 1
-
-binary_sensor:
   - platform: econet
-    name: "ODU Defrost"
-    id: odu_defrost
+    name: "ODU Defrost Sensor"
+    id: odu_defrost_sensor
     sensor_datapoint: ODU_DEFR
     request_mod: none
+    accuracy_decimals: 0
+    internal: true
+
+binary_sensor:
+  - platform: template
+    name: "ODU Defrost"
+    id: odu_defrost
     device_class: running
     entity_category: "diagnostic"
+    lambda: |-
+      return (id(odu_defrost_sensor).state == 1);
 
 text_sensor:
   - platform: econet
