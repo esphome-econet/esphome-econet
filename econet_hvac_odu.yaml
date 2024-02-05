@@ -260,7 +260,7 @@ binary_sensor:
     device_class: running
     entity_category: "diagnostic"
     lambda: |-
-      return (id(odu_defrost_sensor).state == 1)
+      return (id(odu_defrost_sensor).state == 1);
 
 text_sensor:
   - platform: econet
