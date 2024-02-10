@@ -268,7 +268,7 @@ sensor:
     request_mod: 7
     icon: "mdi:information-box"
     entity_category: "diagnostic"
-    
+
 binary_sensor:
   - platform: template
     name: "ODU Defrost"
