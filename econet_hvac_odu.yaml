@@ -258,6 +258,7 @@ sensor:
     sensor_datapoint: ODU_SIZE
     request_once: true
     request_mod: 7
+    accuracy_decimals: 1
     icon: "mdi:information-box"
     entity_category: "diagnostic"
   - platform: econet
