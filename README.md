@@ -18,7 +18,7 @@ This package and the Rheem EcoNet integration can coexist if desired.
 
 ## Supported Rheem Hardware
 
-Most modern Rheem Heat Pump Water Heaters, Tankless Water Heaters, Electric Tank Water Heaters, and HVAC Systems are supported.
+Most modern Rheem Heat Pump Water Heaters, Tankless Water Heaters, Electric Tank Water Heaters, and HVAC Systems (with preliminary support for multi-zone systems) are supported.
 
 ## Required ESPHome Hardware
 

@@ -252,6 +252,23 @@ sensor:
     request_mod: none
     accuracy_decimals: 0
     internal: true
+  - platform: econet
+    name: "ODU Size (Tons)"
+    id: odu_size
+    sensor_datapoint: ODU_SIZE
+    request_once: true
+    request_mod: 7
+    accuracy_decimals: 1
+    icon: "mdi:information-box"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "ODU Type"
+    id: odu_type
+    sensor_datapoint: ODU_TYPE
+    request_once: true
+    request_mod: 7
+    icon: "mdi:information-box"
+    entity_category: "diagnostic"
 
 binary_sensor:
   - platform: template
