@@ -30,8 +30,8 @@ packages:
       hvac-zone-yaml/econet_hvac_zone1.yaml,
       hvac-zone-yaml/econet_hvac_zone2.yaml,
       hvac-zone-yaml/econet_hvac_zone3.yaml,
-      # , hvac-zone-yaml/econet_hvac_zone3_electronicbypass.yaml,
-      # hvac-zone-yaml/econet_hvac_zone4.yaml, 
+      # hvac-zone-yaml/econet_hvac_zone3_electronicbypass.yaml,
+      # hvac-zone-yaml/econet_hvac_zone4.yaml,
       # zones 5, 6 not yet supported.  only zone6 as bypass is supported.  if you have these zones, please file an issue
       hvac-zone-yaml/econet_hvac_zone6_electronicbypass.yaml
     ]
