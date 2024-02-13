@@ -5,7 +5,7 @@ econet:
     13: 0x682
 
 packages:
-  zone3: !include
+  zone4: !include
     file: econet_hvac_zone_template.yaml
     vars:
       zonename: ${zone4name}
