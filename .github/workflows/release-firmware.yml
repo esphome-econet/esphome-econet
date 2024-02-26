@@ -21,7 +21,7 @@ jobs:
     steps:
       - name: Generate Release Version
         id: generate_release_version
-        uses: zwaldowski/semver-release-action@v3
+        uses: zwaldowski/semver-release-action@v4
         with:
           bump: ${{ inputs.bump }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
