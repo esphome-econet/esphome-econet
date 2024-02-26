@@ -162,11 +162,11 @@ text_sensor:
     entity_category: "diagnostic"
     disabled_by_default: true
     lambda: |-
-      const int timeStringSize = 21;
+      const int time_string_size = 21;
       if (!((int) id(irtc_seconds).state >= 0)) {  // Return undefined if values haven't been successfully fetched yet
         return {};
       }
-      struct tm controllerTime = {
+      struct tm controller_time = {
         .tm_sec = (int) id(irtc_seconds).state,
         .tm_min = (int) id(irtc_minute).state,
         .tm_hour = (int) id(irtc_hour).state,
@@ -175,10 +175,10 @@ text_sensor:
         .tm_year = (int) id(irtc_year).state +
                   100  // +100 since C++ expects years since 1900, while econet outputs years since 2000
       };
-      char timeString[timeStringSize];
-      std::strftime(timeString, timeStringSize, "%FT%TZ", &controllerTime);
-      std::string controllerTimeString(timeString);
-      return controllerTimeString;
+      char time_string[time_string_size];
+      std::strftime(time_string, time_string_size, "%FT%TZ", &controller_time);
+      std::string controller_time_string(time_string);
+      return controller_time_string;
 
 switch:
   - platform: econet
