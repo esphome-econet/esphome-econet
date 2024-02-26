@@ -158,7 +158,7 @@ text_sensor:
     name: "Microcontroller Datetime"
     id: irtc_time
     icon: mdi:calendar-clock
-    update_interval: 30s
+    update_interval: ${econet_update_interval}
     entity_category: "diagnostic"
     disabled_by_default: true
     lambda: |-
@@ -172,11 +172,11 @@ text_sensor:
         .tm_hour = (int) id(irtc_hour).state,
         .tm_mday = (int) id(irtc_day).state,
         .tm_mon = (int) id(irtc_month).state - 1,  // -1 since C++ expects 0-11, while Econet outputs 1-12
-        .tm_year = (int) id(irtc_year).state + 100  // +100 since C++ expects years since 1900, while econet outputs years since 2000
+        .tm_year = (int) id(irtc_year).state +
+                  100  // +100 since C++ expects years since 1900, while econet outputs years since 2000
       };
       char timeString[timeStringSize];
-      std::strftime(timeString, timeStringSize,
-                    "%FT%TZ", &controllerTime);
+      std::strftime(timeString, timeStringSize, "%FT%TZ", &controllerTime);
       std::string controllerTimeString(timeString);
       return controllerTimeString;
 
