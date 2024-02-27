@@ -162,21 +162,20 @@ text_sensor:
     entity_category: "diagnostic"
     disabled_by_default: true
     lambda: |-
-      const int time_string_size = 21;
-      if (!((int) id(irtc_seconds).state >= 0)) {  // Return undefined if values haven't been successfully fetched yet
+      if (isnan(id(irtc_seconds).state)) {
+        // Return undefined if values haven't been successfully fetched yet
         return {};
       }
-      struct tm controller_time = {
+      tm controller_time = {
         .tm_sec = (int) id(irtc_seconds).state,
         .tm_min = (int) id(irtc_minute).state,
         .tm_hour = (int) id(irtc_hour).state,
         .tm_mday = (int) id(irtc_day).state,
-        .tm_mon = (int) id(irtc_month).state - 1,  // -1 since C++ expects 0-11, while Econet outputs 1-12
-        .tm_year = (int) id(irtc_year).state +
-                  100  // +100 since C++ expects years since 1900, while econet outputs years since 2000
+        .tm_mon = (int) id(irtc_month).state - 1,  // C++: 0-11, econet: 1-12
+        .tm_year = (int) id(irtc_year).state + 2000 - 1900  // C++: years since 1900, econet: since 2000
       };
-      char time_string[time_string_size];
-      std::strftime(time_string, time_string_size, "%FT%TZ", &controller_time);
+      char time_string[21];
+      std::strftime(time_string, sizeof(time_string), "%FT%TZ", &controller_time);
       std::string controller_time_string(time_string);
       return controller_time_string;
 switch:
@@ -257,7 +256,7 @@ number:
     unit_of_measurement: "y"
     step: 1
     min_value: 24
-    max_value: 50
+    max_value: 99
     mode: box
     entity_category: "config"
     icon: mdi:calendar-clock
