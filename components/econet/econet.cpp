@@ -641,7 +641,7 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
 // Fires a Home Assistant event: "esphome.econet_event" with the response.
 void Econet::homeassistant_read(const std::string &datapoint_id, uint32_t address) {
   if (address == 0) {
-    address = src_adr_;
+    address = dst_adr_;
   }
   register_listener(datapoint_id, -1, true, [this, datapoint_id](const EconetDatapoint &datapoint) {
     std::map<std::string, std::string> data;
