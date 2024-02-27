@@ -154,6 +154,32 @@ text_sensor:
     request_once: true
     icon: "mdi:information-box"
     entity_category: "diagnostic"
+  - platform: template
+    name: "Microcontroller Datetime"
+    id: irtc_time
+    icon: mdi:calendar-clock
+    update_interval: ${econet_update_interval}
+    entity_category: "diagnostic"
+    disabled_by_default: true
+    lambda: |-
+      const int time_string_size = 21;
+      if (!((int) id(irtc_seconds).state >= 0)) {  // Return undefined if values haven't been successfully fetched yet
+        return {};
+      }
+      struct tm controller_time = {
+        .tm_sec = (int) id(irtc_seconds).state,
+        .tm_min = (int) id(irtc_minute).state,
+        .tm_hour = (int) id(irtc_hour).state,
+        .tm_mday = (int) id(irtc_day).state,
+        .tm_mon = (int) id(irtc_month).state - 1,  // -1 since C++ expects 0-11, while Econet outputs 1-12
+        .tm_year = (int) id(irtc_year).state +
+                  100  // +100 since C++ expects years since 1900, while econet outputs years since 2000
+      };
+      char time_string[time_string_size];
+      std::strftime(time_string, time_string_size, "%FT%TZ", &controller_time);
+      std::string controller_time_string(time_string);
+      return controller_time_string;
+
 switch:
   - platform: econet
     name: "Beep On Alarm"
@@ -224,3 +250,82 @@ button:
       - switch.turn_on: alhisclr
       - delay: 1s
       - switch.turn_off: alhisclr
+number:
+  - platform: econet
+    name: "IRTC Year"
+    id: irtc_year
+    number_datapoint: IRTCYEAR
+    unit_of_measurement: "y"
+    step: 1
+    min_value: 24
+    max_value: 50
+    mode: box
+    entity_category: "config"
+    icon: mdi:calendar-clock
+    request_mod: 8
+    internal: true
+  - platform: econet
+    name: "IRTC Month"
+    id: irtc_month
+    number_datapoint: IRTCMONT
+    unit_of_measurement: "m"
+    step: 1
+    min_value: 1
+    max_value: 12
+    mode: box
+    entity_category: "config"
+    icon: mdi:calendar-clock
+    request_mod: 8
+    internal: true
+  - platform: econet
+    name: "IRTC Day"
+    id: irtc_day
+    number_datapoint: IRTCDAYS
+    unit_of_measurement: "d"
+    step: 1
+    min_value: 1
+    max_value: 31
+    mode: box
+    entity_category: "config"
+    icon: mdi:calendar-clock
+    request_mod: 8
+    internal: true
+  - platform: econet
+    name: "IRTC Hour"
+    id: irtc_hour
+    number_datapoint: IRTCHOUR
+    unit_of_measurement: "h"
+    step: 1
+    min_value: 0
+    max_value: 23
+    mode: box
+    entity_category: "config"
+    icon: mdi:calendar-clock
+    request_mod: 8
+    internal: true
+  - platform: econet
+    name: "IRTC Minute"
+    id: irtc_minute
+    number_datapoint: IRTCMINS
+    unit_of_measurement: "min"
+    step: 1
+    min_value: 0
+    max_value: 59
+    mode: box
+    entity_category: "config"
+    icon: mdi:calendar-clock
+    request_mod: 8
+    internal: true
+  - platform: econet
+    name: "IRTC Seconds"
+    id: irtc_seconds
+    number_datapoint: IRTCSECS
+    unit_of_measurement: "s"
+    step: 1
+    min_value: 0
+    max_value: 59
+    mode: box
+    entity_category: "config"
+    icon: mdi:calendar-clock
+    request_mod: 8
+    internal: true
