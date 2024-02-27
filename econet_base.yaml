@@ -89,6 +89,30 @@ sensor:
     name: "WiFi Signal Strength"
     id: wifi_signal_sensor
     entity_category: "diagnostic"
+time:
+  - platform: sntp
+    id: sntp_time
+    on_time_sync:
+      then:
+        - logger.log: "Synchronized system clock"
+        - number.set:
+            id: irtc_year
+            value: !lambda return id(sntp_time).utcnow().year - 2000;
+        - number.set:
+            id: irtc_month
+            value: !lambda return id(sntp_time).utcnow().month;
+        - number.set:
+            id: irtc_day
+            value: !lambda return id(sntp_time).utcnow().day_of_month;
+        - number.set:
+            id: irtc_hour
+            value: !lambda return id(sntp_time).utcnow().hour;
+        - number.set:
+            id: irtc_minute
+            value: !lambda return id(sntp_time).utcnow().minute;
+        - number.set:
+            id: irtc_seconds
+            value: !lambda return id(sntp_time).utcnow().second;
 text_sensor:
   - platform: econet
     name: "Alarm 1"
