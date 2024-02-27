@@ -23,7 +23,7 @@ esphome:
   board: $board
   project:
     name: "esphome-econet.esphome-econet"
-    version: v1.19.0
+    version: v1.20.0
 preferences:
   flash_write_interval: "24h"
 wifi:
@@ -179,7 +179,6 @@ text_sensor:
       std::strftime(time_string, time_string_size, "%FT%TZ", &controller_time);
       std::string controller_time_string(time_string);
       return controller_time_string;
-
 switch:
   - platform: econet
     name: "Beep On Alarm"
