@@ -94,7 +94,10 @@ time:
     id: sntp_time
     on_time_sync:
       then:
-        - logger.log: "Synchronized system clock"
+        - logger.log:
+            format: "Synchronizing microcontroller to esphome-econet time"
+            level: info
+            tag: sntp_time
         - number.set:
             id: irtc_year
             value: !lambda return id(sntp_time).utcnow().year - 2000;
