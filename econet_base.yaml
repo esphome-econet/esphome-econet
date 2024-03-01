@@ -103,22 +103,22 @@ time:
               tag: homeassistant_time_sync
           - number.set:
               id: irtc_year
-              value: !lambda return id(homeassistant_time).utcnow().year - 2000;
+              value: !lambda return id(homeassistant_time).now().year - 2000;
           - number.set:
               id: irtc_month
-              value: !lambda return id(homeassistant_time).utcnow().month;
+              value: !lambda return id(homeassistant_time).now().month;
           - number.set:
               id: irtc_day
-              value: !lambda return id(homeassistant_time).utcnow().day_of_month;
+              value: !lambda return id(homeassistant_time).now().day_of_month;
           - number.set:
               id: irtc_hour
-              value: !lambda return id(homeassistant_time).utcnow().hour;
+              value: !lambda return id(homeassistant_time).now().hour;
           - number.set:
               id: irtc_minute
-              value: !lambda return id(homeassistant_time).utcnow().minute;
+              value: !lambda return id(homeassistant_time).now().minute;
           - number.set:
               id: irtc_seconds
-              value: !lambda return id(homeassistant_time).utcnow().second;
+              value: !lambda return id(homeassistant_time).now().second;
         else:
           - logger.log:
               format: "System clock was synced but time is invalid"
@@ -209,8 +209,8 @@ text_sensor:
         .tm_mon = (int) id(irtc_month).state - 1,  // C++: 0-11, econet: 1-12
         .tm_year = (int) id(irtc_year).state + 2000 - 1900  // C++: years since 1900, econet: since 2000
       };
-      char time_string[21];
-      std::strftime(time_string, sizeof(time_string), "%FT%TZ", &controller_time);
+      char time_string[sizeof("yyyy-mm-ddThh:mm:ss-hhmm")];
+      std::strftime(time_string, sizeof(time_string), "%FT%T%z", &controller_time);
       std::string controller_time_string(time_string);
       return controller_time_string;
 switch:
