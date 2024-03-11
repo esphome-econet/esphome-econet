@@ -130,20 +130,6 @@ text_sensor:
     icon: "mdi:alert"
     entity_category: "diagnostic"
   - platform: econet
-    name: "Alarm History 3"
-    id: alarm_history_3
-    sensor_datapoint: ALARMH03
-    request_mod: 3
-    icon: "mdi:alert"
-    entity_category: "diagnostic"
-  - platform: econet
-    name: "Alarm History 4"
-    id: alarm_history_4
-    sensor_datapoint: ALARMH04
-    request_mod: 3
-    icon: "mdi:alert"
-    entity_category: "diagnostic"
-  - platform: econet
     name: "Software Version Number"
     id: sw_version
     sensor_datapoint: SW_VERSN
