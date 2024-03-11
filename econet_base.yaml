@@ -197,7 +197,7 @@ text_sensor:
     entity_category: "diagnostic"
     disabled_by_default: true
     lambda: |-
-      if (isnan(id(irtc_seconds).state)) {
+      if (isnan(id(irtc_day).state) || !id(irtc_day).state) {
         // Return undefined if values haven't been successfully fetched yet
         return {};
       }
