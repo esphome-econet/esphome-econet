@@ -11,6 +11,10 @@ packages:
     url: https://github.com/esphome-econet/esphome-econet
     ref: main
     file: econet_electric_tank_water_heater.yaml
+  econet_time:
+    url: https://github.com/esphome-econet/esphome-econet
+    ref: main
+    file: econet_time.yaml
 
 dashboard_import:
   package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${variant}.yaml@${github_ref}

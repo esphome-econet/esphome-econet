@@ -10,6 +10,10 @@ packages:
     url: https://github.com/esphome-econet/esphome-econet
     ref: main
     file: econet_electric_tank_water_heater.yaml
+  econet-esp8266:
+    url: https://github.com/esphome-econet/esphome-econet
+    ref: main
+    file: build-yaml/econet-esp8266.yaml
 
 dashboard_import:
   package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${platform}.yaml@${github_ref}
