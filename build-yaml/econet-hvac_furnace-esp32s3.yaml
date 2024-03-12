@@ -11,10 +11,6 @@ packages:
     url: https://github.com/esphome-econet/esphome-econet
     ref: main
     file: econet_hvac_furnace.yaml
-  econet_time:
-    url: https://github.com/esphome-econet/esphome-econet
-    ref: main
-    file: econet_time.yaml
   # Uncomment if you have an communicationg Outdoor Unit
   # econet-hvac-odu:
   #   url: https://github.com/esphome-econet/esphome-econet
