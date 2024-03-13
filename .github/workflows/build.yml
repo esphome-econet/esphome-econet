@@ -48,7 +48,17 @@ jobs:
             '
               .substitutions.external_components_source = "../components" |
               .packages.econet = "../econet_${{ matrix.appliance.name }}.yaml" |
-              .packages.econet   tag = "!include"
+              .packages.econet   tag = "!include" |
+            '
+            build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
+      - name: Add components only for the build
+        uses: mikefarah/yq@v4
+        with:
+          cmd: >
+            yq -P -i
+            '
+              .improv_serial = "" |
+              .improv_serial tag = "!!null"
             '
             build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Force Verbose Logging
