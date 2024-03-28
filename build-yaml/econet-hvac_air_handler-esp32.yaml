@@ -10,7 +10,7 @@ packages:
     url: https://github.com/esphome-econet/esphome-econet
     ref: main
     file: econet_hvac_air_handler.yaml
-  # Uncomment if you have an communicationg Outdoor Unit
+  # Uncomment if you have an communicating Outdoor Unit
   # econet-hvac-odu:
   #   url: https://github.com/esphome-econet/esphome-econet
   #   ref: main
