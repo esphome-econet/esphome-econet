@@ -109,6 +109,20 @@ text_sensor:
     icon: "mdi:information-box"
     entity_category: "diagnostic"
 
+select:
+  - platform: "econet"
+    name: "Fan Duty Cycle"
+    id: fan_duty
+    enum_datapoint: FAN_MODE
+    options:
+      0: "Continuous"
+      1: "Timed, 10 min"
+      2: "Timed, 20 min"
+      3: "Timed, 30 min"
+      4: "Timed, 40 min"
+    icon: "mdi:fan"
+    request_mod: 9
+
 switch:
   - platform: econet
     name: "Dehumidification Enable State"
