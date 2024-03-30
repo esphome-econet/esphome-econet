@@ -93,6 +93,14 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
+    name: "ODU Lockout Timer"
+    id: odu_lockout_timer
+    sensor_datapoint: LOCKTIMR
+    unit_of_measurement: "s"
+    request_mod: none
+    accuracy_decimals: 0
+    entity_category: "diagnostic"
+  - platform: econet
     name: "ODU Low Cool Two Week Hours"
     id: odu_low_cool_two_week_hours
     sensor_datapoint: ODURCS1H
