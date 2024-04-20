@@ -51,16 +51,6 @@ jobs:
               .packages.econet   tag = "!include"
             '
             build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
-      - name: Add components only for the build
-        uses: mikefarah/yq@v4
-        with:
-          cmd: >
-            yq -P -i
-            '
-              .improv_serial = "" |
-              .improv_serial tag = "!!null"
-            '
-            build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Force Verbose Logging
         if: ${{ inputs.force-verbose-logging }}
         uses: mikefarah/yq@v4
