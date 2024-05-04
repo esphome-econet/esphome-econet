@@ -58,6 +58,62 @@ sensor:
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
+  - platform: econet
+    name: "Compressor Runtime"
+    id: hours_compressor
+    sensor_datapoint: HRS_COMP
+    request_mod: 5
+    unit_of_measurement: "h"
+    accuracy_decimals: 6
+    device_class: "duration"
+    state_class: "total_increasing"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Fan Low Speed Runtime"
+    id: hours_fan_low_speed
+    sensor_datapoint: HRSLOFAN
+    request_mod: 5
+    unit_of_measurement: "h"
+    accuracy_decimals: 6
+    device_class: "duration"
+    state_class: "total_increasing"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Fan High Speed Runtime"
+    id: hours_fan_high_speed
+    sensor_datapoint: HRSHIFAN
+    request_mod: 5
+    unit_of_measurement: "h"
+    accuracy_decimals: 6
+    device_class: "duration"
+    state_class: "total_increasing"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Energy"
+    id: energy
+    sensor_datapoint: TOTALKWH
+    request_mod: 5
+    unit_of_measurement: "kWh"
+    accuracy_decimals: 3
+    device_class: "energy"
+    state_class: "total_increasing"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "AC Current RMS"
+    sensor_datapoint: I_RMSVAL
+    request_mod: 5
+    unit_of_measurement: "A"
+    accuracy_decimals: 3
+    device_class: "current"
+    state_class: "measurement"
+  - platform: econet
+    name: "Expansion Valve Current Position"
+    id: expansion_valve_current_position
+    sensor_datapoint: EXACTUAL
+    request_mod: 5
+    accuracy_decimals: 1
+    unit_of_measurement: "%"
+    entity_category: "diagnostic"
 
 binary_sensor:
   - platform: econet
@@ -72,3 +128,11 @@ text_sensor:
     id: fan_speed
     sensor_datapoint: FAN_CTRL
     icon: "mdi:fan"
+  - platform: econet
+    name: "Unit Type"
+    id: unittype
+    sensor_datapoint: UNITTYPE
+    request_mod: 5
+    request_once: true
+    icon: "mdi:information-box"
+    entity_category: "diagnostic"
