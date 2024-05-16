@@ -23,10 +23,12 @@ esphome:
   board: $board
   project:
     name: "esphome-econet.esphome-econet"
-    version: v1.23.1
+    version: v1.23.3
 preferences:
   flash_write_interval: "24h"
 wifi:
+  ap:
+captive_portal:
 api:
   services:
     - service: read
@@ -127,20 +129,6 @@ text_sensor:
     id: alarm_history_2
     sensor_datapoint: ALARMH02
     request_mod: 2
-    icon: "mdi:alert"
-    entity_category: "diagnostic"
-  - platform: econet
-    name: "Alarm History 3"
-    id: alarm_history_3
-    sensor_datapoint: ALARMH03
-    request_mod: 3
-    icon: "mdi:alert"
-    entity_category: "diagnostic"
-  - platform: econet
-    name: "Alarm History 4"
-    id: alarm_history_4
-    sensor_datapoint: ALARMH04
-    request_mod: 3
     icon: "mdi:alert"
     entity_category: "diagnostic"
   - platform: econet
