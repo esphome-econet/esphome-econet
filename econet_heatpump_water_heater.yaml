@@ -100,6 +100,7 @@ sensor:
     entity_category: "diagnostic"
   - platform: econet
     name: "AC Current RMS"
+    id: ac_current_rms
     sensor_datapoint: I_RMSVAL
     request_mod: 5
     unit_of_measurement: "A"
