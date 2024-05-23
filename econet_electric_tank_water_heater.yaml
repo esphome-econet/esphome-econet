@@ -93,22 +93,24 @@ select:
     enum_datapoint: VACA_NET
     options:
       0: "Off"
-      1: "Timed"
+      # https://github.com/esphome-econet/esphome-econet/issues/301
+      # 1: "Timed"
       2: "Permanent"
     icon: "mdi:bag-suitcase"
 
-number:
-  - platform: econet
-    name: "Vacation Timer"
-    id: vacatime
-    number_datapoint: VACATIME
-    unit_of_measurement: "h"
-    step: 1
-    min_value: 1
-    max_value: 10000
-    mode: box
-    icon: "mdi:briefcase-clock"
-    entity_category: "config"
+# https://github.com/esphome-econet/esphome-econet/issues/301
+# number:
+#   - platform: econet
+#     name: "Vacation Timer"
+#     id: vacatime
+#     number_datapoint: VACATIME
+#     unit_of_measurement: "h"
+#     step: 1
+#     min_value: 1
+#     max_value: 10000
+#     mode: box
+#     icon: "mdi:briefcase-clock"
+#     entity_category: "config"
 
 text_sensor:
   - platform: econet
