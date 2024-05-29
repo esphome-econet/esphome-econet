@@ -115,8 +115,8 @@ class Econet : public Component, public uart::UARTDevice {
                          uint32_t src_adr = 0);
 
   void homeassistant_read(const std::string &datapoint_id, uint32_t address = 0);
-  void homeassistant_write(const std::string &datapoint_id, uint8_t value);
-  void homeassistant_write(const std::string &datapoint_id, float value);
+  void homeassistant_write(const std::string &datapoint_id, uint8_t value, uint32_t address = 0);
+  void homeassistant_write(const std::string &datapoint_id, float value, uint32_t address = 0);
 
  protected:
   uint32_t update_interval_millis_{30000};
