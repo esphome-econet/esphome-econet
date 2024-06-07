@@ -6,7 +6,7 @@ check-filenames = ''
 fix = true
 show-fixes = true
 select = [
-    "UP", # Repalces pyupgrade
+    "UP", # Replaces pyupgrade
 ]
 ignore = [
     # May conflict with the formatter, https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
