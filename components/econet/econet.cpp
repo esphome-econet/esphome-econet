@@ -1,5 +1,7 @@
 #include "econet.h"
 
+#include <cinttypes>
+
 namespace esphome {
 namespace econet {
 
@@ -390,7 +392,7 @@ void Econet::loop() {
   int bytes_available = this->available();
   if (bytes_available > 0) {
     this->last_read_data_ = now;
-    ESP_LOGI(TAG, "Read %d. ms=%ld", bytes_available, now);
+    ESP_LOGI(TAG, "Read %d. ms=%" PRIu32, bytes_available, now);
     this->read_buffer_(bytes_available);
     return;
   }
