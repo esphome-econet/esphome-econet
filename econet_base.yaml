@@ -18,7 +18,7 @@ esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   comment: ${device_description}
-  min_version: "2023.12.0" # This version introduced climate humidity which is now used by esphome-econet
+  min_version: "2024.6.1" # This version included a breaking change to the ota: component
   platform: $platform
   board: $board
   project:
