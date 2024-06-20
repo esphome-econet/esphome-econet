@@ -55,6 +55,7 @@ api:
       then:
         - lambda: id(econet_id).homeassistant_write(datapoint_id, value);
 ota:
+  platform: esphome
 logger:
   level: ${logger_level}
   tx_buffer_size: 1024
