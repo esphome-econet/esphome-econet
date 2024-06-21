@@ -48,12 +48,26 @@ api:
         value: int
       then:
         - lambda: id(econet_id).homeassistant_write(datapoint_id, (uint8_t) value);
+    - service: write_enum_from_address
+      variables:
+        datapoint_id: string
+        value: int
+        address: int
+      then:
+        - lambda: id(econet_id).homeassistant_write(datapoint_id, (uint8_t) value, address);
     - service: write_float
       variables:
         datapoint_id: string
         value: float
       then:
         - lambda: id(econet_id).homeassistant_write(datapoint_id, value);
+    - service: write_float_from_address
+      variables:
+        datapoint_id: string
+        value: float
+        address: int
+      then:
+        - lambda: id(econet_id).homeassistant_write(datapoint_id, value, address);
 ota:
   platform: esphome
 logger:
