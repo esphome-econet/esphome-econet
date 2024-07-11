@@ -2,7 +2,7 @@
 substitutions:
   tx_pin: GPIO19
   rx_pin: GPIO22
-  platform: esp32
+  variant: esp32
   board: esp32dev
 
 packages:
@@ -12,7 +12,7 @@ packages:
     file: econet_tankless_water_heater.yaml
 
 dashboard_import:
-  package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${platform}.yaml@${github_ref}
+  package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${variant}.yaml@${github_ref}
   import_full_config: false
 
 # Uncomment the below to use Wi-Fi settings from your secrets.yaml file
