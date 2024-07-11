@@ -3,7 +3,6 @@ substitutions:
   tx_pin: GPIO6
   rx_pin: GPIO5
   board: esp32-s3-devkitc-1
-  platform: esp32
   variant: esp32s3
 
 packages:
@@ -15,14 +14,6 @@ packages:
 dashboard_import:
   package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${variant}.yaml@${github_ref}
   import_full_config: false
-
-esphome:
-  platform: !remove
-  board: !remove
-
-esp32:
-  board: ${board}
-  variant: ${variant}
 
 # Uncomment the below to use Wi-Fi settings from your secrets.yaml file
 # wifi:
