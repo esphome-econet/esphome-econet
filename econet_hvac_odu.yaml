@@ -44,6 +44,7 @@ sensor:
     device_class: "pressure"
     state_class: "measurement"
     entity_category: "diagnostic"
+    disabled_by_default: true
   - platform: econet
     name: "ODU Liquid Line Temp"
     id: odu_liquid_line_temp
@@ -54,6 +55,7 @@ sensor:
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
+    disabled_by_default: true
   - platform: econet
     name: "ODU Crankcase Heater Temperature"
     id: odu_crankcase_heater_temperature
