@@ -35,6 +35,28 @@ sensor:
     accuracy_decimals: 1
     entity_category: "diagnostic"
   - platform: econet
+    name: "ODU Pressure Liquid"
+    id: odu_pressure_liquid
+    sensor_datapoint: PRES_LIQ
+    request_mod: none
+    unit_of_measurement: "psi"
+    accuracy_decimals: 1
+    device_class: "pressure"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+    disabled_by_default: true
+  - platform: econet
+    name: "ODU Liquid Line Temp"
+    id: odu_liquid_line_temp
+    sensor_datapoint: TEMP_OLT
+    request_mod: none
+    unit_of_measurement: "°F"
+    accuracy_decimals: 1
+    device_class: "temperature"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+    disabled_by_default: true
+  - platform: econet
     name: "ODU Crankcase Heater Temperature"
     id: odu_crankcase_heater_temperature
     sensor_datapoint: TEMP_CPT
