@@ -73,7 +73,7 @@ jobs:
             build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Build Firmware
         id: esphome-build
-        uses: esphome/build-action@v3
+        uses: esphome/build-action@v4
         with:
           yaml_file: build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
           cache: true
