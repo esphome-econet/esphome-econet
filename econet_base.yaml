@@ -19,11 +19,17 @@ esphome:
   friendly_name: ${friendly_name}
   comment: ${device_description}
   min_version: "2024.6.0"
-  platform: $platform
-  board: $board
+  #platform: $platform
+  #board: $board
   project:
     name: "esphome-econet.esphome-econet"
     version: v2.2.0
+
+esp32:
+  board: $board
+  framework:
+    type: esp-idf
+
 preferences:
   flash_write_interval: "24h"
 wifi:
