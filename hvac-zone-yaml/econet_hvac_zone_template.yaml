@@ -16,6 +16,7 @@ climate:
   - platform: econet
     id: zone${zonenumber}_climate
     name: ${zonename} Climate
+    request_mod: ${zone_thermostat_requestmod}
     src_address: ${zone_thermostat_address}
     visual:
       min_temperature: "10"
@@ -31,7 +32,9 @@ climate:
       2: "HEAT_COOL"
       3: "FAN_ONLY"
       4: "OFF"
-    custom_fan_mode_datapoint: STATNFAN
+    custom_fan_mode_datapoint: STAT_FAN
+    custom_fan_mode_no_schedule_datapoint: STATNFAN
+    follow_schedule_datapoint: SCHEDULE
     custom_fan_modes:
       0: "Automatic"
       1: "Speed 1 (Low)"
