@@ -18,9 +18,11 @@ climate:
     src_address: ${thermostat_address}
     name: "HVAC"
     visual:
-      min_temperature: "10"
-      max_temperature: "32.2222"
-      temperature_step: 1.0f
+      min_temperature: "50 °F"
+      max_temperature: "90 °F"
+      temperature_step:
+        target_temperature: "1.0 °F"
+        current_temperature: "0.1 °F"
       min_humidity: 10
       max_humidity: 80
     current_temperature_datapoint: SPT

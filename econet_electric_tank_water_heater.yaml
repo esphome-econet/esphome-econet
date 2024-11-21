@@ -16,9 +16,11 @@ climate:
     id: econet_climate
     name: None
     visual:
-      min_temperature: "43.3333"
-      max_temperature: "60"
-      temperature_step: 1.0f
+      min_temperature: "110 °F"
+      max_temperature: "140 °F"
+      temperature_step:
+        target_temperature: "1.0 °F"
+        current_temperature: "0.1 °F"
     current_temperature_datapoint: UPHTRTMP
     target_temperature_datapoint: WHTRSETP
     mode_datapoint: WHTRENAB
