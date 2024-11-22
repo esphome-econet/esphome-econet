@@ -18,7 +18,7 @@ esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   comment: ${device_description}
-  min_version: "2024.6.0"
+  min_version: "2024.11.0"
   platform: $platform
   board: $board
   project:
