@@ -78,6 +78,7 @@ jobs:
       - name: Copy files
         run: |-
           mkdir output
+          cp -R firmwares/*/*.json output/
           cp -R firmwares/*/*/*.bin output/
           ls -R output/
       - name: Upload GitHub Pages artifact
