@@ -21,7 +21,7 @@ climate:
       min_temperature: "50 °F"
       max_temperature: "90 °F"
       temperature_step:
-        target_temperature: "1.0 °F"
+        target_temperature: "0.5 °F"
         current_temperature: "0.1 °F"
       min_humidity: 10
       max_humidity: 80

@@ -21,7 +21,7 @@ climate:
       min_temperature: "50 °F"
       max_temperature: "90 °F"
       temperature_step:
-        target_temperature: "1.0 °F"
+        target_temperature: "0.5 °F"
         current_temperature: "0.1 °F"
     current_temperature_datapoint: SPT
     target_temperature_low_datapoint: HEATSETP
