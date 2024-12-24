@@ -3,8 +3,8 @@ import esphome.config_validation as cv
 from esphome import automation, pins
 from esphome.components import uart
 from esphome.const import (
-    CONF_ID,
     CONF_FLOW_CONTROL_PIN,
+    CONF_ID,
     CONF_SENSOR_DATAPOINT,
     CONF_TRIGGER_ID,
 )

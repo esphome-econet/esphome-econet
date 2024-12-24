@@ -5,7 +5,10 @@ check-filenames = ''
 [tool.ruff]
 fix = true
 show-fixes = true
-select = [
+
+[tool.ruff.lint]
+extend-select = [
+    "I", # Sorts imports
     "UP", # Replaces pyupgrade
 ]
 ignore = [
