@@ -19,9 +19,11 @@ climate:
     request_mod: ${zone_thermostat_requestmod}
     src_address: ${zone_thermostat_address}
     visual:
-      min_temperature: "10"
-      max_temperature: "32.2222"
-      temperature_step: 1.0f
+      min_temperature: "50 °F"
+      max_temperature: "90 °F"
+      temperature_step:
+        target_temperature: "0.5 °F"
+        current_temperature: "0.1 °F"
     current_temperature_datapoint: SPT
     target_temperature_low_datapoint: HEATSETP
     target_temperature_high_datapoint: COOLSETP

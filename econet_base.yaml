@@ -18,12 +18,12 @@ esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   comment: ${device_description}
-  min_version: "2024.6.0"
+  min_version: "2024.11.0"
   platform: $platform
   board: $board
   project:
     name: "esphome-econet.esphome-econet"
-    version: v2.2.0
+    version: v2.2.4
 preferences:
   flash_write_interval: "24h"
 wifi:
