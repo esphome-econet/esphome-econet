@@ -73,10 +73,9 @@ jobs:
             build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Build Firmware
         id: esphome-build
-        uses: esphome/build-action@v4
+        uses: esphome/build-action@v6
         with:
           yaml-file: build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
-          cache: true
       - name: Copy firmware and manifest
         if: ${{ inputs.upload-artifacts }}
         run: |
