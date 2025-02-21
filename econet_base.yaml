@@ -7,6 +7,8 @@ substitutions:
   rx_pin: GPIO22
   platform: esp32
   board: esp32dev
+  variant: esp32
+  framework: arduino
   github_ref: main
   external_components_source: github://esphome-econet/esphome-econet@${github_ref}
   logger_level: WARN
@@ -19,11 +21,14 @@ esphome:
   friendly_name: ${friendly_name}
   comment: ${device_description}
   min_version: "2024.11.0"
-  platform: $platform
-  board: $board
   project:
     name: "esphome-econet.esphome-econet"
     version: v2.3.0
+${platform}:
+  board: ${board}
+  variant: ${variant}
+  framework:
+    type: ${framework}
 preferences:
   flash_write_interval: "24h"
 wifi:
