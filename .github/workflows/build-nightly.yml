@@ -15,6 +15,7 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       force-verbose-logging: true
+      esphome-version: 'beta'
   create-issue-on-failure:
     name: Create Issue on Failure
     runs-on: ubuntu-latest
