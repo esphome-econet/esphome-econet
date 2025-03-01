@@ -19,7 +19,7 @@ on:
         required: false
         default: 'latest'
         description: "Specify the esphome release with which to build."
-  workflow_call:
+  workflow_dispatch:
     inputs:
       upload-artifacts:
         type: boolean
