@@ -36,7 +36,7 @@ on:
         required: false
         default: 'latest'
         description: "Specify the esphome release with which to build."
-  
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
