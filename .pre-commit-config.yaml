@@ -29,7 +29,7 @@ repos:
       - id: check-toml
       - id: end-of-file-fixer
       - id: mixed-line-ending
-        args: [--fix=auto]
+        args: [--fix=lf]
       - id: no-commit-to-branch
         args:
           - --branch=main
