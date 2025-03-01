@@ -19,7 +19,24 @@ on:
         required: false
         default: 'latest'
         description: "Specify the esphome release with which to build."
-
+  workflow_call:
+    inputs:
+      upload-artifacts:
+        type: boolean
+        required: false
+        default: false
+        description: "Set to true to have this workflow upload resulting firmware artifacts."
+      force-verbose-logging:
+        type: boolean
+        required: false
+        default: false
+        description: "Set to true to have this workflow force verbose logging, useful for catching build failures in logging code."
+      esphome-version:
+        type: string
+        required: false
+        default: 'latest'
+        description: "Specify the esphome release with which to build."
+  
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

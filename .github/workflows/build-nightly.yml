@@ -5,15 +5,6 @@ on:
   schedule:
     - cron: "0 0 * * *"
   workflow_dispatch:
-    inputs:
-      esphome-version:
-        type: choice
-        required: false
-        default: 'latest'
-        description: "Specify the esphome release with which to build."
-        options:
-          - latest
-          - beta
 
 concurrency:
   group: ${{ github.workflow }}
