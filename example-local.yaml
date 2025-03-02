@@ -1,12 +1,12 @@
 ---
 substitutions:
   external_components_source: components  # Build with local code instead of pulling from Github
-  zone1name: Zone1Name #zone names are required for hvac zone control
+  zone1name: Zone1Name  # zone names are required for hvac zone control
   zone2name: Zone2Name
-  zone3name: Zone3Name #rename to "Bypass" if using zone3 as bypass
+  zone3name: Zone3Name  # rename to "Bypass" if using zone3 as bypass
   zone4name: Zone4Name
   zone5name: Zone5Name
-  zone6name: Zone6Name #rename to "Bypass" if using zone6 as bypass
+  zone6name: Zone6Name  # rename to "Bypass" if using zone6 as bypass
 
 packages:  # Change this file to the correct one(s) for your device
   econet-hpwh: !include econet_heatpump_water_heater.yaml

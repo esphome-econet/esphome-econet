@@ -2,9 +2,10 @@
 extends: default
 
 rules:
-  line-length:
-    level: warning
-    allow-non-breakable-inline-mappings: true
+  comments-indentation: disable
+  line-length: disable
+    # level: warning
+    # allow-non-breakable-inline-mappings: true
   truthy:
     check-keys: false
 
