@@ -3,7 +3,7 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.4
+    rev: v0.9.9
     hooks:
       - id: ruff
       - id: ruff-format
@@ -26,9 +26,14 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+        args: [--fix=lf]
       - id: no-commit-to-branch
         args:
           - --branch=main
+      - id: trailing-whitespace
 
 # Configuration per https://pre-commit.ci/#configuration
 ci:
