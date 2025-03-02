@@ -14,6 +14,28 @@ on:
         required: false
         default: false
         description: "Set to true to have this workflow force verbose logging, useful for catching build failures in logging code."
+      esphome-version:
+        type: string
+        required: false
+        default: 'latest'
+        description: "Specify the esphome release with which to build."
+  workflow_dispatch:
+    inputs:
+      upload-artifacts:
+        type: boolean
+        required: false
+        default: false
+        description: "Set to true to have this workflow upload resulting firmware artifacts."
+      force-verbose-logging:
+        type: boolean
+        required: false
+        default: false
+        description: "Set to true to have this workflow force verbose logging, useful for catching build failures in logging code."
+      esphome-version:
+        type: string
+        required: false
+        default: 'latest'
+        description: "Specify the esphome release with which to build."
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -76,6 +98,7 @@ jobs:
         uses: esphome/build-action@v6
         with:
           yaml-file: build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
+          version: ${{ inputs.esphome-version }}
       - name: Copy firmware and manifest
         if: ${{ inputs.upload-artifacts }}
         run: |
