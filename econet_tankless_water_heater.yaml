@@ -4,7 +4,7 @@ substitutions:
   friendly_name: "Tankless Water Heater"
   device_description: "Rheem Tankless Water Heater"
   econet_update_interval: 5s
-  tankless_kbtus_per_m3: "35.300" # Natural Gas = approx 35.300, Propane = approx 88.852
+  tankless_kbtus_per_m3: "35.300"  # Natural Gas = approx 35.300, Propane = approx 88.852
 
 packages:
   econet: !include econet_base.yaml

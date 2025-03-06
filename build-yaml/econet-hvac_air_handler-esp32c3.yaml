@@ -1,10 +1,10 @@
 ---
 substitutions:
-  tx_pin: GPIO6
-  rx_pin: GPIO5
-  board: esp32-s3-devkitc-1
+  tx_pin: GPIO21
+  rx_pin: GPIO20
+  board: esp32-c3-devkitm-1
   platform: esp32
-  variant: esp32s3
+  variant: esp32c3
 
 packages:
   econet:

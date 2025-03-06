@@ -14,6 +14,28 @@ on:
         required: false
         default: false
         description: "Set to true to have this workflow force verbose logging, useful for catching build failures in logging code."
+      esphome-version:
+        type: string
+        required: false
+        default: 'latest'
+        description: "Specify the esphome release with which to build."
+  workflow_dispatch:
+    inputs:
+      upload-artifacts:
+        type: boolean
+        required: false
+        default: false
+        description: "Set to true to have this workflow upload resulting firmware artifacts."
+      force-verbose-logging:
+        type: boolean
+        required: false
+        default: false
+        description: "Set to true to have this workflow force verbose logging, useful for catching build failures in logging code."
+      esphome-version:
+        type: string
+        required: false
+        default: 'latest'
+        description: "Specify the esphome release with which to build."
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -25,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        platform: [esp32, esp32s3, esp8266]
+        platform: [esp32, esp32c3, esp32s3, esp8266]
         appliance:
           - name: electric_tank_water_heater
             shorthand: etwh
@@ -73,10 +95,10 @@ jobs:
             build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Build Firmware
         id: esphome-build
-        uses: esphome/build-action@v4
+        uses: esphome/build-action@v6
         with:
           yaml-file: build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
-          cache: true
+          version: ${{ inputs.esphome-version }}
       - name: Copy firmware and manifest
         if: ${{ inputs.upload-artifacts }}
         run: |
@@ -89,7 +111,7 @@ jobs:
           name: econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}
           path: output
           retention-days: 7
-  build-status: # Needed to provide an overall status on this job rather than just the various matrix jobs
+  build-status:  # Needed to provide an overall status on this job rather than just the various matrix jobs
     name: Compile Build Status
     needs: build
     runs-on: ubuntu-latest
