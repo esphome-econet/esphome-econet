@@ -266,8 +266,8 @@ sensor:
     accuracy_decimals: 1
     entity_category: "diagnostic"
   - platform: econet
-    name: "ODU KW Hours"
-    id: odu_kwh
+    name: "ODU Energy"
+    id: odu_energy
     sensor_datapoint: ODU__KWH
     request_mod: none
     entity_category: "diagnostic"
@@ -275,6 +275,15 @@ sensor:
     device_class: energy
     unit_of_measurement: "kWh"
     accuracy_decimals: 1
+  - platform: integration
+    name: "Total Daily ODU Energy"
+    id: daily_odu_energy
+    sensor: odu_energy
+    time_unit: h
+    state_class: "total_increasing"
+    device_class: power
+    accuracy_decimals: 1
+    unit_of_measurement: "kWh"
   - platform: econet
     name: "ODU Defrost Sensor"
     id: odu_defrost_sensor
@@ -299,6 +308,16 @@ sensor:
     request_mod: 7
     icon: "mdi:information-box"
     entity_category: "diagnostic"
+
+time:
+  - platform: homeassistant
+    on_time:
+      # Every midnight
+      - seconds: 0
+        minutes: 0
+        hours: 0
+        then:
+          - sensor.integration.reset: daily_odu_energy
 
 binary_sensor:
   - platform: template

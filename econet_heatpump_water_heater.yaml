@@ -98,6 +98,15 @@ sensor:
     device_class: "energy"
     state_class: "total_increasing"
     entity_category: "diagnostic"
+  - platform: integration
+    name: "Total Daily Energy"
+    id: daily_energy
+    sensor: energy
+    time_unit: h
+    state_class: "total_increasing"
+    device_class: power
+    accuracy_decimals: 1
+    unit_of_measurement: "kWh"
   - platform: econet
     name: "AC Current RMS"
     id: ac_current_rms
@@ -137,3 +146,13 @@ text_sensor:
     request_once: true
     icon: "mdi:information-box"
     entity_category: "diagnostic"
+
+time:
+  - platform: homeassistant
+    on_time:
+      # Every midnight
+      - seconds: 0
+        minutes: 0
+        hours: 0
+        then:
+          - sensor.integration.reset: daily_energy

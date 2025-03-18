@@ -308,19 +308,29 @@ sensor:
     accuracy_decimals: 3
   - platform: integration
     name: "Total Daily Gas"
+    id: daily_gas_usage
     sensor: gas_usage_m3_h
     time_unit: h
-    state_class: total_increasing
+    state_class: "total_increasing"
     device_class: gas
     accuracy_decimals: 5
     unit_of_measurement: "m³"
   - platform: econet
-    name: "Indoor KW"
-    id: indoor_kw
+    name: "Indoor Energy"
+    id: indoor_energy
     sensor_datapoint: INDOORKW
     entity_category: "diagnostic"
     state_class: "total_increasing"
     device_class: energy
+    unit_of_measurement: "kWh"
+  - platform: integration
+    name: "Total Daily Indoor Energy"
+    id: daily_indoor_energy
+    sensor: indoor_energy
+    time_unit: h
+    state_class: "total_increasing"
+    device_class: power
+    accuracy_decimals: 1
     unit_of_measurement: "kWh"
   - platform: template
     name: "Heating Capacity"
@@ -349,6 +359,17 @@ sensor:
     icon: "mdi:sun-snowflake-variant"
     filters:
       - delta: 0.9
+
+time:
+  - platform: homeassistant
+    on_time:
+      # Every midnight
+      - seconds: 0
+        minutes: 0
+        hours: 0
+        then:
+          - sensor.integration.reset: daily_gas_usage
+          - sensor.integration.reset: daily_indoor_energy
 
 text_sensor:
   - platform: template
