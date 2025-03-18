@@ -281,7 +281,7 @@ sensor:
     sensor: odu_energy
     time_unit: h
     state_class: "total_increasing"
-    device_class: power
+    device_class: energy
     accuracy_decimals: 1
     unit_of_measurement: "kWh"
   - platform: econet
