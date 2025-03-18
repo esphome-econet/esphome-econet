@@ -122,6 +122,7 @@ sensor:
     name: "Flame Sensor"
     id: flame_sensor
     device_class: "current"
+    state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 4
     unit_of_measurement: "mA"
@@ -132,6 +133,7 @@ sensor:
     name: "Furnace AFUE"
     id: furnace_afue
     sensor_datapoint: FURNAFUE
+    state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     unit_of_measurement: "%"
@@ -145,6 +147,7 @@ sensor:
     name: "Furnace High Heat BTU Output"
     id: furnace_hh_btus
     sensor_datapoint: FURNHBTU
+    state_class: "measurement"
     entity_category: "diagnostic"
     unit_of_measurement: "btu/h"
     icon: "mdi:gas-burner"
@@ -153,6 +156,7 @@ sensor:
     name: "Furnace Low Heat BTU Output"
     id: furnace_lh_btus
     sensor_datapoint: FURNLBTU
+    state_class: "measurement"
     entity_category: "diagnostic"
     unit_of_measurement: "btu/h"
     icon: "mdi:gas-burner"
@@ -161,6 +165,7 @@ sensor:
     name: "Two Week Cycles - Low Heat"
     id: low_heat_2week_cycles
     icon: "mdi:sync"
+    state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -169,6 +174,7 @@ sensor:
     name: "Two Week Cycles - High Heat"
     id: high_heat_2week_cycles
     icon: "mdi:sync"
+    state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -177,6 +183,7 @@ sensor:
     name: "Two Week Cycles - Blower"
     id: blower_2week_cycles
     icon: "mdi:sync"
+    state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -185,6 +192,7 @@ sensor:
     name: "Two Week Cycles - Powered"
     id: powered_2week_cycles
     icon: "mdi:sync"
+    state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -194,6 +202,7 @@ sensor:
     unit_of_measurement: "h"
     id: low_heat_2week_hrs
     icon: "mdi:timelapse"
+    state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -203,6 +212,7 @@ sensor:
     unit_of_measurement: "h"
     id: high_heat_2week_hrs
     icon: "mdi:timelapse"
+    state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -212,6 +222,7 @@ sensor:
     unit_of_measurement: "h"
     id: blower_2week_hrs
     icon: "mdi:timelapse"
+    state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -220,6 +231,7 @@ sensor:
     name: "Lifetime Cycles - Low Heat"
     id: low_heat_lifetime_cycles
     icon: "mdi:sync"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -228,6 +240,7 @@ sensor:
     name: "Lifetime Cycles - High Heat"
     id: high_heat_lifetime_cycles
     icon: "mdi:sync"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -236,6 +249,7 @@ sensor:
     name: "Lifetime Cycles - Blower"
     id: blower_lifetime_cycles
     icon: "mdi:sync"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -244,6 +258,7 @@ sensor:
     name: "Lifetime Cycles - Powered"
     id: powered_lifetime_cycles
     icon: "mdi:sync"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -253,6 +268,7 @@ sensor:
     unit_of_measurement: "h"
     id: low_heat_lifetime_hrs
     icon: "mdi:timelapse"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -262,6 +278,7 @@ sensor:
     unit_of_measurement: "h"
     id: high_heat_lifetime_hrs
     icon: "mdi:timelapse"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -271,6 +288,7 @@ sensor:
     unit_of_measurement: "h"
     id: blower_lifetime_hrs
     icon: "mdi:timelapse"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -280,6 +298,7 @@ sensor:
     unit_of_measurement: "d"
     id: powered_lifetime_days
     icon: "mdi:timelapse"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
@@ -289,6 +308,7 @@ sensor:
     id: instant_btu_output
     unit_of_measurement: "kbtu/h"
     icon: "mdi:gas-burner"
+    state_class: "measurement"
     accuracy_decimals: 3
     filters:
       - delta: 0.9
@@ -297,6 +317,7 @@ sensor:
     id: instant_btu_usage
     unit_of_measurement: "kbtu/h"
     icon: "mdi:gas-burner"
+    state_class: "measurement"
     accuracy_decimals: 3
     filters:
       - delta: 0.9
@@ -305,6 +326,7 @@ sensor:
     id: gas_usage_m3_h
     unit_of_measurement: "m³/h"
     icon: "mdi:meter-gas"
+    state_class: "measurement"
     accuracy_decimals: 3
   - platform: integration
     name: "Total Daily Gas"
