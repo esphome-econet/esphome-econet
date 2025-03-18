@@ -29,7 +29,7 @@ econet:
             id(heat_stage).publish_state(x[26]);
             id(static_pressure).publish_state(((x[15] << 8) + x[16]) / 5280.0);
             id(return_air_temperature).publish_state(((x[50] << 8) + x[51]) / 10.0);
-            id(outdoor_air_temperature).publish_state(((x[52] << 8) + x[53])/10.0);
+            id(outdoor_air_temperature).publish_state(((x[52] << 8) + x[53])/1000.0);
             id(flame_sensor).publish_state(x[33] / 10.0);
             // Accumulators
             id(low_heat_2week_cycles).publish_state((x[102] << 8) + x[103]);
@@ -47,7 +47,7 @@ econet:
             id(high_heat_lifetime_hrs).publish_state((x[132] << 8) + x[133]);
             id(blower_lifetime_hrs).publish_state((x[135] << 8) + x[136]);
             id(powered_lifetime_days).publish_state((x[137] << 8) + x[138]);
-            id(supply_air_temperature).publish_state(((x[145] << 8) + x[146])/10.0);
+            id(supply_air_temperature).publish_state(((x[145] << 8) + x[146])/1000.0);
     - sensor_datapoint: HRHEEMID
       request_mod: 5
       request_once: true
