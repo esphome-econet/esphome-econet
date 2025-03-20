@@ -6,6 +6,10 @@ econet:
   request_mod_addresses:
     7: ${odu_address}
 
+globals:
+  - id: odu_today_kwh
+    type: float
+
 sensor:
   - platform: econet
     name: "ODU Outside Air Temperature"
@@ -275,15 +279,20 @@ sensor:
     device_class: energy
     unit_of_measurement: "kWh"
     accuracy_decimals: 1
-  - platform: integration
+  - platform: template
     name: "Total Daily ODU Energy"
     id: daily_odu_energy
-    sensor: odu_energy
-    time_unit: h
     state_class: "total_increasing"
     device_class: energy
     accuracy_decimals: 1
     unit_of_measurement: "kWh"
+    lambda: |-
+      static bool first_run = true;
+      if (isnan(id(odu_energy).state)) return NAN;
+      if (first_run) id(odu_today_kwh) = id(odu_energy).state;
+      if (first_run) first_run = false;
+      return id(odu_energy).state - id(odu_today_kwh);
+    update_interval: ${econet_update_interval}
   - platform: econet
     name: "ODU Defrost Sensor"
     id: odu_defrost_sensor
@@ -317,7 +326,7 @@ time:
         minutes: 0
         hours: 0
         then:
-          - sensor.integration.reset: daily_odu_energy
+          - lambda: id(odu_today_kwh) = id(odu_energy).state;
 
 binary_sensor:
   - platform: template

@@ -83,6 +83,10 @@ econet:
             sw2.erase(remove(sw2.begin(), sw2.end(), '\00'), sw2.end());
             id(furnace_sw2).publish_state(sw2);
 
+globals:
+  - id: furnace_today_kwh
+    type: float
+
 sensor:
   - platform: econet
     name: "Supply Air Temperature"
@@ -323,15 +327,20 @@ sensor:
     state_class: "total_increasing"
     device_class: energy
     unit_of_measurement: "kWh"
-  - platform: integration
+  - platform: template
     name: "Total Daily Indoor Energy"
     id: daily_indoor_energy
-    sensor: indoor_energy
-    time_unit: h
     state_class: "total_increasing"
     device_class: energy
     accuracy_decimals: 1
     unit_of_measurement: "kWh"
+    lambda: |-
+      static bool first_run = true;
+      if (isnan(id(indoor_energy).state)) return NAN;
+      if (first_run) id(furnace_today_kwh) = id(indoor_energy).state;
+      if (first_run) first_run = false;
+      return id(indoor_energy).state - id(furnace_today_kwh);
+    update_interval: ${econet_update_interval}
   - platform: template
     name: "Heating Capacity"
     id: heat_capacity
@@ -369,7 +378,7 @@ time:
         hours: 0
         then:
           - sensor.integration.reset: daily_gas_usage
-          - sensor.integration.reset: daily_indoor_energy
+          - lambda: id(furnace_today_kwh) = id(indoor_energy).state;
 
 text_sensor:
   - platform: template

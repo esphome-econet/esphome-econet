@@ -10,6 +10,10 @@ packages:
 econet:
   dst_address: 0x1280
 
+globals:
+  - id: hpwh_today_kwh
+    type: float
+
 climate:
   - id: !extend econet_climate
     custom_presets:
@@ -98,15 +102,20 @@ sensor:
     device_class: "energy"
     state_class: "total_increasing"
     entity_category: "diagnostic"
-  - platform: integration
+  - platform: template
     name: "Total Daily Energy"
     id: daily_energy
-    sensor: energy
-    time_unit: h
     state_class: "total_increasing"
     device_class: energy
     accuracy_decimals: 1
     unit_of_measurement: "kWh"
+    lambda: |-
+      static bool first_run = true;
+      if (isnan(id(energy).state)) return NAN;
+      if (first_run) id(hpwh_today_kwh) = id(energy).state;
+      if (first_run) first_run = false;
+      return id(energy).state - id(hpwh_today_kwh);
+    update_interval: ${econet_update_interval}
   - platform: econet
     name: "AC Current RMS"
     id: ac_current_rms
@@ -155,4 +164,4 @@ time:
         minutes: 0
         hours: 0
         then:
-          - sensor.integration.reset: daily_energy
+          - lambda: id(hpwh_today_kwh) = id(energy).state;
