@@ -147,7 +147,6 @@ sensor:
     name: "Furnace High Heat BTU Output"
     id: furnace_hh_btus
     sensor_datapoint: FURNHBTU
-    state_class: "measurement"
     entity_category: "diagnostic"
     unit_of_measurement: "btu/h"
     icon: "mdi:gas-burner"
@@ -156,7 +155,6 @@ sensor:
     name: "Furnace Low Heat BTU Output"
     id: furnace_lh_btus
     sensor_datapoint: FURNLBTU
-    state_class: "measurement"
     entity_category: "diagnostic"
     unit_of_measurement: "btu/h"
     icon: "mdi:gas-burner"
