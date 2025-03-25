@@ -93,10 +93,10 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 0
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     disabled_by_default: true
     request_mod: none
-    filters:
-      - delta: 0.9
   - platform: econet
     name: "Return Air Temperature"
     id: return_air_temperature
@@ -106,9 +106,9 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 0
-    request_mod: none
     filters:
-      - delta: 0.9
+      - throttle_average: ${econet_throttle_interval}
+    request_mod: none
   - platform: template
     name: "Outdoor Air Temperature"
     id: outdoor_air_temperature
@@ -119,7 +119,7 @@ sensor:
     accuracy_decimals: 0
     disabled_by_default: true
     filters:
-      - delta: 0.9
+      - throttle_average: ${econet_throttle_interval}
   - platform: template
     name: "Flame Sensor"
     id: flame_sensor
@@ -129,6 +129,7 @@ sensor:
     accuracy_decimals: 4
     unit_of_measurement: "mA"
     filters:
+      - throttle_average: ${econet_throttle_interval}
       - delta: 0.09
       - multiply: .001  # Convert from uA to mA
   - platform: econet
@@ -138,13 +139,13 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 0
-    unit_of_measurement: "%"
-    icon: "mdi:fire-circle"
-    request_once: true
     filters:
       - lambda: |-  # Some furnaces seem to report waste rather than efficiency; this normalizes things to traditional AFUE
           if (x < 50) return 100-x;
           return x;
+    unit_of_measurement: "%"
+    icon: "mdi:fire-circle"
+    request_once: true
   - platform: econet
     name: "Furnace High Heat BTU Output"
     id: furnace_hh_btus
@@ -169,6 +170,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Two Week Cycles - High Heat"
@@ -178,6 +180,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Two Week Cycles - Blower"
@@ -187,6 +190,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Two Week Cycles - Powered"
@@ -196,6 +200,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Two Week Hours - Low Heat"
@@ -206,6 +211,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Two Week Hours - High Heat"
@@ -216,6 +222,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Two Week Hours - Blower"
@@ -226,6 +233,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Lifetime Cycles - Low Heat"
@@ -235,6 +243,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Lifetime Cycles - High Heat"
@@ -244,6 +253,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Lifetime Cycles - Blower"
@@ -253,6 +263,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Lifetime Cycles - Powered"
@@ -262,6 +273,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Lifetime Hours - Low Heat"
@@ -272,6 +284,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Lifetime Hours - High Heat"
@@ -282,6 +295,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Lifetime Hours - Blower"
@@ -292,6 +306,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Lifetime Days - Powered"
@@ -302,6 +317,7 @@ sensor:
     entity_category: "diagnostic"
     accuracy_decimals: 0
     filters:
+      - throttle: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Instant BTU Output"
@@ -311,6 +327,7 @@ sensor:
     state_class: "measurement"
     accuracy_decimals: 3
     filters:
+      - throttle_average: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Instant BTU Usage"
@@ -320,6 +337,7 @@ sensor:
     state_class: "measurement"
     accuracy_decimals: 3
     filters:
+      - throttle_average: ${econet_throttle_interval}
       - delta: 0.9
   - platform: template
     name: "Instant Gas Usage"
@@ -328,9 +346,19 @@ sensor:
     icon: "mdi:meter-gas"
     state_class: "measurement"
     accuracy_decimals: 3
+    filters:
+      - throttle_average: ${econet_throttle_interval}
+    # Create raw measurement to use in integration platform below
+  - platform: template
+    id: gas_usage_m3_h_raw
+    unit_of_measurement: "m³/h"
+    icon: "mdi:meter-gas"
+    internal: true
+    accuracy_decimals: 3
   - platform: integration
     name: "Total Daily Gas"
-    sensor: gas_usage_m3_h
+    id: daily_gas_usage
+    sensor: gas_usage_m3_h_raw
     time_unit: h
     state_class: total_increasing
     device_class: gas
@@ -341,6 +369,8 @@ sensor:
     id: indoor_kw
     sensor_datapoint: INDOORKW
     entity_category: "diagnostic"
+    filters:
+      - throttle: ${econet_throttle_interval}
     state_class: "total_increasing"
     device_class: energy
     unit_of_measurement: "kWh"
@@ -349,28 +379,31 @@ sensor:
     id: heat_capacity
     entity_category: "diagnostic"
     accuracy_decimals: 0
+    filters:
+      - throttle_average: ${econet_throttle_interval}
+      - delta: 0.9
     state_class: "measurement"
     icon: "mdi:gas-burner"
-    filters:
-      - delta: 0.9
   - platform: template
     name: "Heating Stage"
     id: heat_stage
     entity_category: "diagnostic"
     accuracy_decimals: 0
+    filters:
+      - throttle: ${econet_throttle_interval}
+      - delta: 0.9
     state_class: "measurement"
     icon: "mdi:gas-burner"
-    filters:
-      - delta: 0.9
   - platform: template
     name: "Compressor Stage"
     id: compressor_stage
     entity_category: "diagnostic"
     accuracy_decimals: 0
+    filters:
+      - throttle: ${econet_throttle_interval}
+      - delta: 0.9
     state_class: "measurement"
     icon: "mdi:sun-snowflake-variant"
-    filters:
-      - delta: 0.9
 
 text_sensor:
   - platform: template
@@ -404,3 +437,4 @@ interval:
           id(instant_btu_output).publish_state(furnace_kbtus);
           id(instant_btu_usage).publish_state(furnace_kbtus / furnace_eff);
           id(gas_usage_m3_h).publish_state(furnace_kbtus / furnace_eff / ${furnace_kbtus_per_m3});
+          id(gas_usage_m3_h_raw).publish_state(furnace_kbtus / furnace_eff / ${furnace_kbtus_per_m3});
