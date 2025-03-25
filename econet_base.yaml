@@ -13,6 +13,7 @@ substitutions:
   external_components_source: github://esphome-econet/esphome-econet@${github_ref}
   logger_level: WARN
   econet_update_interval: 30s
+  econet_throttle_interval: ${econet_update_interval}
   econet_alarm_update_interval: 30s
   econet_alarm_history_update_interval: 60s
   mcu_connected_timeout: ${econet_update_interval}

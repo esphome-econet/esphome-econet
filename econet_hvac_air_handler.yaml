@@ -17,6 +17,7 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
     filters:
+      - throttle_average: ${econet_throttle_interval}
       - delta: 0.9
   - platform: econet
     name: "Return Air Temperature"
@@ -27,6 +28,7 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
     filters:
+      - throttle_average: ${econet_throttle_interval}
       - delta: 0.9
 
 binary_sensor:

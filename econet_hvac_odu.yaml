@@ -14,6 +14,8 @@ sensor:
     request_mod: none
     unit_of_measurement: "°F"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -24,6 +26,8 @@ sensor:
     request_mod: none
     unit_of_measurement: "°F"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -34,6 +38,8 @@ sensor:
     request_mod: none
     accuracy_decimals: 1
     state_class: "measurement"
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Pressure Liquid"
@@ -42,6 +48,8 @@ sensor:
     request_mod: none
     unit_of_measurement: "psi"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "pressure"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -53,6 +61,8 @@ sensor:
     request_mod: none
     unit_of_measurement: "°F"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -64,6 +74,8 @@ sensor:
     request_mod: none
     unit_of_measurement: "°F"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -73,6 +85,8 @@ sensor:
     sensor_datapoint: EXACTUAL
     request_mod: none
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     unit_of_measurement: "%"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -83,6 +97,8 @@ sensor:
     request_mod: none
     unit_of_measurement: "°F"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -93,6 +109,8 @@ sensor:
     request_mod: none
     unit_of_measurement: "°F"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -103,6 +121,8 @@ sensor:
     request_mod: none
     unit_of_measurement: "°F"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -113,6 +133,8 @@ sensor:
     request_mod: none
     unit_of_measurement: "psi"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "pressure"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -123,6 +145,8 @@ sensor:
     unit_of_measurement: "s"
     request_mod: none
     accuracy_decimals: 0
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
@@ -288,12 +312,16 @@ sensor:
     device_class: energy
     unit_of_measurement: "kWh"
     accuracy_decimals: 1
+    filters:
+      - throttle: ${econet_throttle_interval}
   - platform: econet
     name: "ODU Defrost Sensor"
     id: odu_defrost_sensor
     sensor_datapoint: ODU_DEFR
     request_mod: none
     accuracy_decimals: 0
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     internal: true
   - platform: econet
     name: "ODU Size (Tons)"
@@ -310,6 +338,8 @@ sensor:
     sensor_datapoint: ODU_TYPE
     request_once: true
     request_mod: 7
+    filters:
+      - throttle: ${econet_throttle_interval}
     icon: "mdi:information-box"
     entity_category: "diagnostic"
 
