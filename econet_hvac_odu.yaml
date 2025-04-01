@@ -33,6 +33,7 @@ sensor:
     sensor_datapoint: ISCSPEED
     request_mod: none
     accuracy_decimals: 1
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Pressure Liquid"
@@ -73,6 +74,7 @@ sensor:
     request_mod: none
     accuracy_decimals: 1
     unit_of_measurement: "%"
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Expansion Valve Super Heat"
@@ -121,6 +123,7 @@ sensor:
     unit_of_measurement: "s"
     request_mod: none
     accuracy_decimals: 0
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Low Cool Two Week Hours"
@@ -128,6 +131,7 @@ sensor:
     sensor_datapoint: ODURCS1H
     request_mod: none
     accuracy_decimals: 1
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU High Cool Two Week Hours"
@@ -136,6 +140,7 @@ sensor:
     unit_of_measurement: ""
     request_mod: none
     accuracy_decimals: 1
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Low Heat Two Week Hours"
@@ -143,6 +148,7 @@ sensor:
     sensor_datapoint: ODURHS1H
     request_mod: none
     accuracy_decimals: 1
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU High Heat Two Week Hours"
@@ -150,6 +156,7 @@ sensor:
     sensor_datapoint: ODURHS2H
     request_mod: none
     accuracy_decimals: 1
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Low Cool Two Week Cycles"
@@ -157,6 +164,7 @@ sensor:
     sensor_datapoint: ODURCS1C
     request_mod: none
     accuracy_decimals: 1
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU High Cool Two Week Cycles"
@@ -164,6 +172,7 @@ sensor:
     sensor_datapoint: ODURCS2C
     request_mod: none
     accuracy_decimals: 1
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Low Heat Two Week Cycles"
@@ -171,6 +180,7 @@ sensor:
     sensor_datapoint: ODURHS1C
     request_mod: none
     accuracy_decimals: 1
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU High Heat Two Week Cycles"
@@ -178,6 +188,7 @@ sensor:
     sensor_datapoint: ODURHS2C
     request_mod: none
     accuracy_decimals: 1
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Low Cool Lifetime Hours"
@@ -185,7 +196,7 @@ sensor:
     sensor_datapoint: ODULCS1H
     request_mod: none
     accuracy_decimals: 1
-    state_class: "total"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU High Cool Lifetime Hours"
@@ -193,7 +204,7 @@ sensor:
     sensor_datapoint: ODULCS2H
     request_mod: none
     accuracy_decimals: 1
-    state_class: "total"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Low Heat Lifetime Hours"
@@ -201,7 +212,7 @@ sensor:
     sensor_datapoint: ODULHS1H
     request_mod: none
     accuracy_decimals: 1
-    state_class: "total"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU High Heat Lifetime Hours"
@@ -209,7 +220,7 @@ sensor:
     sensor_datapoint: ODULHS2H
     request_mod: none
     accuracy_decimals: 1
-    state_class: "total"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Low Cool Lifetime Cycles"
@@ -217,7 +228,7 @@ sensor:
     sensor_datapoint: ODULCS1C
     request_mod: none
     accuracy_decimals: 1
-    state_class: "total"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU High Cool Lifetime Cycles"
@@ -225,7 +236,7 @@ sensor:
     sensor_datapoint: ODULCS2C
     request_mod: none
     accuracy_decimals: 1
-    state_class: "total"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Low Heat Lifetime Cycles"
@@ -233,7 +244,7 @@ sensor:
     sensor_datapoint: ODULHS1C
     request_mod: none
     accuracy_decimals: 1
-    state_class: "total"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU High Heat Lifetime Cycles"
@@ -241,7 +252,7 @@ sensor:
     sensor_datapoint: ODULHS2C
     request_mod: none
     accuracy_decimals: 1
-    state_class: "total"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Defrost Cycles Two Week Hours"
@@ -249,6 +260,7 @@ sensor:
     sensor_datapoint: ODURDEFC
     request_mod: none
     accuracy_decimals: 1
+    state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Defrost Cycles Lifetime Hours"
@@ -256,7 +268,7 @@ sensor:
     sensor_datapoint: ODULDEFC
     request_mod: none
     accuracy_decimals: 1
-    state_class: "total"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU Days"
@@ -264,6 +276,7 @@ sensor:
     sensor_datapoint: ODU_DAYS
     request_mod: none
     accuracy_decimals: 1
+    state_class: "total_increasing"
     entity_category: "diagnostic"
   - platform: econet
     name: "ODU KW Hours"
