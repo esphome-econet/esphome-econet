@@ -124,6 +124,53 @@ select:
       4: "Timed, 40 min"
     icon: "mdi:fan"
     request_mod: 9
+  - platform: "econet"
+    name: "Humidify During"
+    id: humidify_during
+    enum_datapoint: HUMDCTRL
+    options:
+      0: "Heat"
+      1: "Heat/Fan"
+      2: "Heat/Fan/Cool"
+    icon: "mdi:knob"
+    request_mod: 9
+  - platform: "econet"
+    name: "Humidify with Fan - Level"
+    id: hum_w_fan_level
+    enum_datapoint: HUM_WFAN
+    options:
+      0: "Off"
+      1: "Low"
+      2: "Med. Lo"
+      3: "Medium"
+      4: "Med. Hi"
+      5: "High"
+    icon: "mdi:fan"
+    request_mod: 9
+  - platform: "econet"
+    name: "Humidity Smart Control"
+    id: hum_smart_control
+    enum_datapoint: HUMSMART
+    options:
+      0: "Off"
+      1: "Low"
+      2: "Medium"
+      3: "High"
+    icon: "mdi:network-strength-2"
+    request_mod: 9
+
+number:
+  - platform: econet
+    name: "Humidification Target Percentage"
+    id: humidification_target_percentage
+    number_datapoint: HMTARGET
+    min_value: 10
+    max_value: 80
+    step: 1
+    mode: "slider"
+    icon: "mdi:air-humidifier"
+    request_mod: 9
+
 
 switch:
   - platform: econet
@@ -131,6 +178,13 @@ switch:
     id: dehumidification_enable_state
     switch_datapoint: DHUMENAB
     icon: "mdi:air-humidifier-off"
+  - platform: econet
+    name: "Humidification Enable State"
+    id: humidification_enable_state
+    switch_datapoint: HUMDCNFG
+    icon: "mdi:air-humidifier-on"
+    restore_mode: RESTORE_DEFAULT_OFF
+    request_mod: 9
   - platform: econet
     name: "Follow Schedule"
     id: schedule
