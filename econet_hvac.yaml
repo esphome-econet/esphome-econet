@@ -170,6 +170,16 @@ number:
     mode: "slider"
     icon: "mdi:air-humidifier"
     request_mod: 9
+  - platform: econet
+    name: "Relative Humidity Offset"
+    id: humidification_offset
+    number_datapoint: RELHOFFS
+    min_value: -9.5
+    max_value: 9.5
+    step: 0.5
+    mode: "slider"
+    icon: "mdi:skew-more"
+    request_mod: 9
 
 
 switch:
