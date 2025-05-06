@@ -1,0 +1,172 @@
+select:
+  - platform: "econet"
+    name: "Filter Type"
+    id: fiter_type
+    enum_datapoint: FILTTYPE 
+    options:
+      0: "Media"
+      1: "EAC"
+      2: "EAC w/ Media"
+    icon: "mdi:filter-settings-outline"
+    request_mod: 9
+  - platform: "econet"
+    name: "Room Sensor Selection"
+    id: room_sensor_type
+    enum_datapoint: ROOMSNSE 
+    options:
+      0: "Internal"
+      1: "Remote"
+      2: "Averaged"
+    icon: "mdi:home-thermometer"
+    request_mod: 9
+  - platform: "econet"
+    name: "Outdoor Air Temperature Source"
+    id: oat_source
+    enum_datapoint: OATSELCT 
+    options:
+      1: "Equipment"
+      2: "Internet"
+    icon: "mdi:home-thermometer"
+    request_mod: 9
+  - platform: "econet"
+    name: "Hi Heat Airflow Adjustment"
+    id: hh_airflow_adjust
+    enum_datapoint: FAIRHADJ 
+    options:
+      0: "Lowest"
+      1: "Lower"
+      2: "None"
+      3: "Highest"
+    icon: "mdi:waves-arrow-right"
+    request_mod: 9
+  - platform: "econet"
+    name: "Lo Heat Airflow Adjustment"
+    id: lh_airflow_adjust
+    enum_datapoint: FAIRLADJ 
+    options:
+      0: "Lowest"
+      1: "Lower"
+      2: "None"
+      3: "Highest"
+    icon: "mdi:waves-arrow-right"
+    request_mod: 9
+  - platform: "econet"
+    name: "Aux 1 Contacts Configuration"
+    id: aux_one_config
+    enum_datapoint: FAUX1CFG 
+    options:
+      0: "Off"
+      1: "Float Switch"
+      2: "Shutdown"
+      3: "Shutdown Cool"
+      4: "Furnace Lockout"
+      5: "HP Heat Lockout"
+    icon: "mdi:dots-vertical"
+    request_mod: 9
+  - platform: "econet"
+    name: "Aux 1 Contacts Logic"
+    id: aux_one_logic
+    enum_datapoint: FAUX1LOG
+    options:
+      0: "N.O"
+      1: "N.C"
+    icon: "mdi:toggle-switch-outline"
+    request_mod: 9
+  - platform: "econet"
+    name: "Aux 2 Contacts Configuration"
+    id: aux_2_config
+    enum_datapoint: FAUX2CFG 
+    options:
+      0: "Off"
+      1: "Float Switch"
+      2: "Shutdown"
+      3: "Shutdown Cool"
+      4: "Furnace Lockout"
+      5: "HP Heat Lockout"
+    icon: "mdi:dots-vertical"
+    request_mod: 9
+  - platform: "econet"
+    name: "Aux 2 Contacts Logic"
+    id: aux_two_logic
+    enum_datapoint: FAUX2LOG
+    options:
+      0: "N.O"
+      1: "N.C"
+    icon: "mdi:toggle-switch-outline"
+    request_mod: 9
+  - platform: "econet"
+    name: "Elevation (ft)"
+    id: elevation_geologic
+    enum_datapoint: ELEVATIN 
+    options:
+      0: "US,CN 0-2000"
+      1: "US 2001-3000"
+      2: "CN 2001-4500"
+      3: "US 3001-4000"
+      4: "US 4001-5000"
+      5: "US 5001-6000"
+      6: "US 6001-7000"
+      7: "US 7001-8000"
+      8: "US 8001-9000"
+      9: "US >9001"
+    icon: "mdi:elevation-rise"
+    request_mod: 9
+    
+switch:
+  - platform: econet
+    name: "Smooth Arrival"
+    id: smooth_arrival
+    switch_datapoint: SMARTREC
+    icon: "mdi:image-lock"
+  - platform: econet
+    name: "Proximity Sensing"
+    id: proximity_sensing
+    switch_datapoint: MOT_ENAB
+    icon: "mdi:human-greeting-proximity"
+  - platform: econet
+    name: "(Thermostat) Backlight Enable"
+    id: thermostat_backlight
+    switch_datapoint: BL__ENAB
+    icon: "mdi:brightness-5"
+
+number:
+  - platform: econet
+    name: "Temperature Offset"
+    id: temperature_offset
+    number_datapoint: TEMPOFFS
+    min_value: -9.5
+    max_value: 9.5
+    step: 0.5
+    mode: "slider"
+    icon: "mdi:skew-more"
+    request_mod: 9
+  - platform: econet
+    name: "Temperature Dead Band"
+    id: temperature_dead_band
+    number_datapoint: DEADBAND
+    min_value: 0
+    max_value: 6
+    step: 1
+    mode: "slider"
+    icon: "mdi:skew-more"
+    request_mod: 9
+  - platform: econet
+    name: "Auto Changeover Time (mins)"
+    id: auto_change_tim
+    number_datapoint: AUTOTiME
+    min_value: 5
+    max_value: 60
+    step: 1
+    mode: "slider"
+    icon: "mdi:home-clock-outline"
+    request_mod: 9
+  - platform: econet
+    name: "Furnace Blower Off Delay"
+    id: furnace_blower_off_delay
+    number_datapoint: FCHTBLOD
+    min_value: 90
+    max_value: 180
+    step: 30
+    mode: "slider"
+    icon: "mdi:timer-plus"
+    request_mod: 9
