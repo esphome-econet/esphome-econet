@@ -2,7 +2,7 @@ select:
   - platform: "econet"
     name: "Filter Type"
     id: fiter_type
-    enum_datapoint: FILTTYPE 
+    enum_datapoint: FILTTYPE
     options:
       0: "Media"
       1: "EAC"
@@ -12,7 +12,7 @@ select:
   - platform: "econet"
     name: "Room Sensor Selection"
     id: room_sensor_type
-    enum_datapoint: ROOMSNSE 
+    enum_datapoint: ROOMSNSE
     options:
       0: "Internal"
       1: "Remote"
@@ -22,7 +22,7 @@ select:
   - platform: "econet"
     name: "Outdoor Air Temperature Source"
     id: oat_source
-    enum_datapoint: OATSELCT 
+    enum_datapoint: OATSELCT
     options:
       1: "Equipment"
       2: "Internet"
@@ -31,7 +31,7 @@ select:
   - platform: "econet"
     name: "Hi Heat Airflow Adjustment"
     id: hh_airflow_adjust
-    enum_datapoint: FAIRHADJ 
+    enum_datapoint: FAIRHADJ
     options:
       0: "Lowest"
       1: "Lower"
@@ -42,7 +42,7 @@ select:
   - platform: "econet"
     name: "Lo Heat Airflow Adjustment"
     id: lh_airflow_adjust
-    enum_datapoint: FAIRLADJ 
+    enum_datapoint: FAIRLADJ
     options:
       0: "Lowest"
       1: "Lower"
@@ -53,7 +53,7 @@ select:
   - platform: "econet"
     name: "Aux 1 Contacts Configuration"
     id: aux_one_config
-    enum_datapoint: FAUX1CFG 
+    enum_datapoint: FAUX1CFG
     options:
       0: "Off"
       1: "Float Switch"
@@ -75,7 +75,7 @@ select:
   - platform: "econet"
     name: "Aux 2 Contacts Configuration"
     id: aux_2_config
-    enum_datapoint: FAUX2CFG 
+    enum_datapoint: FAUX2CFG
     options:
       0: "Off"
       1: "Float Switch"
@@ -97,7 +97,7 @@ select:
   - platform: "econet"
     name: "Elevation (ft)"
     id: elevation_geologic
-    enum_datapoint: ELEVATIN 
+    enum_datapoint: ELEVATIN
     options:
       0: "US,CN 0-2000"
       1: "US 2001-3000"
@@ -111,7 +111,7 @@ select:
       9: "US >9001"
     icon: "mdi:elevation-rise"
     request_mod: 9
-    
+
 switch:
   - platform: econet
     name: "Smooth Arrival"
