@@ -20,7 +20,7 @@ esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   comment: ${device_description}
-  min_version: "2024.11.0"
+  min_version: "2025.5.0"
   project:
     name: "esphome-econet.esphome-econet"
     version: v2.8.0
