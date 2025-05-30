@@ -56,9 +56,9 @@ def ensure_option_map(value):
 
 
 CONFIG_SCHEMA = cv.All(
-    climate.CLIMATE_SCHEMA.extend(
+    climate.climate_schema(EconetClimate)
+    .extend(
         {
-            cv.GenerateID(): cv.declare_id(EconetClimate),
             cv.Optional(CONF_CURRENT_TEMPERATURE_DATAPOINT, default=""): cv.string,
             cv.Optional(CONF_TARGET_TEMPERATURE_DATAPOINT, default=""): cv.string,
             cv.Optional(CONF_TARGET_TEMPERATURE_LOW_DATAPOINT, default=""): cv.string,
