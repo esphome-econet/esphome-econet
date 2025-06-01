@@ -23,7 +23,7 @@ esphome:
   min_version: "2025.5.0"
   project:
     name: "esphome-econet.esphome-econet"
-    version: v2.8.0
+    version: v2.8.1
 ${platform}:
   board: ${board}
   variant: ${variant}
