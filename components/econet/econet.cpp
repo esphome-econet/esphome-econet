@@ -192,7 +192,7 @@ void Econet::parse_message_(bool is_tx) {
     }
 
     if (read_req_.awaiting_res) {
-      ESP_LOGW(TAG, "New read request while waiting response for previous read request");
+      ESP_LOGW(TAG, "New read request while waiting for response to previous read request");
     }
     std::vector<std::string> obj_names;
     extract_obj_names(pdata, data_len, &obj_names);
@@ -382,6 +382,15 @@ void Econet::loop() {
   const uint32_t now = millis();
   loop_now_ = now;
 
+  if (this->mcu_connected_ && (now - this->last_read_data_ > this->mcu_connected_timeout_)) {
+    ESP_LOGW(TAG, "No data received from MCU within %" PRIu32 "ms. Marking disconnected.",
+             this->mcu_connected_timeout_);
+    this->mcu_connected_ = false;
+    if (this->mcu_connected_binary_sensor_ != nullptr) {
+      this->mcu_connected_binary_sensor_->publish_state(this->mcu_connected_);
+    }
+  }
+
   if ((now - this->last_read_data_ > RECEIVE_TIMEOUT) && !rx_message_.empty()) {
     ESP_LOGW(TAG, "Ignoring partially received message due to timeout");
     rx_message_.clear();
@@ -391,6 +400,13 @@ void Econet::loop() {
   // Read Everything that is in the buffer
   int bytes_available = this->available();
   if (bytes_available > 0) {
+    if (!this->mcu_connected_) {
+      ESP_LOGI(TAG, "Data received from MCU. Marking connected.");
+      this->mcu_connected_ = true;
+      if (this->mcu_connected_binary_sensor_ != nullptr) {
+        this->mcu_connected_binary_sensor_->publish_state(this->mcu_connected_);
+      }
+    }
     this->last_read_data_ = now;
     ESP_LOGI(TAG, "Read %d. ms=%" PRIu32, bytes_available, now);
     this->read_buffer_(bytes_available);

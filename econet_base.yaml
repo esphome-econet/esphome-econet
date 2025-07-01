@@ -15,6 +15,7 @@ substitutions:
   econet_update_interval: 30s
   econet_alarm_update_interval: 30s
   econet_alarm_history_update_interval: 60s
+  mcu_connected_timeout: 120s
   wifi_module_address: "0x340"
 esphome:
   name: ${name}
@@ -95,6 +96,9 @@ econet:
     2: ${econet_alarm_history_update_interval}
     3: ${econet_alarm_history_update_interval}
   src_address: ${wifi_module_address}
+  mcu_connected_timeout: ${mcu_connected_timeout}
+  mcu_connected_binary_sensor:
+    name: "Microcontroller Connected"
 sensor:
   - platform: econet
     name: "Active Alerts"
