@@ -3,6 +3,7 @@
 #include "esphome/core/component.h"
 #include "esphome/core/helpers.h"
 #include "esphome/components/api/custom_api_device.h"
+#include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/uart/uart.h"
 #include <map>
 #include <vector>
@@ -105,6 +106,10 @@ class Econet : public Component, public uart::UARTDevice {
     update_interval_millis_ = interval_millis;
     update_intervals_();
   }
+  void set_mcu_connected_timeout(uint32_t timeout) { this->mcu_connected_timeout_ = timeout; }
+  void set_mcu_connected_binary_sensor(binary_sensor::BinarySensor *sensor) {
+    this->mcu_connected_binary_sensor_ = sensor;
+  }
   void set_flow_control_pin(GPIOPin *flow_control_pin) { this->flow_control_pin_ = flow_control_pin; }
 
   void set_float_datapoint_value(const std::string &datapoint_id, float value, uint32_t address = 0);
@@ -120,6 +125,9 @@ class Econet : public Component, public uart::UARTDevice {
 
  protected:
   uint32_t update_interval_millis_{30000};
+  uint32_t mcu_connected_timeout_{120000};
+  bool mcu_connected_{false};
+  binary_sensor::BinarySensor *mcu_connected_binary_sensor_{nullptr};
   std::vector<uint32_t> request_mod_addresses_ = std::vector<uint32_t>(MAX_REQUEST_MODS, 0);
   std::map<uint8_t, uint32_t> request_mod_update_interval_millis_map_;
   std::vector<uint32_t> request_mod_update_interval_millis_ =
@@ -128,7 +136,7 @@ class Econet : public Component, public uart::UARTDevice {
   uint32_t min_delay_between_read_requests_{update_interval_millis_};
 
   std::vector<EconetDatapointListener> listeners_;
-  ReadRequest read_req_;
+  ReadRequest read_req_{};
   void set_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value);
   void send_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value);
 

@@ -1,12 +1,15 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome import automation, pins
+from esphome.components import binary_sensor as esphome_binary_sensor
 from esphome.components import uart
 from esphome.const import (
     CONF_FLOW_CONTROL_PIN,
     CONF_ID,
     CONF_SENSOR_DATAPOINT,
     CONF_TRIGGER_ID,
+    DEVICE_CLASS_CONNECTIVITY,
+    ENTITY_CATEGORY_DIAGNOSTIC,
 )
 from esphome.cpp_helpers import gpio_pin_expression
 
@@ -20,6 +23,8 @@ CONF_REQUEST_MOD = "request_mod"
 CONF_REQUEST_ONCE = "request_once"
 CONF_REQUEST_MOD_UPDATE_INTERVALS = "request_mod_update_intervals"
 CONF_REQUEST_MOD_ADDRESSES = "request_mod_addresses"
+CONF_MCU_CONNECTED_TIMEOUT = "mcu_connected_timeout"
+CONF_MCU_CONNECTED_BINARY_SENSOR = "mcu_connected_binary_sensor"
 
 econet_ns = cg.esphome_ns.namespace("econet")
 Econet = econet_ns.class_("Econet", cg.Component, uart.UARTDevice)
@@ -99,6 +104,16 @@ CONFIG_SCHEMA = (
                 CONF_REQUEST_MOD_UPDATE_INTERVALS
             ): validate_request_mod_update_intervals,
             cv.Optional(CONF_REQUEST_MOD_ADDRESSES): validate_request_mod_addresses,
+            cv.Optional(
+                CONF_MCU_CONNECTED_TIMEOUT, default="120s"
+            ): cv.positive_time_period_milliseconds,
+            cv.Optional(
+                CONF_MCU_CONNECTED_BINARY_SENSOR
+            ): esphome_binary_sensor.binary_sensor_schema(
+                esphome_binary_sensor.BinarySensor,
+                device_class=DEVICE_CLASS_CONNECTIVITY,
+                entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
+            ),
         }
     )
     .extend(cv.polling_component_schema("30s"))
@@ -141,6 +156,13 @@ async def to_code(config):
     if CONF_FLOW_CONTROL_PIN in config:
         pin = await gpio_pin_expression(config[CONF_FLOW_CONTROL_PIN])
         cg.add(var.set_flow_control_pin(pin))
+    if CONF_MCU_CONNECTED_TIMEOUT in config:
+        cg.add(var.set_mcu_connected_timeout(config[CONF_MCU_CONNECTED_TIMEOUT]))
+    if CONF_MCU_CONNECTED_BINARY_SENSOR in config:
+        sens = await esphome_binary_sensor.new_binary_sensor(
+            config[CONF_MCU_CONNECTED_BINARY_SENSOR]
+        )
+        cg.add(var.set_mcu_connected_binary_sensor(sens))
     for conf in config.get(CONF_ON_DATAPOINT_UPDATE, []):
         trigger = cg.new_Pvariable(
             conf[CONF_TRIGGER_ID],
