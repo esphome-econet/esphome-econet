@@ -175,6 +175,7 @@ class Econet : public Component, public uart::UARTDevice {
   uint32_t last_request_{0};
   uint32_t last_read_request_{0};
   uint32_t last_read_data_{0};
+  uint32_t last_valid_read_{0};
   std::vector<uint8_t> rx_message_;
   std::vector<uint8_t> tx_message_;
 

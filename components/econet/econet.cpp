@@ -174,6 +174,17 @@ void Econet::parse_message_(bool is_tx) {
     return;
   }
 
+  if (!is_tx) {
+    if (!this->mcu_connected_) {
+      ESP_LOGI(TAG, "Data received from MCU. Marking connected.");
+      this->mcu_connected_ = true;
+      if (this->mcu_connected_binary_sensor_ != nullptr) {
+        this->mcu_connected_binary_sensor_->publish_state(this->mcu_connected_);
+      }
+    }
+    this->last_valid_read_ = loop_now_;
+  }
+
   // Track Read Requests
   if (command == READ_COMMAND) {
     uint8_t type = pdata[0] & 0x7F;
@@ -382,7 +393,7 @@ void Econet::loop() {
   const uint32_t now = millis();
   loop_now_ = now;
 
-  if (this->mcu_connected_ && (now - this->last_read_data_ > this->mcu_connected_timeout_)) {
+  if (this->mcu_connected_ && (now - this->last_valid_read_ > this->mcu_connected_timeout_)) {
     ESP_LOGW(TAG, "No data received from MCU within %" PRIu32 "ms. Marking disconnected.",
              this->mcu_connected_timeout_);
     this->mcu_connected_ = false;
@@ -400,13 +411,6 @@ void Econet::loop() {
   // Read Everything that is in the buffer
   int bytes_available = this->available();
   if (bytes_available > 0) {
-    if (!this->mcu_connected_) {
-      ESP_LOGI(TAG, "Data received from MCU. Marking connected.");
-      this->mcu_connected_ = true;
-      if (this->mcu_connected_binary_sensor_ != nullptr) {
-        this->mcu_connected_binary_sensor_->publish_state(this->mcu_connected_);
-      }
-    }
     this->last_read_data_ = now;
     ESP_LOGI(TAG, "Read %d. ms=%" PRIu32, bytes_available, now);
     this->read_buffer_(bytes_available);
