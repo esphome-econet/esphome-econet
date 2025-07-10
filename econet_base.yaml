@@ -25,11 +25,6 @@ esphome:
   project:
     name: "esphome-econet.esphome-econet"
     version: v2.9.2
-${platform}:
-  board: ${board}
-  variant: ${variant}
-  framework:
-    type: ${framework}
 preferences:
   flash_write_interval: "24h"
 wifi:

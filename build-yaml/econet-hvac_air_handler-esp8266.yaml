@@ -5,6 +5,9 @@ substitutions:
   platform: esp8266
   board: d1_mini
 
+${platform}:
+  board: ${board}
+
 packages:
   econet:
     url: https://github.com/esphome-econet/esphome-econet
@@ -19,10 +22,6 @@ packages:
 dashboard_import:
   package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${platform}.yaml@${github_ref}
   import_full_config: false
-
-esp8266:
-  variant: !remove
-  framework: !remove
 
 # Uncomment the below to use Wi-Fi settings from your secrets.yaml file
 # wifi:

@@ -5,6 +5,13 @@ substitutions:
   board: esp32-c3-devkitm-1
   platform: esp32
   variant: esp32c3
+  framework: arduino
+
+${platform}:
+  board: ${board}
+  variant: ${variant}
+  framework:
+    type: ${framework}
 
 packages:
   econet:

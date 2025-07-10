@@ -4,6 +4,14 @@ substitutions:
   rx_pin: GPIO22
   platform: esp32
   board: esp32dev
+  variant: esp32
+  framework: arduino
+
+${platform}:
+  board: ${board}
+  variant: ${variant}
+  framework:
+    type: ${framework}
 
 packages:
   econet:
