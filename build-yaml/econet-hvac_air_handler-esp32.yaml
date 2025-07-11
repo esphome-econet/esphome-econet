@@ -2,8 +2,12 @@
 substitutions:
   tx_pin: GPIO19
   rx_pin: GPIO22
-  platform: esp32
+
+esp32:
   board: esp32dev
+  variant: esp32
+  framework:
+    type: arduino
 
 packages:
   econet:
@@ -17,7 +21,7 @@ packages:
   #   file: econet_hvac_odu.yaml
 
 dashboard_import:
-  package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${platform}.yaml@${github_ref}
+  package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-esp32.yaml@${github_ref}
   import_full_config: false
 
 # Uncomment the below to use Wi-Fi settings from your secrets.yaml file
