@@ -2,16 +2,12 @@
 substitutions:
   tx_pin: GPIO21
   rx_pin: GPIO20
-  board: esp32-c3-devkitm-1
-  platform: esp32
-  variant: esp32c3
-  framework: arduino
 
-${platform}:
-  board: ${board}
-  variant: ${variant}
+esp32:
+  board: esp32-c3-devkitm-1
+  variant: esp32c3
   framework:
-    type: ${framework}
+    type: arduino
 
 packages:
   econet:
@@ -20,7 +16,7 @@ packages:
     file: econet_electric_tank_water_heater.yaml
 
 dashboard_import:
-  package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${variant}.yaml@${github_ref}
+  package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-esp32c3.yaml@${github_ref}
   import_full_config: false
 
 # Uncomment the below to use Wi-Fi settings from your secrets.yaml file
