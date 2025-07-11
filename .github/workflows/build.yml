@@ -38,7 +38,7 @@ on:
         description: "Specify the esphome release with which to build."
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.esphome-version }}
   cancel-in-progress: true
 
 jobs:
