@@ -16,7 +16,7 @@ jobs:
       matrix:
         esphome-version:
           - name: Release
-            shorthand: release
+            shorthand: latest
           - name: Beta
             shorthand: beta
           - name: Development
