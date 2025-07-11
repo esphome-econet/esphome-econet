@@ -12,10 +12,20 @@ concurrency:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        esphome-version:
+          - name: Release
+            shorthand: release
+          - name: Beta
+            shorthand: beta
+          - name: Development
+            shorthand: dev
+      fail-fast: false
     uses: ./.github/workflows/build.yml
     with:
       force-verbose-logging: true
-      esphome-version: 'beta'
+      esphome-version:  ${{ matrix.esphome-version.shorthand }}
   create-issue-on-failure:
     name: Create Issue on Failure
     runs-on: ubuntu-latest
