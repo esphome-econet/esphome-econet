@@ -14,7 +14,7 @@ void EconetSelect::setup() {
         ESP_LOGV(TAG, "MCU reported select %s value %u", this->select_id_.c_str(), enum_value);
         auto mappings = this->mappings_;
         auto it = std::find(mappings.cbegin(), mappings.cend(), enum_value);
-        if (it == mappings.end()) {
+        if (it == mappings.cend()) {
           ESP_LOGW(TAG, "Invalid value %u", enum_value);
           return;
         }
