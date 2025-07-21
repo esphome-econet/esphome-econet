@@ -13,6 +13,7 @@ namespace esphome {
 namespace econet {
 
 static const uint8_t MAX_REQUEST_MODS = 16;
+static const uint32_t DEFAULT_UPDATE_INTERVAL_MILLIS = 30000;
 
 class ReadRequest {
  public:
@@ -124,16 +125,16 @@ class Econet : public Component, public uart::UARTDevice {
   void homeassistant_write(const std::string &datapoint_id, float value, uint32_t address = 0);
 
  protected:
-  uint32_t update_interval_millis_{30000};
-  uint32_t mcu_connected_timeout_{120000};
+  uint32_t update_interval_millis_{DEFAULT_UPDATE_INTERVAL_MILLIS};
+  uint32_t mcu_connected_timeout_{DEFAULT_UPDATE_INTERVAL_MILLIS * 4};
   bool mcu_connected_{false};
   binary_sensor::BinarySensor *mcu_connected_binary_sensor_{nullptr};
   std::vector<uint32_t> request_mod_addresses_ = std::vector<uint32_t>(MAX_REQUEST_MODS, 0);
   std::map<uint8_t, uint32_t> request_mod_update_interval_millis_map_;
   std::vector<uint32_t> request_mod_update_interval_millis_ =
-      std::vector<uint32_t>(MAX_REQUEST_MODS, update_interval_millis_);
-  uint32_t min_update_interval_millis_{update_interval_millis_};
-  uint32_t min_delay_between_read_requests_{update_interval_millis_};
+      std::vector<uint32_t>(MAX_REQUEST_MODS, DEFAULT_UPDATE_INTERVAL_MILLIS);
+  uint32_t min_update_interval_millis_{DEFAULT_UPDATE_INTERVAL_MILLIS};
+  uint32_t min_delay_between_read_requests_{DEFAULT_UPDATE_INTERVAL_MILLIS};
 
   std::vector<EconetDatapointListener> listeners_;
   ReadRequest read_req_{};
