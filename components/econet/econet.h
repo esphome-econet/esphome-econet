@@ -17,16 +17,11 @@ static const uint32_t DEFAULT_UPDATE_INTERVAL_MILLIS = 30000;
 
 class ReadRequest {
  public:
-  uint32_t dst_adr;
-  uint8_t dst_bus;
-
-  uint32_t src_adr;
-  uint8_t src_bus;
-
-  bool awaiting_res;
-
-  uint8_t type;
   std::vector<std::string> obj_names;
+  uint32_t dst_adr;
+  uint32_t src_adr;
+  uint8_t type;
+  bool awaiting_res;
 };
 
 struct EconetDatapointID {
@@ -49,13 +44,13 @@ enum class EconetDatapointType : uint8_t {
 };
 
 struct EconetDatapoint {
-  EconetDatapointType type;
+  std::vector<uint8_t> value_raw;
+  std::string value_string;
   union {
     float value_float;
     uint8_t value_enum;
   };
-  std::string value_string;
-  std::vector<uint8_t> value_raw;
+  EconetDatapointType type;
 };
 inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
   if (lhs.type != rhs.type) {
@@ -125,19 +120,6 @@ class Econet : public Component, public uart::UARTDevice {
   void homeassistant_write(const std::string &datapoint_id, float value, uint32_t address = 0);
 
  protected:
-  uint32_t update_interval_millis_{DEFAULT_UPDATE_INTERVAL_MILLIS};
-  uint32_t mcu_connected_timeout_{DEFAULT_UPDATE_INTERVAL_MILLIS * 4};
-  bool mcu_connected_{false};
-  binary_sensor::BinarySensor *mcu_connected_binary_sensor_{nullptr};
-  std::vector<uint32_t> request_mod_addresses_ = std::vector<uint32_t>(MAX_REQUEST_MODS, 0);
-  std::map<uint8_t, uint32_t> request_mod_update_interval_millis_map_;
-  std::vector<uint32_t> request_mod_update_interval_millis_ =
-      std::vector<uint32_t>(MAX_REQUEST_MODS, DEFAULT_UPDATE_INTERVAL_MILLIS);
-  uint32_t min_update_interval_millis_{DEFAULT_UPDATE_INTERVAL_MILLIS};
-  uint32_t min_delay_between_read_requests_{DEFAULT_UPDATE_INTERVAL_MILLIS};
-
-  std::vector<EconetDatapointListener> listeners_;
-  ReadRequest read_req_{};
   void set_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value);
   void send_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value);
 
@@ -163,6 +145,15 @@ class Econet : public Component, public uart::UARTDevice {
     }
   }
 
+  // Member variables - ordered for packing
+  // Large/complex types
+  ReadRequest read_req_{};
+  esphome::api::CustomAPIDevice capi_;
+  std::vector<EconetDatapointListener> listeners_;
+  std::vector<uint32_t> request_mod_addresses_ = std::vector<uint32_t>(MAX_REQUEST_MODS, 0);
+  std::map<uint8_t, uint32_t> request_mod_update_interval_millis_map_;
+  std::vector<uint32_t> request_mod_update_interval_millis_ =
+      std::vector<uint32_t>(MAX_REQUEST_MODS, DEFAULT_UPDATE_INTERVAL_MILLIS);
   std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(MAX_REQUEST_MODS);
   std::vector<uint32_t> request_mod_last_requested_ = std::vector<uint32_t>(MAX_REQUEST_MODS, 0);
   std::set<uint8_t> request_mods_;
@@ -171,19 +162,28 @@ class Econet : public Component, public uart::UARTDevice {
   std::map<EconetDatapointID, EconetDatapoint> datapoints_;
   std::map<EconetDatapointID, EconetDatapoint> pending_writes_;
   std::queue<EconetDatapointID> datapoint_ids_for_read_service_;
+  std::vector<uint8_t> rx_message_;
+  std::vector<uint8_t> tx_message_;
 
+  // Pointers
+  binary_sensor::BinarySensor *mcu_connected_binary_sensor_{nullptr};
+  GPIOPin *flow_control_pin_{nullptr};
+
+  // 4-byte types
+  uint32_t update_interval_millis_{DEFAULT_UPDATE_INTERVAL_MILLIS};
+  uint32_t mcu_connected_timeout_{DEFAULT_UPDATE_INTERVAL_MILLIS * 4};
+  uint32_t min_update_interval_millis_{DEFAULT_UPDATE_INTERVAL_MILLIS};
+  uint32_t min_delay_between_read_requests_{DEFAULT_UPDATE_INTERVAL_MILLIS};
   uint32_t loop_now_{0};
   uint32_t last_request_{0};
   uint32_t last_read_request_{0};
   uint32_t last_read_data_{0};
   uint32_t last_valid_read_{0};
-  std::vector<uint8_t> rx_message_;
-  std::vector<uint8_t> tx_message_;
-
   uint32_t src_adr_{0};
   uint32_t dst_adr_{0};
-  GPIOPin *flow_control_pin_{nullptr};
-  esphome::api::CustomAPIDevice capi_;
+
+  // 1-byte types
+  bool mcu_connected_{false};
 };
 
 class EconetClient {
@@ -195,9 +195,9 @@ class EconetClient {
 
  protected:
   Econet *parent_;
+  uint32_t src_adr_{0};
   int8_t request_mod_{0};
   bool request_once_{false};
-  uint32_t src_adr_{0};
 };
 
 }  // namespace econet
