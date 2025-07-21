@@ -91,6 +91,8 @@ void Econet::setup() {
   if (flow_control_pin_ != nullptr) {
     flow_control_pin_->setup();
   }
+  this->rx_message_.reserve(256);
+  this->tx_message_.reserve(256);
 }
 
 void Econet::dump_config() {
@@ -206,6 +208,9 @@ void Econet::parse_message_(bool is_tx) {
       ESP_LOGW(TAG, "New read request while waiting for response to previous read request");
     }
     std::vector<std::string> obj_names;
+    if (data_len > 4) {
+      obj_names.reserve((data_len - 4) / (OBJ_NAME_SIZE + 2));
+    }
     extract_obj_names(pdata, data_len, &obj_names);
     for (auto &obj_name : obj_names) {
       ESP_LOGI(TAG, "  %s", obj_name.c_str());
@@ -434,6 +439,7 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
     address = dst_adr_;
   }
   std::vector<uint8_t> data;
+  data.reserve(6 + OBJ_NAME_SIZE + FLOAT_SIZE);
 
   data.push_back(1);
   data.push_back(1);
@@ -460,6 +466,7 @@ void Econet::request_strings_() {
   std::vector<std::string> objects;
   uint32_t dst_adr = dst_adr_;
   if (!datapoint_ids_for_read_service_.empty()) {
+    objects.reserve(1);
     objects.push_back(datapoint_ids_for_read_service_.front().name);
     dst_adr = datapoint_ids_for_read_service_.front().address;
     datapoint_ids_for_read_service_.pop();
@@ -470,6 +477,7 @@ void Econet::request_strings_() {
     }
     for (auto request_mod : request_mods_) {
       if ((loop_now_ - request_mod_last_requested_[request_mod]) >= request_mod_update_interval_millis_[request_mod]) {
+        objects.reserve(request_datapoint_ids_[request_mod].size());
         std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
                   back_inserter(objects));
         request_mod_last_requested_[request_mod] = loop_now_;
@@ -495,6 +503,7 @@ void Econet::request_strings_() {
   last_read_request_ = loop_now_;
 
   std::vector<uint8_t> data;
+  data.reserve(2 + objects.size() * (2 + OBJ_NAME_SIZE));
 
   // Read Class
   if (objects.size() == 1 && raw_datapoint_ids_.count(EconetDatapointID{.name = objects[0], .address = dst_adr}) == 1) {
