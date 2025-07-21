@@ -163,7 +163,7 @@ class Econet : public Component, public uart::UARTDevice {
   }
 
   std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(MAX_REQUEST_MODS);
-  std::vector<uint32_t> request_mod_last_requested_ = std::vector<uint32_t>{MAX_REQUEST_MODS, 0};
+  std::vector<uint32_t> request_mod_last_requested_ = std::vector<uint32_t>(MAX_REQUEST_MODS, 0);
   std::set<uint8_t> request_mods_;
   std::set<EconetDatapointID> raw_datapoint_ids_;
   std::set<EconetDatapointID> request_once_datapoint_ids_;
