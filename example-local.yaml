@@ -1,3 +1,5 @@
+# This file is for local development only. Not intended for production use.
+# Used during development to test and debug the component.
 ---
 substitutions:
   external_components_source: components  # Build with local code instead of pulling from Github
@@ -7,6 +9,12 @@ substitutions:
   zone4name: Zone4Name
   zone5name: Zone5Name
   zone6name: Zone6Name  # rename to "Bypass" if using zone6 as bypass
+
+esp32:
+  board: esp32dev
+  variant: esp32
+  framework:
+    type: arduino
 
 packages:  # Change this file to the correct one(s) for your device
   econet-hpwh: !include econet_heatpump_water_heater.yaml
@@ -31,6 +39,4 @@ wifi:
 
 # If you have UNSUPPORTED sensors add something like the following to disable them
 # sensor:
-#   - id: !extend hot_water
-#     request_mod: none
-#     internal: true
+#   - id: !remove hot_water
