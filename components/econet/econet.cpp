@@ -611,41 +611,26 @@ void Econet::set_datapoint_(const EconetDatapointID &datapoint_id, const EconetD
 }
 
 void Econet::send_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value) {
-  auto specific = EconetDatapointID{.name = datapoint_id.name, .address = datapoint_id.address};
-  auto any = EconetDatapointID{.name = datapoint_id.name, .address = 0};
-  bool send_specific = true;
-  bool send_any = true;
-  if (datapoints_.count(specific) == 1) {
-    EconetDatapoint old_value = datapoints_[specific];
-    if (old_value == value) {
-      ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", specific.name.c_str());
-      send_specific = false;
-    }
+  auto specific_id = datapoint_id;
+  auto any_id = EconetDatapointID{.name = datapoint_id.name, .address = 0};
+  bool changed = false;
+  if (datapoints_.count(specific_id) == 0 || !(datapoints_[specific_id] == value)) {
+    datapoints_[specific_id] = value;
+    changed = true;
   }
-  if (send_specific) {
-    datapoints_[specific] = value;
+  if (datapoints_.count(any_id) == 0 || !(datapoints_[any_id] == value)) {
+    datapoints_[any_id] = value;
+    changed = true;
+  }
+  if (changed) {
     for (auto &listener : this->listeners_) {
       if (listener.datapoint_id.name == datapoint_id.name &&
           (listener.datapoint_id.address == 0 || listener.datapoint_id.address == datapoint_id.address)) {
         listener.on_datapoint(value);
       }
     }
-  }
-  if (datapoints_.count(any) == 1) {
-    EconetDatapoint old_value = datapoints_[any];
-    if (old_value == value) {
-      ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", any.name.c_str());
-      send_any = false;
-    }
-  }
-  if (send_any) {
-    datapoints_[any] = value;
-    for (auto &listener : this->listeners_) {
-      if (listener.datapoint_id.name == datapoint_id.name &&
-          (listener.datapoint_id.address == 0 || listener.datapoint_id.address == datapoint_id.address)) {
-        listener.on_datapoint(value);
-      }
-    }
+  } else {
+    ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", specific_id.name.c_str());
   }
 }
 
