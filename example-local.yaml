@@ -9,17 +9,12 @@ substitutions:
   zone4name: Zone4Name
   zone5name: Zone5Name
   zone6name: Zone6Name  # rename to "Bypass" if using zone6 as bypass
-  tx_pin: GPIO4
-  rx_pin: GPIO5
 
-esp8266:
-  board: d1_mini
-
-# esp32:
-#   board: esp32dev
-#   variant: esp32
-#   framework:
-#     type: arduino
+esp32:
+  board: esp32dev
+  variant: esp32
+  framework:
+    type: arduino
 
 packages:  # Change this file to the correct one(s) for your device
   econet-hpwh: !include econet_heatpump_water_heater.yaml
