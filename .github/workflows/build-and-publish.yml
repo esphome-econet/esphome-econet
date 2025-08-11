@@ -44,7 +44,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Download built firmwares
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: firmwares
       - name: Dump file list
@@ -70,7 +70,7 @@ jobs:
     needs: consolidate-manifests
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           path: firmwares
       - name: Dump file list
