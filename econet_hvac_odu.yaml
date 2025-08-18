@@ -312,6 +312,15 @@ sensor:
     request_mod: 7
     icon: "mdi:information-box"
     entity_category: "diagnostic"
+  - platform: econet
+    name: "ODU Address (reported)"
+    sensor_datapoint: ODUADDRS
+    id: odu_address_reported
+    request_once: true
+    request_mod: 8
+    src_address: ${thermostat_address}
+    icon: "mdi:information-box"
+    entity_category: "diagnostic"
 
 binary_sensor:
   - platform: template
