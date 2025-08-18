@@ -61,7 +61,7 @@ jobs:
             shorthand: tlwh
       fail-fast: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Force Manifest to Build Local Code
         uses: mikefarah/yq@v4
         with:

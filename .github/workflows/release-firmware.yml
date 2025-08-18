@@ -27,7 +27,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prefix: "v"
           dry_run: true
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           token: ${{ secrets.RELEASE_AUTOMATION_ACTION }}
       - name: Update Project Version String
