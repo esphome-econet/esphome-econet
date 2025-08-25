@@ -83,7 +83,7 @@ jobs:
           cp -R firmwares/*/*/*.bin output/
           ls -R output/
       - name: Upload GitHub-Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: output
 
