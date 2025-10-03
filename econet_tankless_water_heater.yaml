@@ -27,7 +27,7 @@ climate:
     mode_datapoint: WHTRENAB
     modes:
       0: "OFF"
-      1: "AUTO"
+      1: "HEAT"
 
 sensor:
   - platform: econet
