@@ -39,6 +39,8 @@ sensor:
     sensor_datapoint: LOHTRTMP
     unit_of_measurement: "°F"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -48,6 +50,8 @@ sensor:
     sensor_datapoint: UPHTRTMP
     unit_of_measurement: "°F"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -57,16 +61,19 @@ sensor:
     sensor_datapoint: POWRWATT
     unit_of_measurement: "W"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
+      - lambda: ${sensor_power_filters_lambda}
     device_class: "power"
     state_class: "measurement"
-    filters:
-      - lambda: ${sensor_power_filters_lambda}
   - platform: econet
     name: "Lower Heating Element Runtime"
     id: hours_lower_heater
     sensor_datapoint: HRSLOHTR
     unit_of_measurement: "h"
     accuracy_decimals: 6
+    filters:
+      - throttle: ${econet_throttle_interval}
     device_class: "duration"
     state_class: "total_increasing"
     entity_category: "diagnostic"
@@ -76,6 +83,8 @@ sensor:
     sensor_datapoint: HRSUPHTR
     unit_of_measurement: "h"
     accuracy_decimals: 6
+    filters:
+      - throttle: ${econet_throttle_interval}
     device_class: "duration"
     state_class: "total_increasing"
     entity_category: "diagnostic"
@@ -85,6 +94,8 @@ sensor:
     sensor_datapoint: HOTWATER
     unit_of_measurement: "%"
     accuracy_decimals: 0
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "moisture"
     state_class: "measurement"
 

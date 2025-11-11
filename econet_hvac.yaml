@@ -58,6 +58,7 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
     filters:
+      - throttle_average: ${econet_throttle_interval}
       - delta: 9.9
   - platform: econet
     name: "Airhandler RPM"
@@ -67,6 +68,7 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
     filters:
+      - throttle_average: ${econet_throttle_interval}
       - delta: 9.9
   - platform: econet
     name: "Static Pressure"
@@ -78,6 +80,7 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
     filters:
+      - throttle_average: ${econet_throttle_interval}
       - delta: 0.02
   - platform: econet
     name: "Thermostat Current Humidity"
