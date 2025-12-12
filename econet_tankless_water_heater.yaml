@@ -36,6 +36,8 @@ sensor:
     sensor_datapoint: TEMP__IN
     unit_of_measurement: "°F"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -45,6 +47,8 @@ sensor:
     sensor_datapoint: TEMP_OUT
     unit_of_measurement: "°F"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "temperature"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -54,6 +58,8 @@ sensor:
     sensor_datapoint: WTR_BTUS
     unit_of_measurement: "kbtu"
     accuracy_decimals: 3
+    filters:
+      - throttle: ${econet_throttle_interval}
     entity_category: "diagnostic"
     icon: "mdi:flash"
     on_value:
@@ -66,6 +72,8 @@ sensor:
     sensor_datapoint: WTR_USED
     unit_of_measurement: "gal"
     accuracy_decimals: 1
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     device_class: "water"
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -75,11 +83,12 @@ sensor:
     sensor_datapoint: FLOWRATE
     unit_of_measurement: "gpm"
     accuracy_decimals: 1
-    state_class: "measurement"
-    entity_category: "diagnostic"
     filters:
+      - throttle_average: ${econet_throttle_interval}
       # Convert liters per minute to gpm
       - multiply: 0.264172
+    state_class: "measurement"
+    entity_category: "diagnostic"
     icon: "mdi:water"
   - platform: econet
     name: "Ignition Cycles"
@@ -87,6 +96,8 @@ sensor:
     sensor_datapoint: IGNCYCLS
     unit_of_measurement: ""
     accuracy_decimals: 0
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     entity_category: "diagnostic"
     icon: "mdi:heating-coil"
   - platform: template
@@ -94,6 +105,8 @@ sensor:
     id: instant_btus
     unit_of_measurement: "kbtu/hr"
     accuracy_decimals: 3
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     state_class: "measurement"
     entity_category: "diagnostic"
     # yamllint disable rule:line-length
@@ -106,6 +119,8 @@ sensor:
     id: total_gas_usage
     unit_of_measurement: "m³"
     accuracy_decimals: 5
+    filters:
+      - throttle_average: ${econet_throttle_interval}
     state_class: total_increasing
     device_class: gas
 
