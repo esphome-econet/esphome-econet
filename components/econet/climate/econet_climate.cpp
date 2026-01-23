@@ -60,7 +60,7 @@ void EconetClimate::init_preset_ptrs_() {
     return;
   }
   ptrs_initialized_ = true;
-  
+
   // Build pointer vectors and key-to-pointer maps.
   // std::map strings are stable (don't move once inserted).
   // ESPHome 2026.1.0+ requires the exact same pointer for set_custom_preset_()
