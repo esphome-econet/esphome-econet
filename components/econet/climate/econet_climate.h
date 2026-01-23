@@ -63,10 +63,18 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   std::map<uint8_t, climate::ClimateMode> modes_;
   std::map<uint8_t, std::string> custom_presets_;
   std::map<uint8_t, std::string> custom_fan_modes_;
+  // ESPHome 2026.1.0+ requires exact pointer matching for custom presets/fan modes.
+  // We store pointers from the stable map strings for use in traits() and listeners.
+  std::vector<const char *> custom_preset_ptrs_;
+  std::vector<const char *> custom_fan_mode_ptrs_;
+  std::map<uint8_t, const char *> custom_preset_ptr_by_key_;
+  std::map<uint8_t, const char *> custom_fan_mode_ptr_by_key_;
+  bool ptrs_initialized_{false};
   std::string current_humidity_id_{""};
   std::string target_dehumidification_level_id_{""};
   void control(const climate::ClimateCall &call) override;
   climate::ClimateTraits traits() override;
+  void init_preset_ptrs_();
 };
 
 }  // namespace econet
