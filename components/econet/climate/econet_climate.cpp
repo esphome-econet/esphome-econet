@@ -25,6 +25,9 @@ void EconetClimate::dump_config() {
 }
 
 climate::ClimateTraits EconetClimate::traits() {
+  if (traits_initialized_) {
+    return traits_;
+  }
   auto traits = climate::ClimateTraits();
   if (!current_temperature_id_.empty()) {
     traits.add_feature_flags(climate::CLIMATE_SUPPORTS_CURRENT_TEMPERATURE);
@@ -59,7 +62,9 @@ climate::ClimateTraits EconetClimate::traits() {
     }
     traits.set_supported_custom_fan_modes(fans);
   }
-  return traits;
+  traits_ = traits;
+  traits_initialized_ = true;
+  return traits_;
 }
 
 void EconetClimate::setup() {
