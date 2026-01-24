@@ -25,9 +25,6 @@ void EconetClimate::dump_config() {
 }
 
 climate::ClimateTraits EconetClimate::traits() {
-  // Initialize pointers if not done yet
-  init_preset_ptrs_();
-
   auto traits = climate::ClimateTraits();
   if (!current_temperature_id_.empty()) {
     traits.add_feature_flags(climate::CLIMATE_SUPPORTS_CURRENT_TEMPERATURE);
@@ -55,31 +52,16 @@ climate::ClimateTraits EconetClimate::traits() {
   return traits;
 }
 
-void EconetClimate::init_preset_ptrs_() {
-  if (ptrs_initialized_) {
-    return;
-  }
-  ptrs_initialized_ = true;
-
-  // Build pointer vectors and key-to-pointer maps.
-  // std::map strings are stable (don't move once inserted).
-  // ESPHome 2026.1.0+ requires the exact same pointer for set_custom_preset_()
-  // as was registered in traits(), so we store and reuse these pointers.
+void EconetClimate::setup() {
+  // Build pointer vectors once. std::map strings are stable (don't move once inserted),
+  // so c_str() pointers remain valid. ESPHome 2026.1.0+ requires the exact same pointer
+  // for set_custom_preset_() as was registered in traits().
   for (const auto &kv : custom_presets_) {
-    const char *ptr = kv.second.c_str();
-    custom_preset_ptrs_.push_back(ptr);
-    custom_preset_ptr_by_key_[kv.first] = ptr;
+    custom_preset_ptrs_.push_back(kv.second.c_str());
   }
   for (const auto &kv : custom_fan_modes_) {
-    const char *ptr = kv.second.c_str();
-    custom_fan_mode_ptrs_.push_back(ptr);
-    custom_fan_mode_ptr_by_key_[kv.first] = ptr;
+    custom_fan_mode_ptrs_.push_back(kv.second.c_str());
   }
-}
-
-void EconetClimate::setup() {
-  // Initialize pointers before registering listeners
-  init_preset_ptrs_();
 
   if (!current_temperature_id_.empty()) {
     parent_->register_listener(
@@ -154,13 +136,13 @@ void EconetClimate::setup() {
     parent_->register_listener(
         custom_preset_id_, request_mod_, request_once_,
         [this](const EconetDatapoint &datapoint) {
-          auto ptr_it = custom_preset_ptr_by_key_.find(datapoint.value_enum);
-          if (ptr_it == custom_preset_ptr_by_key_.end()) {
+          auto it = custom_presets_.find(datapoint.value_enum);
+          if (it == custom_presets_.end()) {
             ESP_LOGW(TAG, "In custom_presets of your yaml add: %d: \"%s\"", datapoint.value_enum,
                      datapoint.value_string.c_str());
           } else {
-            // Use the exact same pointer that was registered in traits
-            set_custom_preset_(ptr_it->second);
+            // Use the stable map entry's c_str() - same pointer as registered in traits()
+            set_custom_preset_(it->second.c_str());
             publish_state();
           }
         },
@@ -170,14 +152,14 @@ void EconetClimate::setup() {
     parent_->register_listener(
         custom_fan_mode_id_, request_mod_, request_once_,
         [this](const EconetDatapoint &datapoint) {
-          auto ptr_it = custom_fan_mode_ptr_by_key_.find(datapoint.value_enum);
-          if (ptr_it == custom_fan_mode_ptr_by_key_.end()) {
+          auto it = custom_fan_modes_.find(datapoint.value_enum);
+          if (it == custom_fan_modes_.end()) {
             ESP_LOGW(TAG, "In custom_fan_modes of your yaml add: %d: \"%s\"", datapoint.value_enum,
                      datapoint.value_string.c_str());
           } else {
-            fan_mode_ = ptr_it->second;  // Store as string for follow_schedule logic
+            fan_mode_ = it->second;  // Store for follow_schedule logic
             if (follow_schedule_.has_value() && follow_schedule_.value()) {
-              set_custom_fan_mode_(ptr_it->second);
+              set_custom_fan_mode_(it->second.c_str());
               publish_state();
             }
           }
@@ -188,14 +170,14 @@ void EconetClimate::setup() {
     parent_->register_listener(
         custom_fan_mode_no_schedule_id_, request_mod_, request_once_,
         [this](const EconetDatapoint &datapoint) {
-          auto ptr_it = custom_fan_mode_ptr_by_key_.find(datapoint.value_enum);
-          if (ptr_it == custom_fan_mode_ptr_by_key_.end()) {
+          auto it = custom_fan_modes_.find(datapoint.value_enum);
+          if (it == custom_fan_modes_.end()) {
             ESP_LOGW(TAG, "In custom_fan_modes of your yaml add: %d: \"%s\"", datapoint.value_enum,
                      datapoint.value_string.c_str());
           } else {
-            fan_mode_no_schedule_ = ptr_it->second;  // Store as string for follow_schedule logic
+            fan_mode_no_schedule_ = it->second;  // Store for follow_schedule logic
             if (follow_schedule_.has_value() && !follow_schedule_.value()) {
-              set_custom_fan_mode_(ptr_it->second);
+              set_custom_fan_mode_(it->second.c_str());
               publish_state();
             }
           }
@@ -211,10 +193,10 @@ void EconetClimate::setup() {
           follow_schedule_ = datapoint.value_enum > 0;
           const std::string &mode_to_use = follow_schedule_.value() ? fan_mode_ : fan_mode_no_schedule_;
           if (!mode_to_use.empty()) {
-            // Need to find the pointer for this mode string
-            for (const auto &kv : custom_fan_mode_ptr_by_key_) {
-              if (mode_to_use == kv.second) {
-                set_custom_fan_mode_(kv.second);
+            // Find the map entry for this mode string and use its stable c_str() pointer
+            for (const auto &kv : custom_fan_modes_) {
+              if (kv.second == mode_to_use) {
+                set_custom_fan_mode_(kv.second.c_str());
                 publish_state();
                 break;
               }
