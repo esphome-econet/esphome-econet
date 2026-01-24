@@ -38,7 +38,7 @@ on:
         description: "Specify the esphome release with which to build."
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ inputs.esphome-version }}
   cancel-in-progress: true
 
 jobs:
@@ -61,7 +61,7 @@ jobs:
             shorthand: tlwh
       fail-fast: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Force Manifest to Build Local Code
         uses: mikefarah/yq@v4
         with:
@@ -106,7 +106,7 @@ jobs:
           mv ${{ steps.esphome-build.outputs.name }} output/
       - name: Upload artifact
         if: ${{ inputs.upload-artifacts }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}
           path: output

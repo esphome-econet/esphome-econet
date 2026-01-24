@@ -2,7 +2,8 @@
 substitutions:
   tx_pin: GPIO4
   rx_pin: GPIO5
-  platform: esp8266
+
+esp8266:
   board: d1_mini
 
 packages:
@@ -17,12 +18,8 @@ packages:
   #   file: econet_hvac_odu.yaml
 
 dashboard_import:
-  package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-${platform}.yaml@${github_ref}
+  package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-esp8266.yaml@${github_ref}
   import_full_config: false
-
-esp8266:
-  variant: !remove
-  framework: !remove
 
 # Uncomment the below to use Wi-Fi settings from your secrets.yaml file
 # wifi:
