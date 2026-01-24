@@ -146,7 +146,7 @@ void EconetClimate::setup() {
             ESP_LOGW(TAG, "In custom_presets of your yaml add: %d: \"%s\"", datapoint.value_enum,
                      datapoint.value_string.c_str());
           } else {
-            set_custom_preset_(it->second.c_str());
+            set_custom_preset_(it->second.c_str(), it->second.length());
             publish_state();
           }
         },

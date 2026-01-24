@@ -73,7 +73,7 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
 
 struct EconetDatapointListener {
   EconetDatapointID datapoint_id;
-  std::function<void(EconetDatapoint)> on_datapoint;
+  std::function<void(const EconetDatapoint &)> on_datapoint;
 };
 
 class Econet : public Component, public uart::UARTDevice {
@@ -112,7 +112,7 @@ class Econet : public Component, public uart::UARTDevice {
   void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value, uint32_t address = 0);
 
   void register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
-                         const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint = false,
+                         const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint = false,
                          uint32_t src_adr = 0);
 
   void homeassistant_read(const std::string &datapoint_id, uint32_t address = 0);
@@ -164,6 +164,7 @@ class Econet : public Component, public uart::UARTDevice {
   std::queue<EconetDatapointID> datapoint_ids_for_read_service_;
   std::vector<uint8_t> rx_message_;
   std::vector<uint8_t> tx_message_;
+  std::vector<std::string> temp_objects_;
 
   // Pointers
   binary_sensor::BinarySensor *mcu_connected_binary_sensor_{nullptr};
