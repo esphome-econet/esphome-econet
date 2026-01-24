@@ -82,25 +82,25 @@ class Econet : public Component, public uart::UARTDevice {
   void loop() override;
   void dump_config() override;
 
-  void set_src_address(uint32_t address) { src_adr_ = address; }
-  void set_dst_address(uint32_t address) { dst_adr_ = address; }
+  void set_src_address(uint32_t address) { this->src_adr_ = address; }
+  void set_dst_address(uint32_t address) { this->dst_adr_ = address; }
   void set_request_mod_addresses(std::vector<uint8_t> request_mods, std::vector<uint32_t> addresses) {
     for (auto i = 0; i < MAX_REQUEST_MODS; i++) {
-      request_mod_addresses_[i] = 0;
+      this->request_mod_addresses_[i] = 0;
     }
     for (auto i = 0; i < request_mods.size(); i++) {
-      request_mod_addresses_[request_mods[i]] = addresses[i];
+      this->request_mod_addresses_[request_mods[i]] = addresses[i];
     }
   }
   void set_request_mod_update_intervals(std::vector<uint8_t> request_mods, std::vector<uint32_t> update_intervals) {
     for (auto i = 0; i < request_mods.size(); i++) {
-      request_mod_update_interval_millis_map_[request_mods[i]] = update_intervals[i];
+      this->request_mod_update_interval_millis_map_[request_mods[i]] = update_intervals[i];
     }
-    update_intervals_();
+    this->update_intervals_();
   }
   void set_update_interval(uint32_t interval_millis) {
-    update_interval_millis_ = interval_millis;
-    update_intervals_();
+    this->update_interval_millis_ = interval_millis;
+    this->update_intervals_();
   }
   void set_mcu_connected_timeout(uint32_t timeout) { this->mcu_connected_timeout_ = timeout; }
   void set_mcu_connected_binary_sensor(binary_sensor::BinarySensor *sensor) {
@@ -135,13 +135,13 @@ class Econet : public Component, public uart::UARTDevice {
   void write_value_(const std::string &object, EconetDatapointType type, float value, uint32_t address = 0);
 
   void update_intervals_() {
-    min_update_interval_millis_ = update_interval_millis_;
+    this->min_update_interval_millis_ = this->update_interval_millis_;
     for (auto i = 0; i < MAX_REQUEST_MODS; i++) {
-      request_mod_update_interval_millis_[i] = update_interval_millis_;
+      this->request_mod_update_interval_millis_[i] = this->update_interval_millis_;
     }
     for (auto &kv : this->request_mod_update_interval_millis_map_) {
-      request_mod_update_interval_millis_[kv.first] = kv.second;
-      min_update_interval_millis_ = std::min(min_update_interval_millis_, kv.second);
+      this->request_mod_update_interval_millis_[kv.first] = kv.second;
+      this->min_update_interval_millis_ = std::min(this->min_update_interval_millis_, kv.second);
     }
   }
 
