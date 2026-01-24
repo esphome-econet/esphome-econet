@@ -65,6 +65,8 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   std::map<uint8_t, std::string> custom_fan_modes_;
   std::string current_humidity_id_{""};
   std::string target_dehumidification_level_id_{""};
+  climate::ClimateTraits traits_;
+  bool traits_initialized_{false};
   void control(const climate::ClimateCall &call) override;
   climate::ClimateTraits traits() override;
 };
