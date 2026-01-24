@@ -27,12 +27,14 @@ static const uint8_t ACK = 6;
 static const uint8_t READ_COMMAND = 30;   // 0x1E
 static const uint8_t WRITE_COMMAND = 31;  // 0x1F
 
-// Converts 4 bytes (FLOAT_SIZE) to float
+static const int MAX_READ_SIZE = 256;
+
+// Converts 4 bytes (FLOAT_SIZE) in big-endian to float
 float bytes_to_float(const uint8_t *b) {
-  uint8_t byte_array[] = {b[3], b[2], b[1], b[0]};
+  uint32_t val = (static_cast<uint32_t>(b[0]) << 24) | (static_cast<uint32_t>(b[1]) << 16) |
+                 (static_cast<uint32_t>(b[2]) << 8) | static_cast<uint32_t>(b[3]);
   float result;
-  std::copy(reinterpret_cast<const char *>(&byte_array[0]), reinterpret_cast<const char *>(&byte_array[4]),
-            reinterpret_cast<char *>(&result));
+  memcpy(&result, &val, sizeof(result));
   return result;
 }
 
@@ -72,19 +74,19 @@ void join_obj_names(const std::vector<std::string> &objects, std::vector<uint8_t
   for (const auto &s : objects) {
     data->push_back(0);
     data->push_back(0);
+    size_t s_len = s.length();
     for (int j = 0; j < OBJ_NAME_SIZE; j++) {
-      data->push_back(j < s.length() ? s[j] : 0);
+      data->push_back(j < s_len ? s[j] : 0);
     }
   }
 }
 
 std::string trim_trailing_whitespace(const char *p, uint8_t len) {
-  const char *endp = p + len - 1;
-  while (endp >= p && (*endp == ' ' || *endp == 0)) {
-    endp--;
+  const char *endp = p + len;
+  while (endp > p && (endp[-1] == ' ' || endp[-1] == '\0')) {
+    --endp;
   }
-  std::string s(p, endp - p + 1);
-  return s;
+  return std::string(p, endp);
 }
 
 void Econet::setup() {
@@ -370,23 +372,23 @@ void Econet::handle_response_(const EconetDatapointID &datapoint_id, const uint8
 }
 
 void Econet::read_buffer_(int bytes_available) {
-  uint8_t bytes[bytes_available];
+  uint8_t bytes[MAX_READ_SIZE];
+  int to_read = std::min(bytes_available, MAX_READ_SIZE);
 
-  if (!this->read_array(bytes, bytes_available)) {
+  if (!this->read_array(bytes, to_read)) {
     return;
   }
 
-  for (int i = 0; i < bytes_available; i++) {
+  for (int i = 0; i < to_read; i++) {
     uint8_t byte = bytes[i];
     rx_message_.push_back(byte);
-    uint32_t pos = rx_message_.size() - 1;
+    size_t pos = rx_message_.size() - 1;
     if ((pos == DST_ADR_POS || pos == SRC_ADR_POS) && byte != 0x80) {
       rx_message_.clear();
       continue;
     }
 
-    if (!rx_message_.empty() && rx_message_.size() > LEN_POS &&
-        rx_message_.size() == MSG_HEADER_SIZE + rx_message_[LEN_POS] + MSG_CRC_SIZE) {
+    if (rx_message_.size() > LEN_POS && rx_message_.size() == MSG_HEADER_SIZE + rx_message_[LEN_POS] + MSG_CRC_SIZE) {
       // We have a full message
       this->parse_rx_message_();
       rx_message_.clear();
@@ -448,8 +450,9 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
   data.push_back(0);
   data.push_back(0);
 
+  size_t obj_len = object.length();
   for (int j = 0; j < OBJ_NAME_SIZE; j++) {
-    data.push_back(j < object.length() ? object[j] : 0);
+    data.push_back(j < obj_len ? object[j] : 0);
   }
 
   uint32_t f_to_32 = float_to_uint32(value);
@@ -463,11 +466,10 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
 }
 
 void Econet::request_strings_() {
-  std::vector<std::string> objects;
+  temp_objects_.clear();
   uint32_t dst_adr = dst_adr_;
   if (!datapoint_ids_for_read_service_.empty()) {
-    objects.reserve(1);
-    objects.push_back(datapoint_ids_for_read_service_.front().name);
+    temp_objects_.push_back(datapoint_ids_for_read_service_.front().name);
     dst_adr = datapoint_ids_for_read_service_.front().address;
     datapoint_ids_for_read_service_.pop();
   } else {
@@ -475,11 +477,13 @@ void Econet::request_strings_() {
     if (loop_now_ - last_read_request_ < min_delay_between_read_requests_) {
       return;
     }
-    for (auto request_mod : request_mods_) {
+    for (uint8_t request_mod : request_mods_) {
       if ((loop_now_ - request_mod_last_requested_[request_mod]) >= request_mod_update_interval_millis_[request_mod]) {
-        objects.reserve(request_datapoint_ids_[request_mod].size());
-        std::copy(request_datapoint_ids_[request_mod].begin(), request_datapoint_ids_[request_mod].end(),
-                  back_inserter(objects));
+        const auto &datapoint_ids = request_datapoint_ids_[request_mod];
+        temp_objects_.reserve(datapoint_ids.size());
+        for (const auto &id : datapoint_ids) {
+          temp_objects_.push_back(id);
+        }
         request_mod_last_requested_[request_mod] = loop_now_;
         dst_adr = request_mod_addresses_[request_mod];
         break;
@@ -487,26 +491,27 @@ void Econet::request_strings_() {
     }
   }
   std::vector<std::string>::iterator iter;
-  for (iter = objects.begin(); iter != objects.end();) {
+  for (iter = temp_objects_.begin(); iter != temp_objects_.end();) {
     if (request_once_datapoint_ids_.count(EconetDatapointID{.name = *iter, .address = dst_adr}) == 1 &&
         datapoints_.count(EconetDatapointID{.name = *iter, .address = dst_adr}) == 1) {
-      iter = objects.erase(iter);
+      iter = temp_objects_.erase(iter);
 
     } else {
       ++iter;
     }
   }
-  if (objects.empty()) {
+  if (temp_objects_.empty()) {
     return;
   }
 
   last_read_request_ = loop_now_;
 
   std::vector<uint8_t> data;
-  data.reserve(2 + objects.size() * (2 + OBJ_NAME_SIZE));
+  data.reserve(2 + temp_objects_.size() * (2 + OBJ_NAME_SIZE));
 
   // Read Class
-  if (objects.size() == 1 && raw_datapoint_ids_.count(EconetDatapointID{.name = objects[0], .address = dst_adr}) == 1) {
+  if (temp_objects_.size() == 1 &&
+      raw_datapoint_ids_.count(EconetDatapointID{.name = temp_objects_[0], .address = dst_adr}) == 1) {
     data.push_back(1);
   } else {
     data.push_back(2);
@@ -515,7 +520,7 @@ void Econet::request_strings_() {
   // Read Property
   data.push_back(1);
 
-  join_obj_names(objects, &data);
+  join_obj_names(temp_objects_, &data);
 
   transmit_message_(READ_COMMAND, data, dst_adr);
 }
@@ -574,34 +579,37 @@ void Econet::set_enum_datapoint_value(const std::string &datapoint_id, uint8_t v
 }
 
 void Econet::set_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value) {
-  auto specific = datapoint_id;
+  EconetDatapointID specific = datapoint_id;
   if (specific.address == 0) {
     specific.address = dst_adr_;
   }
-  auto any = EconetDatapointID{.name = datapoint_id.name, .address = 0};
+  const EconetDatapointID any{.name = datapoint_id.name, .address = 0};
   bool send_specific = true;
   bool send_any = true;
-  if (datapoints_.count(specific) == 0) {
+
+  auto specific_it = datapoints_.find(specific);
+  if (specific_it == datapoints_.end()) {
     ESP_LOGW(TAG, "Setting unknown datapoint %s", datapoint_id.name.c_str());
   } else {
-    EconetDatapoint old_value = datapoints_[specific];
+    const EconetDatapoint &old_value = specific_it->second;
     if (old_value.type != value.type) {
       ESP_LOGE(TAG, "Attempt to set datapoint %s with incorrect type", datapoint_id.name.c_str());
       return;
-    } else if (old_value == value && pending_writes_.count(specific) == 0) {
+    }
+    if (old_value == value && pending_writes_.find(specific) == pending_writes_.end()) {
       ESP_LOGV(TAG, "Not setting unchanged value for datapoint %s", datapoint_id.name.c_str());
       send_specific = false;
     }
   }
-  if (datapoints_.count(any) == 0) {
+
+  auto any_it = datapoints_.find(any);
+  if (any_it == datapoints_.end()) {
     ESP_LOGW(TAG, "Setting unknown datapoint %s", datapoint_id.name.c_str());
-  } else {
-    EconetDatapoint old_value = datapoints_[any];
-    if (old_value == value) {
-      ESP_LOGV(TAG, "Not setting unchanged value for datapoint %s", datapoint_id.name.c_str());
-      send_any = false;
-    }
+  } else if (any_it->second == value) {
+    ESP_LOGV(TAG, "Not setting unchanged value for datapoint %s", datapoint_id.name.c_str());
+    send_any = false;
   }
+
   if (send_specific) {
     pending_writes_[specific] = value;
     send_datapoint_(specific, value);
@@ -611,51 +619,64 @@ void Econet::set_datapoint_(const EconetDatapointID &datapoint_id, const EconetD
 }
 
 void Econet::send_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value) {
-  auto specific_id = datapoint_id;
-  auto any_id = EconetDatapointID{.name = datapoint_id.name, .address = 0};
+  const EconetDatapointID any_id{.name = datapoint_id.name, .address = 0};
   bool changed = false;
-  if (datapoints_.count(specific_id) == 0 || !(datapoints_[specific_id] == value)) {
-    datapoints_[specific_id] = value;
+
+  auto specific_it = datapoints_.find(datapoint_id);
+  if (specific_it == datapoints_.end()) {
+    datapoints_.emplace(datapoint_id, value);
+    changed = true;
+  } else if (!(specific_it->second == value)) {
+    specific_it->second = value;
     changed = true;
   }
-  if (datapoints_.count(any_id) == 0 || !(datapoints_[any_id] == value)) {
-    datapoints_[any_id] = value;
+
+  auto any_it = datapoints_.find(any_id);
+  if (any_it == datapoints_.end()) {
+    datapoints_.emplace(any_id, value);
+    changed = true;
+  } else if (!(any_it->second == value)) {
+    any_it->second = value;
     changed = true;
   }
+
   if (changed) {
-    for (auto &listener : this->listeners_) {
+    for (const auto &listener : listeners_) {
       if (listener.datapoint_id.name == datapoint_id.name &&
           (listener.datapoint_id.address == 0 || listener.datapoint_id.address == datapoint_id.address)) {
         listener.on_datapoint(value);
       }
     }
   } else {
-    ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", specific_id.name.c_str());
+    ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", datapoint_id.name.c_str());
   }
 }
 
 void Econet::register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
-                               const std::function<void(EconetDatapoint)> &func, bool is_raw_datapoint,
+                               const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint,
                                uint32_t src_adr) {
-  if (request_mod >= 0 && request_mod < request_datapoint_ids_.size()) {
+  EconetDatapointID dp_id{.name = datapoint_id, .address = src_adr};
+
+  if (request_mod >= 0 && static_cast<size_t>(request_mod) < request_datapoint_ids_.size()) {
     request_datapoint_ids_[request_mod].insert(datapoint_id);
     request_mods_.insert(request_mod);
-    min_delay_between_read_requests_ = std::max(min_update_interval_millis_ / request_mods_.size(), REQUEST_DELAY);
+    min_delay_between_read_requests_ =
+        std::max(min_update_interval_millis_ / request_mods_.size(), static_cast<uint32_t>(REQUEST_DELAY));
     if (request_once) {
-      request_once_datapoint_ids_.insert(EconetDatapointID{.name = datapoint_id, .address = src_adr});
+      request_once_datapoint_ids_.insert(dp_id);
     }
   }
   if (is_raw_datapoint) {
-    raw_datapoint_ids_.insert(EconetDatapointID{.name = datapoint_id, .address = src_adr});
+    raw_datapoint_ids_.insert(dp_id);
   }
-  auto listener = EconetDatapointListener{
-      .datapoint_id = EconetDatapointID{.name = datapoint_id, .address = src_adr},
+
+  listeners_.push_back(EconetDatapointListener{
+      .datapoint_id = dp_id,
       .on_datapoint = func,
-  };
-  this->listeners_.push_back(listener);
+  });
 
   // Run through existing datapoints
-  for (auto &kv : this->datapoints_) {
+  for (const auto &kv : datapoints_) {
     if (kv.first.name == datapoint_id && (kv.first.address == src_adr || kv.first.address == 0)) {
       func(kv.second);
     }
