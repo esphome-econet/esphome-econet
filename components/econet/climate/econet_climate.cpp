@@ -164,7 +164,7 @@ void EconetClimate::setup() {
             fan_mode_ = it->second;
             if (follow_schedule_.has_value()) {
               if (follow_schedule_.value()) {
-                set_custom_fan_mode_(fan_mode_.c_str());
+                set_custom_fan_mode_(fan_mode_.c_str(), fan_mode_.length());
                 publish_state();
               }
             }
@@ -184,7 +184,7 @@ void EconetClimate::setup() {
             fan_mode_no_schedule_ = it->second;
             if (follow_schedule_.has_value()) {
               if (!follow_schedule_.value()) {
-                set_custom_fan_mode_(fan_mode_no_schedule_.c_str());
+                set_custom_fan_mode_(fan_mode_no_schedule_.c_str(), fan_mode_no_schedule_.length());
                 publish_state();
               }
             }
@@ -201,12 +201,12 @@ void EconetClimate::setup() {
           follow_schedule_ = datapoint.value_enum > 0;
           if (follow_schedule_.value()) {
             if (!fan_mode_.empty()) {
-              set_custom_fan_mode_(fan_mode_.c_str());
+              set_custom_fan_mode_(fan_mode_.c_str(), fan_mode_.length());
               publish_state();
             }
           } else {
             if (!fan_mode_no_schedule_.empty()) {
-              set_custom_fan_mode_(fan_mode_no_schedule_.c_str());
+              set_custom_fan_mode_(fan_mode_no_schedule_.c_str(), fan_mode_no_schedule_.length());
               publish_state();
             }
           }
@@ -236,16 +236,16 @@ void EconetClimate::control(const climate::ClimateCall &call) {
       parent_->set_enum_datapoint_value(mode_id_, it->first, this->src_adr_);
     }
   }
-  if (call.get_custom_preset() != nullptr && !custom_preset_id_.empty()) {
-    const std::string preset = call.get_custom_preset();
+  if (call.has_custom_preset() && !custom_preset_id_.empty()) {
+    auto preset = call.get_custom_preset();
     auto it = std::find_if(custom_presets_.begin(), custom_presets_.end(),
                            [&preset](const std::pair<uint8_t, std::string> &p) { return p.second == preset; });
     if (it != custom_presets_.end()) {
       parent_->set_enum_datapoint_value(custom_preset_id_, it->first, this->src_adr_);
     }
   }
-  if (call.get_custom_fan_mode() != nullptr && !custom_fan_mode_id_.empty()) {
-    const std::string fan_mode = call.get_custom_fan_mode();
+  if (call.has_custom_fan_mode() && !custom_fan_mode_id_.empty()) {
+    auto fan_mode = call.get_custom_fan_mode();
     auto it = std::find_if(custom_fan_modes_.begin(), custom_fan_modes_.end(),
                            [&fan_mode](const std::pair<uint8_t, std::string> &p) { return p.second == fan_mode; });
     if (it != custom_fan_modes_.end()) {
