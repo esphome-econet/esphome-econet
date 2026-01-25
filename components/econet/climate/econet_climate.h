@@ -1,8 +1,11 @@
 #pragma once
 
 #include "esphome/core/component.h"
+#include "esphome/core/helpers.h"
 #include "../econet.h"
 #include "esphome/components/climate/climate.h"
+#include <string>
+#include <vector>
 
 namespace esphome {
 namespace econet {
@@ -31,18 +34,31 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   }
   void set_follow_schedule_id(const std::string &follow_schedule_id) { this->follow_schedule_id_ = follow_schedule_id; }
   void set_modes(const std::vector<uint8_t> &keys, const std::vector<climate::ClimateMode> &values) {
-    std::transform(keys.begin(), keys.end(), values.begin(), std::inserter(this->modes_, this->modes_.end()),
-                   [](uint8_t k, climate::ClimateMode v) { return std::make_pair(k, v); });
+    if (keys.size() != values.size()) {
+      return;
+    }
+    this->modes_.init(keys.size());
+    for (size_t i = 0; i < keys.size(); i++) {
+      this->modes_.push_back({keys[i], values[i]});
+    }
   }
   void set_custom_presets(const std::vector<uint8_t> &keys, const std::vector<std::string> &values) {
-    std::transform(keys.begin(), keys.end(), values.begin(),
-                   std::inserter(this->custom_presets_, this->custom_presets_.end()),
-                   [](uint8_t k, const std::string &v) { return std::make_pair(k, v); });
+    if (keys.size() != values.size()) {
+      return;
+    }
+    this->custom_presets_.init(keys.size());
+    for (size_t i = 0; i < keys.size(); i++) {
+      this->custom_presets_.push_back({keys[i], values[i]});
+    }
   }
   void set_custom_fan_modes(const std::vector<uint8_t> &keys, const std::vector<std::string> &values) {
-    std::transform(keys.begin(), keys.end(), values.begin(),
-                   std::inserter(this->custom_fan_modes_, this->custom_fan_modes_.end()),
-                   [](uint8_t k, const std::string &v) { return std::make_pair(k, v); });
+    if (keys.size() != values.size()) {
+      return;
+    }
+    this->custom_fan_modes_.init(keys.size());
+    for (size_t i = 0; i < keys.size(); i++) {
+      this->custom_fan_modes_.push_back({keys[i], values[i]});
+    }
   }
   void set_current_humidity_id(const std::string &current_humidity_id) {
     this->current_humidity_id_ = current_humidity_id;
@@ -52,6 +68,21 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   }
 
  protected:
+  struct EconetClimateMode {
+    uint8_t id;
+    climate::ClimateMode mode;
+  };
+
+  struct EconetPreset {
+    uint8_t id;
+    std::string name;
+  };
+
+  struct EconetFanMode {
+    uint8_t id;
+    std::string name;
+  };
+
   std::string current_temperature_id_{""};
   std::string target_temperature_id_{""};
   std::string target_temperature_low_id_{""};
@@ -64,9 +95,9 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   optional<bool> follow_schedule_;
   std::string fan_mode_{""};
   std::string fan_mode_no_schedule_{""};
-  std::map<uint8_t, climate::ClimateMode> modes_;
-  std::map<uint8_t, std::string> custom_presets_;
-  std::map<uint8_t, std::string> custom_fan_modes_;
+  FixedVector<EconetClimateMode> modes_;
+  FixedVector<EconetPreset> custom_presets_;
+  FixedVector<EconetFanMode> custom_fan_modes_;
   std::string current_humidity_id_{""};
   std::string target_dehumidification_level_id_{""};
   climate::ClimateTraits traits_;

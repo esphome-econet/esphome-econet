@@ -4,6 +4,7 @@
 #include "esphome/core/log.h"
 #include "esphome/components/climate/climate_traits.h"
 #include "econet_climate.h"
+#include <algorithm>
 
 using namespace esphome;
 
@@ -42,23 +43,23 @@ climate::ClimateTraits EconetClimate::traits() {
     traits.add_feature_flags(climate::CLIMATE_REQUIRES_TWO_POINT_TARGET_TEMPERATURE);
   }
   if (!this->mode_id_.empty()) {
-    for (const auto &kv : this->modes_) {
-      traits.add_supported_mode(kv.second);
+    for (const auto &entry : this->modes_) {
+      traits.add_supported_mode(entry.mode);
     }
   }
   if (!this->custom_preset_id_.empty()) {
     std::vector<const char *> presets;
     presets.reserve(this->custom_presets_.size());
-    for (const auto &kv : this->custom_presets_) {
-      presets.push_back(kv.second.c_str());
+    for (const auto &entry : this->custom_presets_) {
+      presets.push_back(entry.name.c_str());
     }
     traits.set_supported_custom_presets(presets);
   }
   if (!this->custom_fan_mode_id_.empty()) {
     std::vector<const char *> fans;
     fans.reserve(this->custom_fan_modes_.size());
-    for (const auto &kv : this->custom_fan_modes_) {
-      fans.push_back(kv.second.c_str());
+    for (const auto &entry : this->custom_fan_modes_) {
+      fans.push_back(entry.name.c_str());
     }
     traits.set_supported_custom_fan_modes(fans);
   }
@@ -126,12 +127,13 @@ void EconetClimate::setup() {
     this->parent_->register_listener(
         this->mode_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
-          auto it = this->modes_.find(datapoint.value_enum);
+          auto it = std::find_if(this->modes_.begin(), this->modes_.end(),
+                                 [&](const EconetClimateMode &m) { return m.id == datapoint.value_enum; });
           if (it == this->modes_.end()) {
             ESP_LOGW(TAG, "In modes of your yaml add a ClimateMode that corresponds to: %d: \"%s\"",
                      datapoint.value_enum, datapoint.value_string.c_str());
           } else {
-            this->mode = it->second;
+            this->mode = it->mode;
             this->publish_state();
           }
         },
@@ -141,12 +143,13 @@ void EconetClimate::setup() {
     this->parent_->register_listener(
         this->custom_preset_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
-          auto it = this->custom_presets_.find(datapoint.value_enum);
+          auto it = std::find_if(this->custom_presets_.begin(), this->custom_presets_.end(),
+                                 [&](const EconetPreset &p) { return p.id == datapoint.value_enum; });
           if (it == this->custom_presets_.end()) {
             ESP_LOGW(TAG, "In custom_presets of your yaml add: %d: \"%s\"", datapoint.value_enum,
                      datapoint.value_string.c_str());
           } else {
-            this->set_custom_preset_(it->second.c_str(), it->second.length());
+            this->set_custom_preset_(it->name.c_str(), it->name.length());
             this->publish_state();
           }
         },
@@ -156,12 +159,13 @@ void EconetClimate::setup() {
     this->parent_->register_listener(
         this->custom_fan_mode_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
-          auto it = this->custom_fan_modes_.find(datapoint.value_enum);
+          auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
+                                 [&](const EconetFanMode &m) { return m.id == datapoint.value_enum; });
           if (it == this->custom_fan_modes_.end()) {
             ESP_LOGW(TAG, "In custom_fan_modes of your yaml add: %d: \"%s\"", datapoint.value_enum,
                      datapoint.value_string.c_str());
           } else {
-            this->fan_mode_ = it->second;
+            this->fan_mode_ = it->name;
             if (this->follow_schedule_.has_value()) {
               if (this->follow_schedule_.value()) {
                 this->set_custom_fan_mode_(this->fan_mode_.c_str(), this->fan_mode_.length());
@@ -176,12 +180,13 @@ void EconetClimate::setup() {
     this->parent_->register_listener(
         this->custom_fan_mode_no_schedule_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
-          auto it = this->custom_fan_modes_.find(datapoint.value_enum);
+          auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
+                                 [&](const EconetFanMode &m) { return m.id == datapoint.value_enum; });
           if (it == this->custom_fan_modes_.end()) {
             ESP_LOGW(TAG, "In custom_fan_modes of your yaml add: %d: \"%s\"", datapoint.value_enum,
                      datapoint.value_string.c_str());
           } else {
-            this->fan_mode_no_schedule_ = it->second;
+            this->fan_mode_no_schedule_ = it->name;
             if (this->follow_schedule_.has_value()) {
               if (!this->follow_schedule_.value()) {
                 this->set_custom_fan_mode_(this->fan_mode_no_schedule_.c_str(), this->fan_mode_no_schedule_.length());
@@ -233,29 +238,29 @@ void EconetClimate::control(const climate::ClimateCall &call) {
   if (call.get_mode().has_value() && !this->mode_id_.empty()) {
     climate::ClimateMode mode = call.get_mode().value();
     auto it = std::find_if(this->modes_.begin(), this->modes_.end(),
-                           [&mode](const std::pair<uint8_t, climate::ClimateMode> &p) { return p.second == mode; });
+                           [&mode](const EconetClimateMode &m) { return m.mode == mode; });
     if (it != this->modes_.end()) {
-      this->parent_->set_enum_datapoint_value(this->mode_id_, it->first, this->src_adr_);
+      this->parent_->set_enum_datapoint_value(this->mode_id_, it->id, this->src_adr_);
     }
   }
   if (call.has_custom_preset() && !this->custom_preset_id_.empty()) {
     auto preset = call.get_custom_preset();
     auto it = std::find_if(this->custom_presets_.begin(), this->custom_presets_.end(),
-                           [&preset](const std::pair<uint8_t, std::string> &p) { return p.second == preset; });
+                           [&preset](const EconetPreset &p) { return p.name == preset; });
     if (it != this->custom_presets_.end()) {
-      this->parent_->set_enum_datapoint_value(this->custom_preset_id_, it->first, this->src_adr_);
+      this->parent_->set_enum_datapoint_value(this->custom_preset_id_, it->id, this->src_adr_);
     }
   }
   if (call.has_custom_fan_mode() && !this->custom_fan_mode_id_.empty()) {
     auto fan_mode = call.get_custom_fan_mode();
     auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
-                           [&fan_mode](const std::pair<uint8_t, std::string> &p) { return p.second == fan_mode; });
+                           [&fan_mode](const EconetFanMode &m) { return m.name == fan_mode; });
     if (it != this->custom_fan_modes_.end()) {
       if (this->follow_schedule_.has_value()) {
         if (this->follow_schedule_.value()) {
-          this->parent_->set_enum_datapoint_value(this->custom_fan_mode_id_, it->first, this->src_adr_);
+          this->parent_->set_enum_datapoint_value(this->custom_fan_mode_id_, it->id, this->src_adr_);
         } else {
-          this->parent_->set_enum_datapoint_value(this->custom_fan_mode_no_schedule_id_, it->first, this->src_adr_);
+          this->parent_->set_enum_datapoint_value(this->custom_fan_mode_no_schedule_id_, it->id, this->src_adr_);
         }
       }
     }

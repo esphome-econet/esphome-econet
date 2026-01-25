@@ -5,9 +5,9 @@
 #include "esphome/components/api/custom_api_device.h"
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/uart/uart.h"
-#include <map>
 #include <vector>
-#include <set>
+#include <algorithm>
+#include <array>
 
 namespace esphome {
 namespace econet {
@@ -30,9 +30,6 @@ struct EconetDatapointID {
 };
 inline bool operator==(const EconetDatapointID &lhs, const EconetDatapointID &rhs) {
   return lhs.name == rhs.name && lhs.address == rhs.address;
-}
-inline bool operator<(const EconetDatapointID &lhs, const EconetDatapointID &rhs) {
-  return (lhs.name < rhs.name) || ((lhs.name == rhs.name) && (lhs.address < rhs.address));
 }
 
 enum class EconetDatapointType : uint8_t {
@@ -76,6 +73,16 @@ struct EconetDatapointListener {
   std::function<void(const EconetDatapoint &)> on_datapoint;
 };
 
+struct RequestModUpdateInterval {
+  uint8_t mod;
+  uint32_t interval;
+};
+
+struct DatapointEntry {
+  EconetDatapointID id;
+  EconetDatapoint data;
+};
+
 class Econet : public Component, public uart::UARTDevice {
  public:
   void setup() override;
@@ -93,8 +100,9 @@ class Econet : public Component, public uart::UARTDevice {
     }
   }
   void set_request_mod_update_intervals(std::vector<uint8_t> request_mods, std::vector<uint32_t> update_intervals) {
-    for (auto i = 0; i < request_mods.size(); i++) {
-      this->request_mod_update_interval_millis_map_[request_mods[i]] = update_intervals[i];
+    this->request_mod_update_interval_millis_map_.init(request_mods.size());
+    for (size_t i = 0; i < request_mods.size(); i++) {
+      this->request_mod_update_interval_millis_map_.push_back({request_mods[i], update_intervals[i]});
     }
     this->update_intervals_();
   }
@@ -139,9 +147,9 @@ class Econet : public Component, public uart::UARTDevice {
     for (auto i = 0; i < MAX_REQUEST_MODS; i++) {
       this->request_mod_update_interval_millis_[i] = this->update_interval_millis_;
     }
-    for (auto &kv : this->request_mod_update_interval_millis_map_) {
-      this->request_mod_update_interval_millis_[kv.first] = kv.second;
-      this->min_update_interval_millis_ = std::min(this->min_update_interval_millis_, kv.second);
+    for (auto &item : this->request_mod_update_interval_millis_map_) {
+      this->request_mod_update_interval_millis_[item.mod] = item.interval;
+      this->min_update_interval_millis_ = std::min(this->min_update_interval_millis_, item.interval);
     }
   }
 
@@ -150,18 +158,18 @@ class Econet : public Component, public uart::UARTDevice {
   ReadRequest read_req_{};
   esphome::api::CustomAPIDevice capi_;
   std::vector<EconetDatapointListener> listeners_;
-  std::vector<uint32_t> request_mod_addresses_ = std::vector<uint32_t>(MAX_REQUEST_MODS, 0);
-  std::map<uint8_t, uint32_t> request_mod_update_interval_millis_map_;
-  std::vector<uint32_t> request_mod_update_interval_millis_ =
-      std::vector<uint32_t>(MAX_REQUEST_MODS, DEFAULT_UPDATE_INTERVAL_MILLIS);
-  std::vector<std::set<std::string>> request_datapoint_ids_ = std::vector<std::set<std::string>>(MAX_REQUEST_MODS);
-  std::vector<uint32_t> request_mod_last_requested_ = std::vector<uint32_t>(MAX_REQUEST_MODS, 0);
-  std::set<uint8_t> request_mods_;
-  std::set<EconetDatapointID> raw_datapoint_ids_;
-  std::set<EconetDatapointID> request_once_datapoint_ids_;
-  std::map<EconetDatapointID, EconetDatapoint> datapoints_;
-  std::map<EconetDatapointID, EconetDatapoint> pending_writes_;
-  std::queue<EconetDatapointID> datapoint_ids_for_read_service_;
+  std::array<uint32_t, MAX_REQUEST_MODS> request_mod_addresses_{};
+  FixedVector<RequestModUpdateInterval> request_mod_update_interval_millis_map_;
+  std::array<uint32_t, MAX_REQUEST_MODS>
+      request_mod_update_interval_millis_{};  // Initialized in loop/update_intervals_
+  std::array<std::vector<std::string>, MAX_REQUEST_MODS> request_datapoint_ids_;
+  std::array<uint32_t, MAX_REQUEST_MODS> request_mod_last_requested_{};
+  std::vector<uint8_t> request_mods_;
+  std::vector<EconetDatapointID> raw_datapoint_ids_;
+  std::vector<EconetDatapointID> request_once_datapoint_ids_;
+  std::vector<DatapointEntry> datapoints_;
+  std::vector<DatapointEntry> pending_writes_;
+  std::vector<EconetDatapointID> datapoint_ids_for_read_service_;
   std::vector<uint8_t> rx_message_;
   std::vector<uint8_t> tx_message_;
   std::vector<std::string> temp_objects_;
