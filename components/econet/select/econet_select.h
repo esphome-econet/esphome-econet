@@ -4,6 +4,7 @@
 #include "esphome/components/select/select.h"
 #include "esphome/core/helpers.h"
 #include "../econet.h"
+#include <string>
 
 namespace esphome {
 namespace econet {

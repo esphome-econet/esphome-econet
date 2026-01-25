@@ -1,13 +1,18 @@
 #pragma once
 
 #include "esphome/core/component.h"
+#include "esphome/core/defines.h"
 #include "esphome/core/helpers.h"
+#ifdef USE_API_HOMEASSISTANT_SERVICES
 #include "esphome/components/api/custom_api_device.h"
+#endif
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/uart/uart.h"
-#include <vector>
 #include <algorithm>
 #include <array>
+#include <functional>
+#include <string>
+#include <vector>
 
 namespace esphome {
 namespace econet {
@@ -153,7 +158,9 @@ class Econet : public Component, public uart::UARTDevice {
   // Member variables - ordered for packing
   // Large/complex types
   ReadRequest read_req_{};
+#ifdef USE_API_HOMEASSISTANT_SERVICES
   esphome::api::CustomAPIDevice capi_;
+#endif
   std::vector<EconetDatapointListener> listeners_;
   std::array<uint32_t, MAX_REQUEST_MODS> request_mod_addresses_{};
   FixedVector<RequestModUpdateInterval> request_mod_update_interval_millis_map_;
