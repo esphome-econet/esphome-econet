@@ -7,7 +7,7 @@ static const char *const TAG = "econet.automation";
 namespace esphome {
 namespace econet {
 
-EconetRawDatapointUpdateTrigger::EconetRawDatapointUpdateTrigger(Econet *parent, const std::string &sensor_id,
+EconetRawDatapointUpdateTrigger::EconetRawDatapointUpdateTrigger(Econet *parent, const char *sensor_id,
                                                                  int8_t request_mod, bool request_once,
                                                                  uint32_t src_adr) {
   parent->register_listener(
