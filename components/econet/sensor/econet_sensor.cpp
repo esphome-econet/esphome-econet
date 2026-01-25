@@ -11,10 +11,10 @@ void EconetSensor::setup() {
       this->sensor_id_, this->request_mod_, this->request_once_,
       [this](const EconetDatapoint &datapoint) {
         if (datapoint.type == EconetDatapointType::FLOAT) {
-          ESP_LOGV(TAG, "MCU reported sensor %s is: %f", this->sensor_id_.c_str(), datapoint.value_float);
+          ESP_LOGV(TAG, "MCU reported sensor %s is: %f", this->sensor_id_, datapoint.value_float);
           this->publish_state(datapoint.value_float);
         } else if (datapoint.type == EconetDatapointType::ENUM_TEXT) {
-          ESP_LOGV(TAG, "MCU reported sensor %s is: %u", this->sensor_id_.c_str(), datapoint.value_enum);
+          ESP_LOGV(TAG, "MCU reported sensor %s is: %u", this->sensor_id_, datapoint.value_enum);
           this->publish_state(datapoint.value_enum);
         }
       },
@@ -23,7 +23,7 @@ void EconetSensor::setup() {
 
 void EconetSensor::dump_config() {
   LOG_SENSOR("", "Econet Sensor", this);
-  ESP_LOGCONFIG(TAG, "  Sensor has datapoint ID %s", this->sensor_id_.c_str());
+  ESP_LOGCONFIG(TAG, "  Sensor has datapoint ID %s", this->sensor_id_);
 }
 
 }  // namespace econet
