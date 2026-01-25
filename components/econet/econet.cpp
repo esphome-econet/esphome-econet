@@ -50,7 +50,7 @@ uint32_t float_to_uint32(float f) {
 uint32_t bytes_to_address(const uint8_t *b) { return ((b[0] & 0x7f) << 24) + (b[1] << 16) + (b[2] << 8) + b[3]; }
 
 // Reverse of bytes_to_address
-void address_to_bytes(uint32_t adr, std::vector<uint8_t> *data) {
+template<size_t N> void address_to_bytes(uint32_t adr, StaticVector<uint8_t, N> *data) {
   data->push_back(0x80);
   data->push_back(adr >> 16);
   data->push_back(adr >> 8);
@@ -72,6 +72,19 @@ void extract_obj_names(const uint8_t *pdata, uint8_t data_len, std::vector<std::
 }
 
 // Reverse of extract_obj_names
+void join_obj_names(const std::vector<const std::string *> &objects, std::vector<uint8_t> *data) {
+  for (const auto *s_ptr : objects) {
+    const std::string &s = *s_ptr;
+    data->push_back(0);
+    data->push_back(0);
+    size_t s_len = s.length();
+    for (int j = 0; j < OBJ_NAME_SIZE; j++) {
+      data->push_back(j < s_len ? s[j] : 0);
+    }
+  }
+}
+
+// Overload for plain string vector used in write_value_
 void join_obj_names(const std::vector<std::string> &objects, std::vector<uint8_t> *data) {
   for (const auto &s : objects) {
     data->push_back(0);
@@ -95,8 +108,6 @@ void Econet::setup() {
   if (this->flow_control_pin_ != nullptr) {
     this->flow_control_pin_->setup();
   }
-  this->rx_message_.reserve(256);
-  this->tx_message_.reserve(256);
 }
 
 void Econet::dump_config() {
@@ -387,7 +398,7 @@ void Econet::read_buffer_(int bytes_available) {
     this->rx_message_.push_back(byte);
     size_t pos = this->rx_message_.size() - 1;
     if ((pos == DST_ADR_POS || pos == SRC_ADR_POS) && byte != 0x80) {
-      this->rx_message_.clear();
+      this->rx_message_ = {};
       continue;
     }
 
@@ -395,7 +406,7 @@ void Econet::read_buffer_(int bytes_available) {
         this->rx_message_.size() == MSG_HEADER_SIZE + this->rx_message_[LEN_POS] + MSG_CRC_SIZE) {
       // We have a full message
       this->parse_rx_message_();
-      this->rx_message_.clear();
+      this->rx_message_ = {};
     }
   }
 }
@@ -415,7 +426,7 @@ void Econet::loop() {
 
   if ((now - this->last_read_data_ > RECEIVE_TIMEOUT) && !this->rx_message_.empty()) {
     ESP_LOGW(TAG, "Ignoring partially received message due to timeout");
-    this->rx_message_.clear();
+    this->rx_message_ = {};
     this->read_req_.awaiting_res = false;
   }
 
@@ -472,10 +483,25 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
 void Econet::request_strings_() {
   this->temp_objects_.clear();
   uint32_t dst_adr = this->dst_adr_;
+
+  bool is_service_call = false;
+
   if (!this->datapoint_ids_for_read_service_.empty()) {
-    this->temp_objects_.push_back(this->datapoint_ids_for_read_service_.front().name);
-    dst_adr = this->datapoint_ids_for_read_service_.front().address;
-    this->datapoint_ids_for_read_service_.erase(this->datapoint_ids_for_read_service_.begin());
+    is_service_call = true;
+    auto &entry = this->datapoint_ids_for_read_service_.front();
+    dst_adr = entry.address;
+
+    // Check if we should request this service item
+    bool request_once =
+        std::find(this->request_once_datapoint_ids_.begin(), this->request_once_datapoint_ids_.end(),
+                  EconetDatapointID{.name = entry.name, .address = dst_adr}) != this->request_once_datapoint_ids_.end();
+    bool exists = std::find_if(this->datapoints_.begin(), this->datapoints_.end(), [&](const DatapointEntry &e) {
+                    return e.id == EconetDatapointID{.name = entry.name, .address = dst_adr};
+                  }) != this->datapoints_.end();
+
+    if (!(request_once && exists)) {
+      this->temp_objects_.push_back(&entry.name);
+    }
   } else {
     // Impose a longer delay restriction for general periodically requested messages
     if (this->loop_now_ - this->last_read_request_ < this->min_delay_between_read_requests_) {
@@ -486,32 +512,32 @@ void Econet::request_strings_() {
           this->request_mod_update_interval_millis_[request_mod]) {
         const auto &datapoint_ids = this->request_datapoint_ids_[request_mod];
         this->temp_objects_.reserve(datapoint_ids.size());
+
         for (const auto &id : datapoint_ids) {
-          this->temp_objects_.push_back(id);
+          dst_adr = this->request_mod_addresses_[request_mod];
+
+          bool request_once =
+              std::find(this->request_once_datapoint_ids_.begin(), this->request_once_datapoint_ids_.end(),
+                        EconetDatapointID{.name = id, .address = dst_adr}) != this->request_once_datapoint_ids_.end();
+          bool exists = std::find_if(this->datapoints_.begin(), this->datapoints_.end(), [&](const DatapointEntry &e) {
+                          return e.id == EconetDatapointID{.name = id, .address = dst_adr};
+                        }) != this->datapoints_.end();
+
+          if (!(request_once && exists)) {
+            this->temp_objects_.push_back(&id);
+          }
         }
         this->request_mod_last_requested_[request_mod] = this->loop_now_;
-        dst_adr = this->request_mod_addresses_[request_mod];
         break;
       }
     }
   }
-  std::vector<std::string>::iterator iter;
-  for (iter = this->temp_objects_.begin(); iter != this->temp_objects_.end();) {
-    bool request_once =
-        std::find(this->request_once_datapoint_ids_.begin(), this->request_once_datapoint_ids_.end(),
-                  EconetDatapointID{.name = *iter, .address = dst_adr}) != this->request_once_datapoint_ids_.end();
-    bool exists = std::find_if(this->datapoints_.begin(), this->datapoints_.end(), [&](const DatapointEntry &e) {
-                    return e.id == EconetDatapointID{.name = *iter, .address = dst_adr};
-                  }) != this->datapoints_.end();
 
-    if (request_once && exists) {
-      iter = this->temp_objects_.erase(iter);
-
-    } else {
-      ++iter;
-    }
-  }
   if (this->temp_objects_.empty()) {
+    // If it was a service call that we skipped because it already exists, remove it from queue now
+    if (is_service_call && !this->datapoint_ids_for_read_service_.empty()) {
+      this->datapoint_ids_for_read_service_.erase(this->datapoint_ids_for_read_service_.begin());
+    }
     return;
   }
 
@@ -522,7 +548,7 @@ void Econet::request_strings_() {
 
   // Read Class
   bool is_raw = std::find(this->raw_datapoint_ids_.begin(), this->raw_datapoint_ids_.end(),
-                          EconetDatapointID{.name = this->temp_objects_[0], .address = dst_adr}) !=
+                          EconetDatapointID{.name = *this->temp_objects_[0], .address = dst_adr}) !=
                 this->raw_datapoint_ids_.end();
   if (this->temp_objects_.size() == 1 && is_raw) {
     data.push_back(1);
@@ -536,6 +562,11 @@ void Econet::request_strings_() {
   join_obj_names(this->temp_objects_, &data);
 
   this->transmit_message_(READ_COMMAND, data, dst_adr);
+
+  // If it was a service call, remove it from queue now that we've used the pointer
+  if (is_service_call && !this->datapoint_ids_for_read_service_.empty()) {
+    this->datapoint_ids_for_read_service_.erase(this->datapoint_ids_for_read_service_.begin());
+  }
 }
 
 void Econet::transmit_message_(uint8_t command, const std::vector<uint8_t> &data, uint32_t dst_adr, uint32_t src_adr) {
@@ -547,7 +578,7 @@ void Econet::transmit_message_(uint8_t command, const std::vector<uint8_t> &data
   }
   this->last_request_ = this->loop_now_;
 
-  this->tx_message_.clear();
+  this->tx_message_ = {};
 
   address_to_bytes(dst_adr, &this->tx_message_);
   address_to_bytes(src_adr, &this->tx_message_);
@@ -556,7 +587,9 @@ void Econet::transmit_message_(uint8_t command, const std::vector<uint8_t> &data
   this->tx_message_.push_back(0);
   this->tx_message_.push_back(0);
   this->tx_message_.push_back(command);
-  this->tx_message_.insert(this->tx_message_.end(), data.begin(), data.end());
+  for (uint8_t b : data) {
+    this->tx_message_.push_back(b);
+  }
 
   uint16_t crc = crc16(&this->tx_message_[0], this->tx_message_.size(), 0);
   this->tx_message_.push_back(crc);

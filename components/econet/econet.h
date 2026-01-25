@@ -12,11 +12,13 @@
 namespace esphome {
 namespace econet {
 
+// MSG_HEADER_SIZE (14) + max uint8_t payload len (255) + MSG_CRC_SIZE (2) = 271 bytes.
+// 300 provides a safe margin for protocol overhead.
+static const size_t MAX_MESSAGE_SIZE = 300;
 static const uint8_t MAX_REQUEST_MODS = 16;
 static const uint32_t DEFAULT_UPDATE_INTERVAL_MILLIS = 30000;
 
-class ReadRequest {
- public:
+struct ReadRequest {
   std::vector<std::string> obj_names;
   uint32_t dst_adr;
   uint32_t src_adr;
@@ -165,9 +167,9 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<DatapointEntry> datapoints_;
   std::vector<DatapointEntry> pending_writes_;
   std::vector<EconetDatapointID> datapoint_ids_for_read_service_;
-  std::vector<uint8_t> rx_message_;
-  std::vector<uint8_t> tx_message_;
-  std::vector<std::string> temp_objects_;
+  StaticVector<uint8_t, MAX_MESSAGE_SIZE> rx_message_;
+  StaticVector<uint8_t, MAX_MESSAGE_SIZE> tx_message_;
+  std::vector<const std::string *> temp_objects_;
 
   // Pointers
   binary_sensor::BinarySensor *mcu_connected_binary_sensor_{nullptr};
