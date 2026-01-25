@@ -31,6 +31,7 @@ wifi:
   ap:
 captive_portal:
 api:
+  homeassistant_services: true
   services:
     - service: read
       variables:
