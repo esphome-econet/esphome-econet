@@ -113,24 +113,21 @@ async def to_code(config):
         )
     )
     cg.add(var.set_follow_schedule_id(config[CONF_FOLLOW_SCHEDULE_DATAPOINT]))
-    cg.add(
-        var.set_modes(
-            list(config[CONF_MODES].keys()),
-            list(config[CONF_MODES].values()),
-        )
-    )
-    cg.add(
-        var.set_custom_presets(
-            list(config[CONF_CUSTOM_PRESETS].keys()),
-            list(config[CONF_CUSTOM_PRESETS].values()),
-        )
-    )
-    cg.add(
-        var.set_custom_fan_modes(
-            list(config[CONF_CUSTOM_FAN_MODES].keys()),
-            list(config[CONF_CUSTOM_FAN_MODES].values()),
-        )
-    )
+    if CONF_MODES in config:
+        modes = config[CONF_MODES]
+        cg.add(var.init_modes(len(modes)))
+        for key, value in modes.items():
+            cg.add(var.add_mode(key, value))
+    if CONF_CUSTOM_PRESETS in config:
+        presets = config[CONF_CUSTOM_PRESETS]
+        cg.add(var.init_custom_presets(len(presets)))
+        for key, value in presets.items():
+            cg.add(var.add_custom_preset(key, value))
+    if CONF_CUSTOM_FAN_MODES in config:
+        fan_modes = config[CONF_CUSTOM_FAN_MODES]
+        cg.add(var.init_custom_fan_modes(len(fan_modes)))
+        for key, value in fan_modes.items():
+            cg.add(var.add_custom_fan_mode(key, value))
     cg.add(var.set_current_humidity_id(config[CONF_CURRENT_HUMIDITY_DATAPOINT]))
     cg.add(
         var.set_target_dehumidification_level_id(
