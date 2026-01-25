@@ -14,7 +14,8 @@ class EconetSelect : public select::Select, public Component, public EconetClien
   void setup() override;
   void dump_config() override;
   void set_select_id(const std::string &select_id) { this->select_id_ = select_id; }
-  void set_select_mappings(std::vector<uint8_t> mappings) { this->mappings_ = std::move(mappings); }
+  void init_select_mappings(size_t size) { this->mappings_.reserve(size); }
+  void add_select_mapping(uint8_t mapping) { this->mappings_.push_back(mapping); }
 
  protected:
   void control(const std::string &value) override;

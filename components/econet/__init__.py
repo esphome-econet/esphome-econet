@@ -140,20 +140,13 @@ async def to_code(config):
     cg.add(var.set_dst_address(config[CONF_DST_ADDRESS]))
     if CONF_REQUEST_MOD_UPDATE_INTERVALS in config:
         request_mod_update_intervals = config[CONF_REQUEST_MOD_UPDATE_INTERVALS]
-        cg.add(
-            var.set_request_mod_update_intervals(
-                list(request_mod_update_intervals.keys()),
-                list(request_mod_update_intervals.values()),
-            )
-        )
+        cg.add(var.init_request_mod_update_intervals(len(request_mod_update_intervals)))
+        for mod, interval in request_mod_update_intervals.items():
+            cg.add(var.add_request_mod_update_interval(mod, interval))
     if CONF_REQUEST_MOD_ADDRESSES in config:
         request_mod_addresses = config[CONF_REQUEST_MOD_ADDRESSES]
-        cg.add(
-            var.set_request_mod_addresses(
-                list(request_mod_addresses.keys()),
-                list(request_mod_addresses.values()),
-            )
-        )
+        for mod, address in request_mod_addresses.items():
+            cg.add(var.add_request_mod_address(mod, address))
     if CONF_FLOW_CONTROL_PIN in config:
         pin = await gpio_pin_expression(config[CONF_FLOW_CONTROL_PIN])
         cg.add(var.set_flow_control_pin(pin))

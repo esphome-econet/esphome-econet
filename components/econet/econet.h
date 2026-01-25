@@ -91,19 +91,14 @@ class Econet : public Component, public uart::UARTDevice {
 
   void set_src_address(uint32_t address) { this->src_adr_ = address; }
   void set_dst_address(uint32_t address) { this->dst_adr_ = address; }
-  void set_request_mod_addresses(std::vector<uint8_t> request_mods, std::vector<uint32_t> addresses) {
-    for (auto i = 0; i < MAX_REQUEST_MODS; i++) {
-      this->request_mod_addresses_[i] = 0;
-    }
-    for (auto i = 0; i < request_mods.size(); i++) {
-      this->request_mod_addresses_[request_mods[i]] = addresses[i];
+  void add_request_mod_address(uint8_t mod, uint32_t address) {
+    if (mod < MAX_REQUEST_MODS) {
+      this->request_mod_addresses_[mod] = address;
     }
   }
-  void set_request_mod_update_intervals(std::vector<uint8_t> request_mods, std::vector<uint32_t> update_intervals) {
-    this->request_mod_update_interval_millis_map_.init(request_mods.size());
-    for (size_t i = 0; i < request_mods.size(); i++) {
-      this->request_mod_update_interval_millis_map_.push_back({request_mods[i], update_intervals[i]});
-    }
+  void init_request_mod_update_intervals(size_t size) { this->request_mod_update_interval_millis_map_.init(size); }
+  void add_request_mod_update_interval(uint8_t mod, uint32_t interval) {
+    this->request_mod_update_interval_millis_map_.push_back({mod, interval});
     this->update_intervals_();
   }
   void set_update_interval(uint32_t interval_millis) {
