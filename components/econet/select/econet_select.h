@@ -12,14 +12,14 @@ class EconetSelect : public select::Select, public Component, public EconetClien
  public:
   void setup() override;
   void dump_config() override;
-  void set_select_id(const std::string &select_id) { this->select_id_ = select_id; }
+  void set_select_id(const char *select_id) { this->select_id_ = select_id; }
   void init_select_mappings(size_t size) { this->mappings_.init(size); }
   void add_select_mapping(uint8_t mapping) { this->mappings_.push_back(mapping); }
 
  protected:
   void control(const std::string &value) override;
 
-  std::string select_id_{""};
+  const char *select_id_{nullptr};
   FixedVector<uint8_t> mappings_;
 };
 

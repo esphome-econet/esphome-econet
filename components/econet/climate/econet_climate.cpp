@@ -30,36 +30,36 @@ climate::ClimateTraits EconetClimate::traits() {
     return this->traits_;
   }
   auto traits = climate::ClimateTraits();
-  if (!this->current_temperature_id_.empty()) {
+  if (this->current_temperature_id_ && *this->current_temperature_id_) {
     traits.add_feature_flags(climate::CLIMATE_SUPPORTS_CURRENT_TEMPERATURE);
   }
-  if (!this->current_humidity_id_.empty()) {
+  if (this->current_humidity_id_ && *this->current_humidity_id_) {
     traits.add_feature_flags(climate::CLIMATE_SUPPORTS_CURRENT_HUMIDITY);
   }
-  if (!this->target_dehumidification_level_id_.empty()) {
+  if (this->target_dehumidification_level_id_ && *this->target_dehumidification_level_id_) {
     traits.add_feature_flags(climate::CLIMATE_SUPPORTS_TARGET_HUMIDITY);
   }
-  if (!this->target_temperature_high_id_.empty()) {
+  if (this->target_temperature_high_id_ && *this->target_temperature_high_id_) {
     traits.add_feature_flags(climate::CLIMATE_REQUIRES_TWO_POINT_TARGET_TEMPERATURE);
   }
-  if (!this->mode_id_.empty()) {
+  if (this->mode_id_ && *this->mode_id_) {
     for (const auto &entry : this->modes_) {
       traits.add_supported_mode(entry.mode);
     }
   }
-  if (!this->custom_preset_id_.empty()) {
+  if (this->custom_preset_id_ && *this->custom_preset_id_) {
     std::vector<const char *> presets;
     presets.reserve(this->custom_presets_.size());
     for (const auto &entry : this->custom_presets_) {
-      presets.push_back(entry.name.c_str());
+      presets.push_back(entry.name);
     }
     traits.set_supported_custom_presets(presets);
   }
-  if (!this->custom_fan_mode_id_.empty()) {
+  if (this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
     std::vector<const char *> fans;
     fans.reserve(this->custom_fan_modes_.size());
     for (const auto &entry : this->custom_fan_modes_) {
-      fans.push_back(entry.name.c_str());
+      fans.push_back(entry.name);
     }
     traits.set_supported_custom_fan_modes(fans);
   }
@@ -69,7 +69,7 @@ climate::ClimateTraits EconetClimate::traits() {
 }
 
 void EconetClimate::setup() {
-  if (!this->current_temperature_id_.empty()) {
+  if (this->current_temperature_id_ && *this->current_temperature_id_) {
     this->parent_->register_listener(
         this->current_temperature_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
@@ -78,7 +78,7 @@ void EconetClimate::setup() {
         },
         false, this->src_adr_);
   }
-  if (!this->current_humidity_id_.empty()) {
+  if (this->current_humidity_id_ && *this->current_humidity_id_) {
     this->parent_->register_listener(
         this->current_humidity_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
@@ -87,7 +87,7 @@ void EconetClimate::setup() {
         },
         false, this->src_adr_);
   }
-  if (!this->target_dehumidification_level_id_.empty()) {
+  if (this->target_dehumidification_level_id_ && *this->target_dehumidification_level_id_) {
     this->parent_->register_listener(
         this->target_dehumidification_level_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
@@ -96,7 +96,7 @@ void EconetClimate::setup() {
         },
         false, this->src_adr_);
   }
-  if (!this->target_temperature_id_.empty()) {
+  if (this->target_temperature_id_ && *this->target_temperature_id_) {
     this->parent_->register_listener(
         this->target_temperature_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
@@ -105,7 +105,7 @@ void EconetClimate::setup() {
         },
         false, this->src_adr_);
   }
-  if (!this->target_temperature_low_id_.empty()) {
+  if (this->target_temperature_low_id_ && *this->target_temperature_low_id_) {
     this->parent_->register_listener(
         this->target_temperature_low_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
@@ -114,7 +114,7 @@ void EconetClimate::setup() {
         },
         false, this->src_adr_);
   }
-  if (!this->target_temperature_high_id_.empty()) {
+  if (this->target_temperature_high_id_ && *this->target_temperature_high_id_) {
     this->parent_->register_listener(
         this->target_temperature_high_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
@@ -123,7 +123,7 @@ void EconetClimate::setup() {
         },
         false, this->src_adr_);
   }
-  if (!this->mode_id_.empty()) {
+  if (this->mode_id_ && *this->mode_id_) {
     this->parent_->register_listener(
         this->mode_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
@@ -139,7 +139,7 @@ void EconetClimate::setup() {
         },
         false, this->src_adr_);
   }
-  if (!this->custom_preset_id_.empty()) {
+  if (this->custom_preset_id_ && *this->custom_preset_id_) {
     this->parent_->register_listener(
         this->custom_preset_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
@@ -149,13 +149,13 @@ void EconetClimate::setup() {
             ESP_LOGW(TAG, "In custom_presets of your yaml add: %d: \"%s\"", datapoint.value_enum,
                      datapoint.value_string.c_str());
           } else {
-            this->set_custom_preset_(it->name.c_str(), it->name.length());
+            this->set_custom_preset_(it->name);
             this->publish_state();
           }
         },
         false, this->src_adr_);
   }
-  if (!this->custom_fan_mode_id_.empty()) {
+  if (this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
     this->parent_->register_listener(
         this->custom_fan_mode_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
@@ -176,7 +176,7 @@ void EconetClimate::setup() {
         },
         false, this->src_adr_);
   }
-  if (!this->custom_fan_mode_no_schedule_id_.empty()) {
+  if (this->custom_fan_mode_no_schedule_id_ && *this->custom_fan_mode_no_schedule_id_) {
     this->parent_->register_listener(
         this->custom_fan_mode_no_schedule_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
@@ -197,11 +197,11 @@ void EconetClimate::setup() {
         },
         false, this->src_adr_);
   }
-  if (!this->follow_schedule_id_.empty()) {
+  if (this->follow_schedule_id_ && *this->follow_schedule_id_) {
     this->parent_->register_listener(
         this->follow_schedule_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
-          ESP_LOGI(TAG, "MCU reported climate sensor %s is: %s", this->follow_schedule_id_.c_str(),
+          ESP_LOGI(TAG, "MCU reported climate sensor %s is: %s", this->follow_schedule_id_,
                    datapoint.value_string.c_str());
           this->follow_schedule_ = datapoint.value_enum > 0;
           if (this->follow_schedule_.value()) {
@@ -221,21 +221,23 @@ void EconetClimate::setup() {
 }
 
 void EconetClimate::control(const climate::ClimateCall &call) {
-  if (call.get_target_temperature().has_value() && !this->target_temperature_id_.empty()) {
+  if (call.get_target_temperature().has_value() && this->target_temperature_id_ && *this->target_temperature_id_) {
     this->parent_->set_float_datapoint_value(
         this->target_temperature_id_, celsius_to_fahrenheit(call.get_target_temperature().value()), this->src_adr_);
   }
-  if (call.get_target_temperature_low().has_value() && !this->target_temperature_low_id_.empty()) {
+  if (call.get_target_temperature_low().has_value() && this->target_temperature_low_id_ &&
+      *this->target_temperature_low_id_) {
     this->parent_->set_float_datapoint_value(this->target_temperature_low_id_,
                                              celsius_to_fahrenheit(call.get_target_temperature_low().value()),
                                              this->src_adr_);
   }
-  if (call.get_target_temperature_high().has_value() && !this->target_temperature_high_id_.empty()) {
+  if (call.get_target_temperature_high().has_value() && this->target_temperature_high_id_ &&
+      *this->target_temperature_high_id_) {
     this->parent_->set_float_datapoint_value(this->target_temperature_high_id_,
                                              celsius_to_fahrenheit(call.get_target_temperature_high().value()),
                                              this->src_adr_);
   }
-  if (call.get_mode().has_value() && !this->mode_id_.empty()) {
+  if (call.get_mode().has_value() && this->mode_id_ && *this->mode_id_) {
     climate::ClimateMode mode = call.get_mode().value();
     auto it = std::find_if(this->modes_.begin(), this->modes_.end(),
                            [&mode](const EconetClimateMode &m) { return m.mode == mode; });
@@ -243,7 +245,7 @@ void EconetClimate::control(const climate::ClimateCall &call) {
       this->parent_->set_enum_datapoint_value(this->mode_id_, it->id, this->src_adr_);
     }
   }
-  if (call.has_custom_preset() && !this->custom_preset_id_.empty()) {
+  if (call.has_custom_preset() && this->custom_preset_id_ && *this->custom_preset_id_) {
     auto preset = call.get_custom_preset();
     auto it = std::find_if(this->custom_presets_.begin(), this->custom_presets_.end(),
                            [&preset](const EconetPreset &p) { return p.name == preset; });
@@ -251,7 +253,7 @@ void EconetClimate::control(const climate::ClimateCall &call) {
       this->parent_->set_enum_datapoint_value(this->custom_preset_id_, it->id, this->src_adr_);
     }
   }
-  if (call.has_custom_fan_mode() && !this->custom_fan_mode_id_.empty()) {
+  if (call.has_custom_fan_mode() && this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
     auto fan_mode = call.get_custom_fan_mode();
     auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
                            [&fan_mode](const EconetFanMode &m) { return m.name == fan_mode; });
@@ -265,7 +267,8 @@ void EconetClimate::control(const climate::ClimateCall &call) {
       }
     }
   }
-  if (call.get_target_humidity().has_value() && !this->target_dehumidification_level_id_.empty()) {
+  if (call.get_target_humidity().has_value() && this->target_dehumidification_level_id_ &&
+      *this->target_dehumidification_level_id_) {
     this->parent_->set_float_datapoint_value(this->target_dehumidification_level_id_,
                                              call.get_target_humidity().value(), this->src_adr_);
   }

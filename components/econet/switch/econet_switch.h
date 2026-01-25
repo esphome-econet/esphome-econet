@@ -11,12 +11,12 @@ class EconetSwitch : public switch_::Switch, public Component, public EconetClie
  public:
   void setup() override;
   void dump_config() override;
-  void set_switch_id(const std::string &switch_id) { this->switch_id_ = switch_id; }
+  void set_switch_id(const char *switch_id) { this->switch_id_ = switch_id; }
 
  protected:
   void write_state(bool state) override;
 
-  std::string switch_id_{""};
+  const char *switch_id_{nullptr};
 };
 
 }  // namespace econet
