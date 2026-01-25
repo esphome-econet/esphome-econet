@@ -3,6 +3,9 @@
 #include <cinttypes>
 #include <algorithm>
 #include <cstring>
+#ifdef USE_API_HOMEASSISTANT_SERVICES
+#include <map>
+#endif
 
 namespace esphome {
 namespace econet {
@@ -763,6 +766,7 @@ void Econet::homeassistant_read(const std::string &datapoint_id, uint32_t addres
     address = this->dst_adr_;
   }
   this->register_listener(datapoint_id, -1, true, [this, datapoint_id](const EconetDatapoint &datapoint) {
+#ifdef USE_API_HOMEASSISTANT_SERVICES
     std::map<std::string, std::string> data;
     data["datapoint_id"] = datapoint_id;
     switch (datapoint.type) {
@@ -788,6 +792,7 @@ void Econet::homeassistant_read(const std::string &datapoint_id, uint32_t addres
         break;
     }
     this->capi_.fire_homeassistant_event("esphome.econet_event", data);
+#endif
   });
   this->datapoint_ids_for_read_service_.push_back(EconetDatapointID{.name = datapoint_id, .address = address});
 }
