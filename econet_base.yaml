@@ -31,39 +31,50 @@ wifi:
   ap:
 captive_portal:
 api:
-  homeassistant_services: true
-  services:
-    - service: read
+  actions:
+    - action: read
       variables:
         datapoint_id: string
+      supports_response: only
       then:
-        - lambda: id(econet_id).homeassistant_read(datapoint_id);
-    - service: read_from_address
+        - api.respond:
+            data: !lambda |-
+              std::map<std::string, std::string> result = id(econet_id).homeassistant_read(datapoint_id);
+              for (auto const& item : result) {
+                root[item.first] = item.second;
+              }
+    - action: read_from_address
       variables:
         datapoint_id: string
         address: int
+      supports_response: only
       then:
-        - lambda: id(econet_id).homeassistant_read(datapoint_id, address);
-    - service: write_enum
+        - api.respond:
+            data: !lambda |-
+              std::map<std::string, std::string> result = id(econet_id).homeassistant_read(datapoint_id, address);
+              for (auto const& item : result) {
+                root[item.first] = item.second;
+              }
+    - action: write_enum
       variables:
         datapoint_id: string
         value: int
       then:
         - lambda: id(econet_id).homeassistant_write(datapoint_id, (uint8_t) value);
-    - service: write_enum_from_address
+    - action: write_enum_from_address
       variables:
         datapoint_id: string
         value: int
         address: int
       then:
         - lambda: id(econet_id).homeassistant_write(datapoint_id, (uint8_t) value, address);
-    - service: write_float
+    - action: write_float
       variables:
         datapoint_id: string
         value: float
       then:
         - lambda: id(econet_id).homeassistant_write(datapoint_id, value);
-    - service: write_float_from_address
+    - action: write_float_from_address
       variables:
         datapoint_id: string
         value: float

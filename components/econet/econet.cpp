@@ -1,11 +1,9 @@
 #include "econet.h"
+#include "esphome/core/application.h"
 
 #include <cinttypes>
 #include <algorithm>
 #include <cstring>
-#ifdef USE_API_HOMEASSISTANT_SERVICES
-#include <map>
-#endif
 
 namespace esphome {
 namespace econet {
@@ -694,21 +692,28 @@ void Econet::send_datapoint_(const EconetDatapointID &datapoint_id, const Econet
     changed = true;
   }
 
-  if (changed) {
-    for (const auto &listener : this->listeners_) {
-      if (listener.datapoint_id.name == datapoint_id.name &&
-          (listener.datapoint_id.address == 0 || listener.datapoint_id.address == datapoint_id.address)) {
-        listener.on_datapoint(value);
+  if (!changed) {
+    ESP_LOGV(TAG, "Datapoint %s unchanged", datapoint_id.name.c_str());
+  }
+
+  for (auto it = this->listeners_.begin(); it != this->listeners_.end();) {
+    if (it->datapoint_id.name == datapoint_id.name &&
+        (it->datapoint_id.address == 0 || it->datapoint_id.address == datapoint_id.address)) {
+      if (changed || it->one_shot) {
+        it->on_datapoint(value);
+        if (it->one_shot) {
+          it = this->listeners_.erase(it);
+          continue;
+        }
       }
     }
-  } else {
-    ESP_LOGV(TAG, "Not sending unchanged value for datapoint %s", datapoint_id.name.c_str());
+    ++it;
   }
 }
 
 void Econet::register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
                                const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint,
-                               uint32_t src_adr) {
+                               uint32_t src_adr, bool one_shot, bool run_existing) {
   EconetDatapointID dp_id{.name = datapoint_id, .address = src_adr};
 
   if (request_mod >= 0 && static_cast<size_t>(request_mod) < this->request_datapoint_ids_.size()) {
@@ -741,52 +746,70 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
   this->listeners_.push_back(EconetDatapointListener{
       .datapoint_id = dp_id,
       .on_datapoint = func,
+      .one_shot = one_shot,
   });
 
-  // Run through existing datapoints
-  for (const auto &entry : this->datapoints_) {
-    if (entry.id.name == datapoint_id && (entry.id.address == src_adr || entry.id.address == 0)) {
-      func(entry.data);
+  if (run_existing) {
+    // Run through existing datapoints
+    for (const auto &entry : this->datapoints_) {
+      if (entry.id.name == datapoint_id && (entry.id.address == src_adr || entry.id.address == 0)) {
+        func(entry.data);
+      }
     }
   }
 }
 
 // Called from a Home Assistant exposed service to read a datapoint.
-// Fires a Home Assistant event: "esphome.econet_event" with the response.
-void Econet::homeassistant_read(const std::string &datapoint_id, uint32_t address) {
+std::map<std::string, std::string> Econet::homeassistant_read(const std::string &datapoint_id, uint32_t address) {
   if (address == 0) {
     address = this->dst_adr_;
   }
-  this->register_listener(datapoint_id, -1, true, [this, datapoint_id](const EconetDatapoint &datapoint) {
-#ifdef USE_API_HOMEASSISTANT_SERVICES
-    std::map<std::string, std::string> data;
-    data["datapoint_id"] = datapoint_id;
-    switch (datapoint.type) {
-      case EconetDatapointType::FLOAT:
-        data["type"] = "FLOAT";
-        data["value"] = std::to_string(datapoint.value_float);
-        break;
-      case EconetDatapointType::ENUM_TEXT:
-        data["type"] = "ENUM_TEXT";
-        data["value"] = std::to_string(datapoint.value_enum);
-        data["value_string"] = datapoint.value_string;
-        break;
-      case EconetDatapointType::TEXT:
-        data["type"] = "TEXT";
-        data["value_string"] = datapoint.value_string;
-        break;
-      case EconetDatapointType::RAW:
-        data["type"] = "RAW";
-        data["value_raw"] = format_hex_pretty(datapoint.value_raw);
-        break;
-      case EconetDatapointType::UNSUPPORTED:
-        data["type"] = "UNSUPPORTED";
-        break;
-    }
-    this->capi_.fire_homeassistant_event("esphome.econet_event", data);
-#endif
-  });
+  std::map<std::string, std::string> data;
+  bool data_received = false;
+  this->register_listener(
+      datapoint_id, -1, true,
+      [&](const EconetDatapoint &datapoint) {
+        data["datapoint_id"] = datapoint_id;
+        switch (datapoint.type) {
+          case EconetDatapointType::FLOAT:
+            data["type"] = "FLOAT";
+            data["value"] = std::to_string(datapoint.value_float);
+            break;
+          case EconetDatapointType::ENUM_TEXT:
+            data["type"] = "ENUM_TEXT";
+            data["value"] = std::to_string(datapoint.value_enum);
+            data["value_string"] = datapoint.value_string;
+            break;
+          case EconetDatapointType::TEXT:
+            data["type"] = "TEXT";
+            data["value_string"] = datapoint.value_string;
+            break;
+          case EconetDatapointType::RAW:
+            data["type"] = "RAW";
+            data["value_raw"] = format_hex_pretty(datapoint.value_raw);
+            break;
+          case EconetDatapointType::UNSUPPORTED:
+            data["type"] = "UNSUPPORTED";
+            break;
+        }
+        data_received = true;
+      },
+      false, address, true, false);
+
   this->datapoint_ids_for_read_service_.push_back(EconetDatapointID{.name = datapoint_id, .address = address});
+
+  uint32_t start_time = millis();
+  while (!data_received) {
+    if (millis() - start_time > 2000) {
+      ESP_LOGW(TAG, "Timeout waiting for datapoint %s response", datapoint_id.c_str());
+      break;
+    }
+    this->loop();
+    App.feed_wdt();
+    delay(1);
+  }
+
+  return data;
 }
 
 void Econet::homeassistant_write(const std::string &datapoint_id, uint8_t value, uint32_t address) {
