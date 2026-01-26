@@ -75,21 +75,10 @@ void extract_obj_names(const uint8_t *pdata, uint8_t data_len, std::vector<std::
 }
 
 // Reverse of extract_obj_names
-void join_obj_names(const std::vector<const std::string *> &objects, std::vector<uint8_t> *data) {
+void join_obj_names(const StaticVector<const std::string *, MAX_OBJECTS_PER_REQUEST> &objects,
+                    StaticVector<uint8_t, MAX_MESSAGE_SIZE> *data) {
   for (const auto *s_ptr : objects) {
     const std::string &s = *s_ptr;
-    data->push_back(0);
-    data->push_back(0);
-    size_t s_len = s.length();
-    for (int j = 0; j < OBJ_NAME_SIZE; j++) {
-      data->push_back(j < s_len ? s[j] : 0);
-    }
-  }
-}
-
-// Overload for plain string vector used in write_value_
-void join_obj_names(const std::vector<std::string> &objects, std::vector<uint8_t> *data) {
-  for (const auto &s : objects) {
     data->push_back(0);
     data->push_back(0);
     size_t s_len = s.length();
@@ -458,8 +447,7 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
   if (address == 0) {
     address = this->dst_adr_;
   }
-  std::vector<uint8_t> data;
-  data.reserve(6 + OBJ_NAME_SIZE + FLOAT_SIZE);
+  StaticVector<uint8_t, MAX_MESSAGE_SIZE> data;
 
   data.push_back(1);
   data.push_back(1);
@@ -480,11 +468,11 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
   data.push_back((uint8_t) (f_to_32 >> 8));
   data.push_back((uint8_t) (f_to_32));
 
-  this->transmit_message_(WRITE_COMMAND, data, address);
+  this->transmit_message_(WRITE_COMMAND, data.data(), data.size(), address);
 }
 
 void Econet::request_strings_() {
-  this->temp_objects_.clear();
+  this->temp_objects_ = {};
   uint32_t dst_adr = this->dst_adr_;
 
   bool is_service_call = false;
@@ -514,9 +502,14 @@ void Econet::request_strings_() {
       if ((this->loop_now_ - this->request_mod_last_requested_[request_mod]) >=
           this->request_mod_update_interval_millis_[request_mod]) {
         const auto &datapoint_ids = this->request_datapoint_ids_[request_mod];
-        this->temp_objects_.reserve(datapoint_ids.size());
 
         for (const auto &id : datapoint_ids) {
+          if (this->temp_objects_.size() >= MAX_OBJECTS_PER_REQUEST) {
+            ESP_LOGW(TAG, "Too many objects for request_mod %d. Truncating to %d", request_mod,
+                     MAX_OBJECTS_PER_REQUEST);
+            break;
+          }
+
           dst_adr = this->request_mod_addresses_[request_mod];
 
           bool request_once =
@@ -546,8 +539,7 @@ void Econet::request_strings_() {
 
   this->last_read_request_ = this->loop_now_;
 
-  std::vector<uint8_t> data;
-  data.reserve(2 + this->temp_objects_.size() * (2 + OBJ_NAME_SIZE));
+  StaticVector<uint8_t, MAX_MESSAGE_SIZE> data;
 
   // Read Class
   bool is_raw = std::find(this->raw_datapoint_ids_.begin(), this->raw_datapoint_ids_.end(),
@@ -564,7 +556,7 @@ void Econet::request_strings_() {
 
   join_obj_names(this->temp_objects_, &data);
 
-  this->transmit_message_(READ_COMMAND, data, dst_adr);
+  this->transmit_message_(READ_COMMAND, data.data(), data.size(), dst_adr);
 
   // If it was a service call, remove it from queue now that we've used the pointer
   if (is_service_call && !this->datapoint_ids_for_read_service_.empty()) {
@@ -572,7 +564,7 @@ void Econet::request_strings_() {
   }
 }
 
-void Econet::transmit_message_(uint8_t command, const std::vector<uint8_t> &data, uint32_t dst_adr, uint32_t src_adr) {
+void Econet::transmit_message_(uint8_t command, const uint8_t *data, size_t len, uint32_t dst_adr, uint32_t src_adr) {
   if (dst_adr == 0) {
     dst_adr = this->dst_adr_;
   }
@@ -586,12 +578,12 @@ void Econet::transmit_message_(uint8_t command, const std::vector<uint8_t> &data
   address_to_bytes(dst_adr, &this->tx_message_);
   address_to_bytes(src_adr, &this->tx_message_);
 
-  this->tx_message_.push_back(data.size());
+  this->tx_message_.push_back(len);
   this->tx_message_.push_back(0);
   this->tx_message_.push_back(0);
   this->tx_message_.push_back(command);
-  for (uint8_t b : data) {
-    this->tx_message_.push_back(b);
+  for (size_t i = 0; i < len; i++) {
+    this->tx_message_.push_back(data[i]);
   }
 
   uint16_t crc = crc16(&this->tx_message_[0], this->tx_message_.size(), 0);

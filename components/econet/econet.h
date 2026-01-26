@@ -20,6 +20,10 @@ namespace econet {
 // MSG_HEADER_SIZE (14) + max uint8_t payload len (255) + MSG_CRC_SIZE (2) = 271 bytes.
 // 300 provides a safe margin for protocol overhead.
 static const size_t MAX_MESSAGE_SIZE = 300;
+// The request packet payload is limited to 255 bytes. The payload consists of
+// 2 bytes of overhead (class + property) and 10 bytes per object (2-byte prefix + 8-byte name).
+// (255 - 2) / 10 = 25.3, so 25 is the safe maximum number of objects per request.
+static const uint8_t MAX_OBJECTS_PER_REQUEST = 25;
 static const uint8_t MAX_REQUEST_MODS = 16;
 static const uint32_t DEFAULT_UPDATE_INTERVAL_MILLIS = 30000;
 
@@ -140,7 +144,7 @@ class Econet : public Component, public uart::UARTDevice {
   void parse_tx_message_();
   void handle_response_(const EconetDatapointID &datapoint_id, const uint8_t *p, uint8_t len);
 
-  void transmit_message_(uint8_t command, const std::vector<uint8_t> &data, uint32_t dst_adr = 0, uint32_t src_adr = 0);
+  void transmit_message_(uint8_t command, const uint8_t *data, size_t len, uint32_t dst_adr = 0, uint32_t src_adr = 0);
   void request_strings_();
   void write_value_(const std::string &object, EconetDatapointType type, float value, uint32_t address = 0);
 
@@ -176,7 +180,7 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<EconetDatapointID> datapoint_ids_for_read_service_;
   StaticVector<uint8_t, MAX_MESSAGE_SIZE> rx_message_;
   StaticVector<uint8_t, MAX_MESSAGE_SIZE> tx_message_;
-  std::vector<const std::string *> temp_objects_;
+  StaticVector<const std::string *, MAX_OBJECTS_PER_REQUEST> temp_objects_;
 
   // Pointers
   binary_sensor::BinarySensor *mcu_connected_binary_sensor_{nullptr};
