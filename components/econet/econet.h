@@ -1,16 +1,13 @@
 #pragma once
 
 #include "esphome/core/component.h"
-#include "esphome/core/defines.h"
 #include "esphome/core/helpers.h"
-#ifdef USE_API_HOMEASSISTANT_SERVICES
-#include "esphome/components/api/custom_api_device.h"
-#endif
 #include "esphome/components/binary_sensor/binary_sensor.h"
 #include "esphome/components/uart/uart.h"
 #include <algorithm>
 #include <array>
 #include <functional>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -82,6 +79,7 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
 struct EconetDatapointListener {
   EconetDatapointID datapoint_id;
   std::function<void(const EconetDatapoint &)> on_datapoint;
+  bool one_shot;
 };
 
 struct RequestModUpdateInterval {
@@ -127,9 +125,9 @@ class Econet : public Component, public uart::UARTDevice {
 
   void register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
                          const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint = false,
-                         uint32_t src_adr = 0);
+                         uint32_t src_adr = 0, bool one_shot = false, bool run_existing = true);
 
-  void homeassistant_read(const std::string &datapoint_id, uint32_t address = 0);
+  std::map<std::string, std::string> homeassistant_read(const std::string &datapoint_id, uint32_t address = 0);
   void homeassistant_write(const std::string &datapoint_id, uint8_t value, uint32_t address = 0);
   void homeassistant_write(const std::string &datapoint_id, float value, uint32_t address = 0);
 
@@ -162,9 +160,6 @@ class Econet : public Component, public uart::UARTDevice {
   // Member variables - ordered for packing
   // Large/complex types
   ReadRequest read_req_{};
-#ifdef USE_API_HOMEASSISTANT_SERVICES
-  esphome::api::CustomAPIDevice capi_;
-#endif
   std::vector<EconetDatapointListener> listeners_;
   std::array<uint32_t, MAX_REQUEST_MODS> request_mod_addresses_{};
   FixedVector<RequestModUpdateInterval> request_mod_update_interval_millis_map_;
