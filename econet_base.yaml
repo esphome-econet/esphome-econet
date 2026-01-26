@@ -24,7 +24,7 @@ esphome:
   min_version: "2026.1.0"
   project:
     name: "esphome-econet.esphome-econet"
-    version: v3.2.0
+    version: v3.3.0
 preferences:
   flash_write_interval: "24h"
 wifi:
