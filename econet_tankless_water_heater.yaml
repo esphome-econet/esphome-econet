@@ -5,9 +5,13 @@ substitutions:
   device_description: "Rheem Tankless Water Heater"
   econet_update_interval: 5s
   tankless_kbtus_per_m3: "35.300"  # Natural Gas = approx 35.300, Propane = approx 88.852
+  water_heater_eco_preset: "None"
+  water_heater_off_preset: "None"
+  water_heater_default_mode: "water_heater::WATER_HEATER_MODE_GAS"
 
 packages:
   econet: !include econet_base.yaml
+  water_heater: !include econet_water_heater_base.yaml
 
 econet:
   dst_address: 0x1040
@@ -16,6 +20,7 @@ climate:
   - platform: econet
     id: econet_climate
     name: None
+    disabled_by_default: true
     visual:
       min_temperature: "110 °F"
       max_temperature: "140 °F"
@@ -28,6 +33,12 @@ climate:
     modes:
       0: "OFF"
       1: "HEAT"
+
+water_heater:
+  - id: !extend econet_water_heater
+    supported_modes:
+      - "OFF"
+      - GAS
 
 sensor:
   - platform: econet
