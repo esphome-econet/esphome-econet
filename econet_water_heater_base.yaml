@@ -1,0 +1,83 @@
+---
+water_heater:
+  - platform: template
+    id: econet_water_heater
+    name: None
+    visual:
+      min_temperature: "110 °F"
+      max_temperature: "140 °F"
+      target_temperature_step: 1
+    current_temperature: |-
+      float val = id(econet_climate).current_temperature;
+      // Synchronization hack: Update the internal state of the water heater
+      // to match the climate component. This bypasses the lack of a target_temperature lambda.
+      auto *wh = id(econet_water_heater);
+      float target = id(econet_climate).target_temperature;
+      if (!std::isnan(target) && wh->get_target_temperature() != target) {
+        struct WaterHeaterAccessor : public water_heater::WaterHeater {
+          using water_heater::WaterHeater::target_temperature_;
+        };
+        static_cast<WaterHeaterAccessor *>(static_cast<water_heater::WaterHeater *>(wh))->target_temperature_ = target;
+        wh->publish_state();
+      }
+      return val;
+    # TODO: Once https://github.com/esphome/esphome/pull/13661 is released, replace the hack with:
+    # current_temperature: !lambda "return id(econet_climate).current_temperature;"
+    # target_temperature: !lambda "return id(econet_climate).target_temperature;"
+    mode: |-
+      if (id(econet_climate).mode == climate::CLIMATE_MODE_OFF) {
+        return water_heater::WATER_HEATER_MODE_OFF;
+      }
+      if (id(econet_climate).has_custom_preset()) {
+        auto preset = id(econet_climate).get_custom_preset();
+        if (preset == "Energy Saver" || preset == "Eco Mode") {
+          return water_heater::WATER_HEATER_MODE_ECO;
+        }
+        if (preset == "Performance") {
+          return water_heater::WATER_HEATER_MODE_PERFORMANCE;
+        }
+        if (preset == "Heat Pump") {
+          return water_heater::WATER_HEATER_MODE_HEAT_PUMP;
+        }
+        if (preset == "High Demand") {
+          return water_heater::WATER_HEATER_MODE_HIGH_DEMAND;
+        }
+        if (preset == "Electric") {
+          return water_heater::WATER_HEATER_MODE_ELECTRIC;
+        }
+        if (preset == "${water_heater_off_preset}") {
+          return water_heater::WATER_HEATER_MODE_OFF;
+        }
+      }
+      return ${water_heater_default_mode};
+    set_action:
+      - climate.control:
+          id: econet_climate
+          target_temperature: !lambda "return id(econet_water_heater).get_target_temperature();"
+          mode: !lambda |-
+            auto op_mode = id(econet_water_heater).get_mode();
+            if (op_mode == water_heater::WATER_HEATER_MODE_OFF) {
+              return climate::CLIMATE_MODE_OFF;
+            }
+            return climate::CLIMATE_MODE_HEAT;
+          custom_preset: !lambda |-
+            auto op_mode = id(econet_water_heater).get_mode();
+            if (op_mode == water_heater::WATER_HEATER_MODE_ECO) {
+              return {"${water_heater_eco_preset}"};
+            }
+            if (op_mode == water_heater::WATER_HEATER_MODE_PERFORMANCE) {
+              return {"Performance"};
+            }
+            if (op_mode == water_heater::WATER_HEATER_MODE_HEAT_PUMP) {
+              return {"Heat Pump"};
+            }
+            if (op_mode == water_heater::WATER_HEATER_MODE_HIGH_DEMAND) {
+              return {"High Demand"};
+            }
+            if (op_mode == water_heater::WATER_HEATER_MODE_ELECTRIC) {
+              return {"Electric"};
+            }
+            if (op_mode == water_heater::WATER_HEATER_MODE_OFF) {
+              return {"${water_heater_off_preset}"};
+            }
+            return {};

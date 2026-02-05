@@ -3,6 +3,9 @@ substitutions:
   name: "econet-hpwh"
   friendly_name: "Water Heater"
   device_description: "Rheem Heat Pump Water Heater"
+  water_heater_eco_preset: "Eco Mode"
+  water_heater_off_preset: "Off"
+  water_heater_default_mode: "water_heater::WATER_HEATER_MODE_HEAT_PUMP"
 
 packages:
   econet: !include econet_electric_tank_water_heater.yaml
@@ -13,13 +16,22 @@ econet:
 climate:
   - id: !extend econet_climate
     custom_presets:
-      0: "Off"
-      1: "Eco Mode"
+      0: "${water_heater_off_preset}"
+      1: "${water_heater_eco_preset}"
       2: "Heat Pump"
       3: "High Demand"
       4: "Electric"
       # Vacation preset doesn't seem to have any effect
       # 5: "Vacation"
+
+water_heater:
+  - id: !extend econet_water_heater
+    supported_modes:
+      - "OFF"
+      - ECO
+      - HEAT_PUMP
+      - HIGH_DEMAND
+      - ELECTRIC
 
 sensor:
   - platform: econet
