@@ -14,7 +14,7 @@ esp32:
   board: esp32dev
   variant: esp32
   framework:
-    type: arduino
+    type: esp-idf
 
 packages:  # Change this file to the correct one(s) for your device
   econet-hpwh: !include econet_heatpump_water_heater.yaml
