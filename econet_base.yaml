@@ -5,10 +5,6 @@ substitutions:
   device_description: "Rheem Device"
   tx_pin: GPIO19
   rx_pin: GPIO22
-  platform: esp32
-  board: esp32dev
-  variant: esp32
-  framework: arduino
   github_ref: main
   external_components_source: github://esphome-econet/esphome-econet@${github_ref}
   logger_level: WARN
@@ -21,7 +17,7 @@ esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   comment: ${device_description}
-  min_version: "2026.1.0"
+  min_version: "2026.2.0"
   project:
     name: "esphome-econet.esphome-econet"
     version: v3.4.0

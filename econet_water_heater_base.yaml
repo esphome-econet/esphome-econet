@@ -7,23 +7,8 @@ water_heater:
       min_temperature: "110 °F"
       max_temperature: "140 °F"
       target_temperature_step: 1
-    current_temperature: |-
-      float val = id(econet_climate).current_temperature;
-      // Synchronization hack: Update the internal state of the water heater
-      // to match the climate component. This bypasses the lack of a target_temperature lambda.
-      auto *wh = id(econet_water_heater);
-      float target = id(econet_climate).target_temperature;
-      if (!std::isnan(target) && wh->get_target_temperature() != target) {
-        struct WaterHeaterAccessor : public water_heater::WaterHeater {
-          using water_heater::WaterHeater::target_temperature_;
-        };
-        static_cast<WaterHeaterAccessor *>(static_cast<water_heater::WaterHeater *>(wh))->target_temperature_ = target;
-        wh->publish_state();
-      }
-      return val;
-    # TODO: Once https://github.com/esphome/esphome/pull/13661 is released, replace the hack with:
-    # current_temperature: !lambda "return id(econet_climate).current_temperature;"
-    # target_temperature: !lambda "return id(econet_climate).target_temperature;"
+    current_temperature: !lambda "return id(econet_climate).current_temperature;"
+    target_temperature: !lambda "return id(econet_climate).target_temperature;"
     mode: |-
       if (id(econet_climate).mode == climate::CLIMATE_MODE_OFF) {
         return water_heater::WATER_HEATER_MODE_OFF;
