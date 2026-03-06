@@ -80,7 +80,7 @@ interval:
                                  return s->state;
                                }
                              }
-                             return false; 
+                             return false;
                       then:
                          # 2. BOTH Disconnected -> Alternate Blue/Purple
                          - light.turn_on:
@@ -107,7 +107,7 @@ interval:
                                  return s->state;
                                }
                              }
-                             return false; 
+                             return false;
                       then:
                          # 4. Only MCU Disconnected -> Solid Purple
                          - light.turn_on:
