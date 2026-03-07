@@ -76,67 +76,67 @@ interval:
                         not:
                           lambda: |-
                             for (auto *s : App.get_binary_sensors()) {
-                               // FIX: Convert StringRef to std::string using .str()
-                               if (s->get_name().str().find("Microcontroller Connected") != std::string::npos) {
-                                 return s->state;
-                               }
-                             }
-                             return false;
+                              // FIX: Convert StringRef to std::string using .str()
+                              if (s->get_name().str().find("Microcontroller Connected") != std::string::npos) {
+                                return s->state;
+                              }
+                            }
+                            return false;
                       then:
-                         # 2. BOTH Disconnected -> Alternate Blue/Purple
-                         - light.turn_on:
-                             id: status_led
-                             effect: "BluePurple"
+                        # 2. BOTH Disconnected -> Alternate Blue/Purple
+                        - light.turn_on:
+                            id: status_led
+                            effect: "BluePurple"
                       else:
-                         # 3. Only API Disconnected -> Solid Blue
-                         - light.turn_on:
-                             id: status_led
-                             brightness: ${status_led_brightness}
-                             red: 0%
-                             green: 0%
-                             blue: 100%
-                             effect: "none"
+                        # 3. Only API Disconnected -> Solid Blue
+                        - light.turn_on:
+                            id: status_led
+                            brightness: ${status_led_brightness}
+                            red: 0%
+                            green: 0%
+                            blue: 100%
+                            effect: "none"
                 else:
                   # API Connected. Check MCU.
                   - if:
                       condition:
-                         not:
-                           lambda: |-
-                             for (auto *s : App.get_binary_sensors()) {
-                               // FIX: Convert StringRef to std::string using .str()
-                               if (s->get_name().str().find("MCU Connected") != std::string::npos) {
-                                 return s->state;
-                               }
-                             }
-                             return false;
+                        not:
+                          lambda: |-
+                            for (auto *s : App.get_binary_sensors()) {
+                              // FIX: Convert StringRef to std::string using .str()
+                              if (s->get_name().str().find("MCU Connected") != std::string::npos) {
+                                return s->state;
+                              }
+                            }
+                            return false;
                       then:
-                         # 4. Only MCU Disconnected -> Solid Purple
-                         - light.turn_on:
-                             id: status_led
-                             brightness: ${status_led_brightness}
-                             red: 80%
-                             green: 0%
-                             blue: 100%
-                             effect: "none"
+                        # 4. Only MCU Disconnected -> Solid Purple
+                        - light.turn_on:
+                            id: status_led
+                            brightness: ${status_led_brightness}
+                            red: 80%
+                            green: 0%
+                            blue: 100%
+                            effect: "none"
                       else:
-                         # 5. Connected + Alarm Count > 0 -> Solid Amber
-                         - if:
-                             condition:
-                               lambda: 'return id(${alarm_id}).state > 0;'
-                             then:
-                               - light.turn_on:
-                                   id: status_led
-                                   brightness: ${status_led_brightness}
-                                   red: 100%
-                                   green: 50%
-                                   blue: 0%
-                                   effect: "none"
-                             else:
-                               # 6. All Normal -> Breathing Green
-                               - light.turn_on:
-                                   id: status_led
-                                   brightness: ${status_led_brightness}
-                                   red: 0%
-                                   green: 100%
-                                   blue: 0%
-                                   effect: "Breathing"
+                        # 5. Connected + Alarm Count > 0 -> Solid Amber
+                        - if:
+                            condition:
+                              lambda: 'return id(${alarm_id}).state > 0;'
+                            then:
+                              - light.turn_on:
+                                  id: status_led
+                                  brightness: ${status_led_brightness}
+                                  red: 100%
+                                  green: 50%
+                                  blue: 0%
+                                  effect: "none"
+                            else:
+                              # 6. All Normal -> Breathing Green
+                              - light.turn_on:
+                                  id: status_led
+                                  brightness: ${status_led_brightness}
+                                  red: 0%
+                                  green: 100%
+                                  blue: 0%
+                                  effect: "Breathing"
