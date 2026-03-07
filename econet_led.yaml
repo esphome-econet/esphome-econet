@@ -1,3 +1,4 @@
+---
 substitutions:
   status_led_pin: GPIO35
   status_led_brightness: "50%"
@@ -72,9 +73,9 @@ interval:
                   # API Disconnected. Check MCU.
                   - if:
                       condition:
-                         not:
-                           lambda: |-
-                             for (auto *s : App.get_binary_sensors()) {
+                        not:
+                          lambda: |-
+                            for (auto *s : App.get_binary_sensors()) {
                                // FIX: Convert StringRef to std::string using .str()
                                if (s->get_name().str().find("Microcontroller Connected") != std::string::npos) {
                                  return s->state;
