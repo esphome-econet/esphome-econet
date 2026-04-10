@@ -10,7 +10,7 @@ void EconetTextSensor::setup() {
   this->parent_->register_listener(
       this->sensor_id_, this->request_mod_, this->request_once_,
       [this](const EconetDatapoint &datapoint) {
-        ESP_LOGD(TAG, "MCU reported text sensor %s is: %s", this->sensor_id_, datapoint.value_string.c_str());
+        ESP_LOGV(TAG, "MCU reported text sensor %s is: %s", this->sensor_id_, datapoint.value_string.c_str());
         this->publish_state(datapoint.value_string);
       },
       false, this->src_adr_);
