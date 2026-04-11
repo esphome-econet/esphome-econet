@@ -7,7 +7,9 @@ substitutions:
   tankless_kbtus_per_m3: "35.300"  # Natural Gas = approx 35.300, Propane = approx 88.852
   water_heater_eco_preset: "None"
   water_heater_off_preset: "None"
+  water_heater_default_mode_preset: "None"
   water_heater_default_mode: "water_heater::WATER_HEATER_MODE_GAS"
+  water_heater_set_away_code: "// no-op"
 
 packages:
   econet: !include econet_base.yaml
