@@ -6,6 +6,7 @@ substitutions:
   water_heater_eco_preset: "Eco Mode"
   water_heater_off_preset: "Off"
   water_heater_default_mode: "water_heater::WATER_HEATER_MODE_HEAT_PUMP"
+  water_heater_default_mode_preset: "Heat Pump"
 
 packages:
   econet: !include econet_electric_tank_water_heater.yaml
