@@ -4,6 +4,8 @@
 #include "esphome/components/climate/climate_traits.h"
 #include "econet_climate.h"
 #include <algorithm>
+#include <string>
+#include <vector>
 
 using namespace esphome;
 
@@ -45,22 +47,6 @@ climate::ClimateTraits EconetClimate::traits() {
     for (const auto &entry : this->modes_) {
       traits.add_supported_mode(entry.mode);
     }
-  }
-  if (this->custom_preset_id_ && *this->custom_preset_id_) {
-    std::vector<const char *> presets;
-    presets.reserve(this->custom_presets_.size());
-    for (const auto &entry : this->custom_presets_) {
-      presets.push_back(entry.name);
-    }
-    traits.set_supported_custom_presets(presets);
-  }
-  if (this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
-    std::vector<const char *> fans;
-    fans.reserve(this->custom_fan_modes_.size());
-    for (const auto &entry : this->custom_fan_modes_) {
-      fans.push_back(entry.name);
-    }
-    traits.set_supported_custom_fan_modes(fans);
   }
   this->traits_ = traits;
   this->traits_initialized_ = true;
@@ -109,6 +95,23 @@ void EconetClimate::register_fan_listener(const char *id, std::string *member, b
 }
 
 void EconetClimate::setup() {
+  if (this->custom_preset_id_ && *this->custom_preset_id_) {
+    std::vector<const char *> presets;
+    presets.reserve(this->custom_presets_.size());
+    for (const auto &entry : this->custom_presets_) {
+      presets.push_back(entry.name);
+    }
+    this->set_supported_custom_presets(presets);
+  }
+  if (this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
+    std::vector<const char *> fans;
+    fans.reserve(this->custom_fan_modes_.size());
+    for (const auto &entry : this->custom_fan_modes_) {
+      fans.push_back(entry.name);
+    }
+    this->set_supported_custom_fan_modes(fans);
+  }
+
   this->register_float_listener(this->current_temperature_id_, &this->current_temperature, true);
   this->register_float_listener(this->target_temperature_id_, &this->target_temperature, true);
   this->register_float_listener(this->target_temperature_low_id_, &this->target_temperature_low, true);
