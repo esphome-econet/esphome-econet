@@ -109,8 +109,7 @@ select:
   - platform: "econet"
     name: "Vacation"
     id: vaca_net
-    # TODO: Uncomment once https://github.com/home-assistant/core/pull/167951 is released
-    # disabled_by_default: true
+    disabled_by_default: true
     enum_datapoint: VACA_NET
     options:
       0: "Off"
