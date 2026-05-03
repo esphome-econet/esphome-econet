@@ -1,7 +1,7 @@
 select:
   - platform: "econet"
     name: "Filter Type"
-    id: fiter_type
+    id: filter_type
     enum_datapoint: FILTTYPE
     options:
       0: "Media"
