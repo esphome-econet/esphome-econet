@@ -20,10 +20,9 @@ EconetTextSensor = econet_ns.class_(
 )
 
 CONFIG_SCHEMA = (
-    text_sensor.text_sensor_schema()
+    text_sensor.text_sensor_schema(EconetTextSensor)
     .extend(
         {
-            cv.GenerateID(): cv.declare_id(EconetTextSensor),
             cv.Required(CONF_SENSOR_DATAPOINT): cv.string,
         }
     )

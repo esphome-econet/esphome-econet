@@ -11,12 +11,12 @@ class EconetNumber : public number::Number, public Component, public EconetClien
  public:
   void setup() override;
   void dump_config() override;
-  void set_number_id(const std::string &number_id) { this->number_id_ = number_id; }
+  void set_number_id(const char *number_id) { this->number_id_ = number_id; }
 
  protected:
   void control(float value) override;
 
-  std::string number_id_{""};
+  const char *number_id_{nullptr};
   EconetDatapointType type_{};
 };
 

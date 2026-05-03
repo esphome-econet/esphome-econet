@@ -5,68 +5,72 @@ substitutions:
   device_description: "Rheem Device"
   tx_pin: GPIO19
   rx_pin: GPIO22
-  platform: esp32
-  board: esp32dev
-  variant: esp32
-  framework: arduino
   github_ref: main
   external_components_source: github://esphome-econet/esphome-econet@${github_ref}
-  logger_level: WARN
+  logger_level: DEBUG
   econet_update_interval: 30s
   econet_alarm_update_interval: 30s
   econet_alarm_history_update_interval: 60s
+  mcu_connected_timeout: ${econet_update_interval}
   wifi_module_address: "0x340"
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
   comment: ${device_description}
-  min_version: "2024.11.0"
+  min_version: "2026.4.0"
   project:
     name: "esphome-econet.esphome-econet"
-    version: v2.8.0
-${platform}:
-  board: ${board}
-  variant: ${variant}
-  framework:
-    type: ${framework}
+    version: v3.4.0
 preferences:
   flash_write_interval: "24h"
 wifi:
   ap:
 captive_portal:
 api:
-  services:
-    - service: read
+  actions:
+    - action: read
       variables:
         datapoint_id: string
+      supports_response: only
       then:
-        - lambda: id(econet_id).homeassistant_read(datapoint_id);
-    - service: read_from_address
+        - api.respond:
+            data: !lambda |-
+              std::map<std::string, std::string> result = id(econet_id).homeassistant_read(datapoint_id);
+              for (auto const& item : result) {
+                root[item.first] = item.second;
+              }
+    - action: read_from_address
       variables:
         datapoint_id: string
         address: int
+      supports_response: only
       then:
-        - lambda: id(econet_id).homeassistant_read(datapoint_id, address);
-    - service: write_enum
+        - api.respond:
+            data: !lambda |-
+              std::map<std::string, std::string> result = id(econet_id).homeassistant_read(datapoint_id, address);
+              for (auto const& item : result) {
+                root[item.first] = item.second;
+              }
+    - action: write_enum
       variables:
         datapoint_id: string
         value: int
       then:
         - lambda: id(econet_id).homeassistant_write(datapoint_id, (uint8_t) value);
-    - service: write_enum_from_address
+    - action: write_enum_from_address
       variables:
         datapoint_id: string
         value: int
         address: int
       then:
         - lambda: id(econet_id).homeassistant_write(datapoint_id, (uint8_t) value, address);
-    - service: write_float
+    - action: write_float
       variables:
         datapoint_id: string
         value: float
       then:
         - lambda: id(econet_id).homeassistant_write(datapoint_id, value);
-    - service: write_float_from_address
+    - action: write_float_from_address
       variables:
         datapoint_id: string
         value: float
@@ -95,6 +99,9 @@ econet:
     2: ${econet_alarm_history_update_interval}
     3: ${econet_alarm_history_update_interval}
   src_address: ${wifi_module_address}
+  mcu_connected_timeout: ${mcu_connected_timeout}
+  mcu_connected_binary_sensor:
+    name: "Microcontroller Connected"
 sensor:
   - platform: econet
     name: "Active Alerts"
@@ -229,3 +236,4 @@ button:
       - switch.turn_on: alhisclr
       - delay: 1s
       - switch.turn_off: alhisclr
+binary_sensor:

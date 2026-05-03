@@ -1,0 +1,128 @@
+---
+globals:
+  - id: wh_last_active_preset
+    type: std::string
+    restore_value: true
+    initial_value: '"${water_heater_default_mode_preset}"'
+
+water_heater:
+  - platform: template
+    id: econet_water_heater
+    name: None
+    visual:
+      min_temperature: "110 °F"
+      max_temperature: "140 °F"
+      target_temperature_step: 1
+    current_temperature: !lambda "return id(econet_climate).current_temperature;"
+    target_temperature: !lambda "return id(econet_climate).target_temperature;"
+    is_on: !lambda |-
+      if (id(econet_climate).mode == climate::CLIMATE_MODE_OFF) {
+        return false;
+      }
+      if (id(econet_climate).has_custom_preset()) {
+        if (id(econet_climate).get_custom_preset() == "${water_heater_off_preset}") {
+          return false;
+        }
+      }
+      return true;
+    mode: |-
+      if (id(econet_climate).mode == climate::CLIMATE_MODE_OFF) {
+        return water_heater::WATER_HEATER_MODE_OFF;
+      }
+      if (id(econet_climate).has_custom_preset()) {
+        auto preset = id(econet_climate).get_custom_preset();
+        if (preset == "Energy Saver" || preset == "Eco Mode") {
+          return water_heater::WATER_HEATER_MODE_ECO;
+        }
+        if (preset == "Performance") {
+          return water_heater::WATER_HEATER_MODE_PERFORMANCE;
+        }
+        if (preset == "Heat Pump") {
+          return water_heater::WATER_HEATER_MODE_HEAT_PUMP;
+        }
+        if (preset == "High Demand") {
+          return water_heater::WATER_HEATER_MODE_HIGH_DEMAND;
+        }
+        if (preset == "Electric") {
+          return water_heater::WATER_HEATER_MODE_ELECTRIC;
+        }
+        if (preset == "${water_heater_off_preset}") {
+          return water_heater::WATER_HEATER_MODE_OFF;
+        }
+      }
+      return ${water_heater_default_mode};
+    set_action:
+      - climate.control:
+          id: econet_climate
+          target_temperature: !lambda "return id(econet_water_heater).get_target_temperature();"
+          mode: !lambda |-
+            const bool req_on = id(econet_water_heater).is_on();
+            const auto req_mode = id(econet_water_heater).get_mode();
+            const auto climate_mode = id(econet_climate).mode;
+
+            // Turn off: was on, now requested off.
+            if (!req_on && climate_mode != climate::CLIMATE_MODE_OFF) {
+              return climate::CLIMATE_MODE_OFF;
+            }
+            // Turn on via action: was off, now requested on.
+            if (req_on && climate_mode == climate::CLIMATE_MODE_OFF) {
+              return climate::CLIMATE_MODE_HEAT;
+            }
+            // Mode selected from UI while off: implicit turn on.
+            if (!req_on &&
+                req_mode != water_heater::WATER_HEATER_MODE_OFF &&
+                climate_mode == climate::CLIMATE_MODE_OFF) {
+              return climate::CLIMATE_MODE_HEAT;
+            }
+            if (req_mode == water_heater::WATER_HEATER_MODE_OFF) {
+              return climate::CLIMATE_MODE_OFF;
+            }
+            return climate::CLIMATE_MODE_HEAT;
+          custom_preset: !lambda |-
+            const bool req_on = id(econet_water_heater).is_on();
+            const auto req_mode = id(econet_water_heater).get_mode();
+            const auto climate_mode = id(econet_climate).mode;
+
+            // Turn off: save current preset before switching off.
+            if (!req_on && climate_mode != climate::CLIMATE_MODE_OFF) {
+              if (id(econet_climate).has_custom_preset()) {
+                const auto current = id(econet_climate).get_custom_preset();
+                if (current != "${water_heater_off_preset}") {
+                  id(wh_last_active_preset) = current;
+                }
+              }
+              return {"${water_heater_off_preset}"};
+            }
+
+            // Turn on via action: mode_ is corrupted to OFF by the loop,
+            // so restore the last saved preset.
+            if (climate_mode == climate::CLIMATE_MODE_OFF &&
+                req_mode == water_heater::WATER_HEATER_MODE_OFF) {
+              return {id(wh_last_active_preset)};
+            }
+
+            // Mode change (while on, or selected from UI while off):
+            // map mode to preset, save it, and apply.
+            std::string preset;
+            if (req_mode == water_heater::WATER_HEATER_MODE_ECO) {
+              preset = "${water_heater_eco_preset}";
+            } else if (req_mode == water_heater::WATER_HEATER_MODE_PERFORMANCE) {
+              preset = "Performance";
+            } else if (req_mode == water_heater::WATER_HEATER_MODE_HEAT_PUMP) {
+              preset = "Heat Pump";
+            } else if (req_mode == water_heater::WATER_HEATER_MODE_HIGH_DEMAND) {
+              preset = "High Demand";
+            } else if (req_mode == water_heater::WATER_HEATER_MODE_ELECTRIC) {
+              preset = "Electric";
+            } else if (req_mode == water_heater::WATER_HEATER_MODE_GAS) {
+              preset = "${water_heater_default_mode_preset}";
+            } else {
+              preset = "${water_heater_off_preset}";
+            }
+
+            if (preset != "${water_heater_off_preset}") {
+              id(wh_last_active_preset) = preset;
+            }
+            return {preset};
+      - lambda: |-
+          ${water_heater_set_away_code}
