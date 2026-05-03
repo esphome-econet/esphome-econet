@@ -4,9 +4,16 @@ substitutions:
   friendly_name: "Water Heater"
   device_description: "Rheem Electric Tank Water Heater"
   sensor_power_filters_lambda: return x;
+  water_heater_eco_preset: "Energy Saver"
+  water_heater_off_preset: "None"
+  water_heater_default_mode: "water_heater::WATER_HEATER_MODE_PERFORMANCE"
+  water_heater_default_mode_preset: "Performance"
+  # yamllint disable-line rule:line-length
+  water_heater_set_away_code: 'auto call = id(vaca_net).make_call(); call.set_option(id(econet_water_heater).is_away() ? "Permanent" : "Off"); call.perform();'
 
 packages:
   econet: !include econet_base.yaml
+  water_heater: !include econet_water_heater_base.yaml
 
 econet:
   dst_address: 0x1200
@@ -15,6 +22,7 @@ climate:
   - platform: econet
     id: econet_climate
     name: None
+    disabled_by_default: true
     visual:
       min_temperature: "110 °F"
       max_temperature: "140 °F"
@@ -26,11 +34,20 @@ climate:
     mode_datapoint: WHTRENAB
     modes:
       0: "OFF"
-      1: "AUTO"
+      1: "HEAT"
     custom_preset_datapoint: WHTRCNFG
     custom_presets:
-      0: "Energy Saver"
+      0: "${water_heater_eco_preset}"
       1: "Performance"
+
+water_heater:
+  - id: !extend econet_water_heater
+    supported_modes:
+      - "OFF"
+      - ECO
+      - PERFORMANCE
+    away: !lambda |-
+      return id(vaca_net).current_option() == "Permanent";
 
 sensor:
   - platform: econet
@@ -92,6 +109,7 @@ select:
   - platform: "econet"
     name: "Vacation"
     id: vaca_net
+    disabled_by_default: true
     enum_datapoint: VACA_NET
     options:
       0: "Off"

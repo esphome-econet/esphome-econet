@@ -11,10 +11,10 @@ class EconetSensor : public sensor::Sensor, public Component, public EconetClien
  public:
   void setup() override;
   void dump_config() override;
-  void set_sensor_id(const std::string &sensor_id) { this->sensor_id_ = sensor_id; }
+  void set_sensor_id(const char *sensor_id) { this->sensor_id_ = sensor_id; }
 
  protected:
-  std::string sensor_id_{""};
+  const char *sensor_id_{nullptr};
 };
 
 }  // namespace econet

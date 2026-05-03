@@ -93,6 +93,7 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 0
+    disabled_by_default: true
     request_mod: none
     filters:
       - delta: 0.9
@@ -116,6 +117,7 @@ sensor:
     state_class: "measurement"
     entity_category: "diagnostic"
     accuracy_decimals: 0
+    disabled_by_default: true
     filters:
       - delta: 0.9
   - platform: template

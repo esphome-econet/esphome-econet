@@ -48,7 +48,9 @@ async def to_code(config):
     options_map = config[CONF_OPTIONS]
     var = await select.new_select(config, options=list(options_map.values()))
     await cg.register_component(var, config)
-    cg.add(var.set_select_mappings(list(options_map.keys())))
+    cg.add(var.init_select_mappings(len(options_map)))
+    for key in options_map.keys():
+        cg.add(var.add_select_mapping(key))
     paren = await cg.get_variable(config[CONF_ECONET_ID])
     cg.add(var.set_econet_parent(paren))
     cg.add(var.set_request_mod(config[CONF_REQUEST_MOD]))
