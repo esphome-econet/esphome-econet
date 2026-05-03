@@ -7,7 +7,7 @@ substitutions:
   rx_pin: GPIO22
   github_ref: main
   external_components_source: github://esphome-econet/esphome-econet@${github_ref}
-  logger_level: WARN
+  logger_level: DEBUG
   econet_update_interval: 30s
   econet_alarm_update_interval: 30s
   econet_alarm_history_update_interval: 60s
