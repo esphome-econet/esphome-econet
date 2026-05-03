@@ -159,7 +159,7 @@ void EconetClimate::setup() {
     this->parent_->register_listener(
         this->follow_schedule_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
-          ESP_LOGI(TAG, "MCU reported climate sensor %s is: %s", this->follow_schedule_id_,
+          ESP_LOGV(TAG, "MCU reported climate sensor %s is: %s", this->follow_schedule_id_,
                    datapoint.value_string.c_str());
           this->follow_schedule_ = datapoint.value_enum > 0;
           if (this->follow_schedule_.value()) {
