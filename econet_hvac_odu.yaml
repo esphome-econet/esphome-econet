@@ -321,6 +321,7 @@ sensor:
     src_address: ${thermostat_address}
     icon: "mdi:information-box"
     entity_category: "diagnostic"
+    disabled_by_default: true
 
 binary_sensor:
   - platform: template
