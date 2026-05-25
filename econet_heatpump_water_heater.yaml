@@ -9,7 +9,7 @@ substitutions:
   water_heater_default_mode_preset: "Heat Pump"
 
 packages:
-  econet: !include econet_electric_tank_water_heater.yaml
+  econet: !include econet_electric_water_heater_common.yaml
 
 econet:
   dst_address: 0x1280

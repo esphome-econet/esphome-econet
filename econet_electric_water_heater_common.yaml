@@ -1,0 +1,145 @@
+---
+substitutions:
+  sensor_power_filters_lambda: return x;
+  # yamllint disable-line rule:line-length
+  water_heater_set_away_code: 'auto call = id(vaca_net).make_call(); call.set_option(id(econet_water_heater).is_away() ? "Permanent" : "Off"); call.perform();'
+
+packages:
+  econet: !include econet_base.yaml
+  water_heater: !include econet_water_heater_base.yaml
+
+climate:
+  - platform: econet
+    id: econet_climate
+    name: None
+    disabled_by_default: true
+    visual:
+      min_temperature: "110 °F"
+      max_temperature: "140 °F"
+      temperature_step:
+        target_temperature: "1.0 °F"
+        current_temperature: "0.1 °F"
+    current_temperature_datapoint: UPHTRTMP
+    target_temperature_datapoint: WHTRSETP
+    mode_datapoint: WHTRENAB
+    modes:
+      0: "OFF"
+      1: "HEAT"
+    custom_preset_datapoint: WHTRCNFG
+
+water_heater:
+  - id: !extend econet_water_heater
+    away: !lambda |-
+      return id(vaca_net).current_option() == "Permanent";
+
+sensor:
+  - platform: econet
+    name: "Lower Tank Temperature"
+    id: lower_tank_temp
+    sensor_datapoint: LOHTRTMP
+    unit_of_measurement: "°F"
+    accuracy_decimals: 1
+    device_class: "temperature"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Upper Tank Temperature"
+    id: upper_tank_temp
+    sensor_datapoint: UPHTRTMP
+    unit_of_measurement: "°F"
+    accuracy_decimals: 1
+    device_class: "temperature"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Power"
+    id: power
+    sensor_datapoint: POWRWATT
+    unit_of_measurement: "W"
+    accuracy_decimals: 1
+    device_class: "power"
+    state_class: "measurement"
+    filters:
+      - lambda: ${sensor_power_filters_lambda}
+  - platform: econet
+    name: "Lower Heating Element Runtime"
+    id: hours_lower_heater
+    sensor_datapoint: HRSLOHTR
+    unit_of_measurement: "h"
+    accuracy_decimals: 6
+    device_class: "duration"
+    state_class: "total_increasing"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Upper Heating Element Runtime"
+    id: hours_upper_heater
+    sensor_datapoint: HRSUPHTR
+    unit_of_measurement: "h"
+    accuracy_decimals: 6
+    device_class: "duration"
+    state_class: "total_increasing"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Hot Water"
+    id: hot_water
+    sensor_datapoint: HOTWATER
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    device_class: "moisture"
+    state_class: "measurement"
+
+select:
+  - platform: "econet"
+    name: "Vacation"
+    id: vaca_net
+    disabled_by_default: true
+    enum_datapoint: VACA_NET
+    options:
+      0: "Off"
+      # https://github.com/esphome-econet/esphome-econet/issues/301
+      # 1: "Timed"
+      2: "Permanent"
+    icon: "mdi:bag-suitcase"
+
+# https://github.com/esphome-econet/esphome-econet/issues/301
+# number:
+#   - platform: econet
+#     name: "Vacation Timer"
+#     id: vacatime
+#     number_datapoint: VACATIME
+#     unit_of_measurement: "h"
+#     step: 1
+#     min_value: 1
+#     max_value: 10000
+#     mode: box
+#     icon: "mdi:briefcase-clock"
+#     entity_category: "config"
+
+text_sensor:
+  - platform: econet
+    name: "Heating Element State"
+    id: heating_element
+    sensor_datapoint: HEATCTRL
+    icon: "mdi:heating-coil"
+  - platform: econet
+    name: "Mode"
+    id: mode
+    sensor_datapoint: WHTRMODE
+    icon: "mdi:water-boiler"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Model Number"
+    id: model_number
+    sensor_datapoint: PRODMODN
+    request_mod: 4
+    request_once: true
+    icon: "mdi:information-box"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "Serial Number"
+    id: serial_number
+    sensor_datapoint: PRODSERN
+    request_mod: 4
+    request_once: true
+    icon: "mdi:information-box"
+    entity_category: "diagnostic"
