@@ -24,7 +24,7 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   void set_custom_fan_mode_id(const char *id) { this->custom_fan_mode_id_ = id; }
   void set_custom_fan_mode_no_schedule_id(const char *id) { this->custom_fan_mode_no_schedule_id_ = id; }
   void set_follow_schedule_id(const char *id) { this->follow_schedule_id_ = id; }
-  void set_single_setpoint_ui(bool value) { this->single_setpoint_ui_ = value;
+  void set_single_setpoint_ui(bool value) { this->single_setpoint_ui_ = value; }
   void init_modes(size_t size) { this->modes_.init(size); }
   void add_mode(uint8_t id, climate::ClimateMode mode) { this->modes_.push_back({id, mode}); }
   void init_custom_presets(size_t size) { this->custom_presets_.init(size); }
