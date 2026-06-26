@@ -17,6 +17,7 @@ climate:
     id: econet_climate
     src_address: ${thermostat_address}
     name: "HVAC"
+    single_setpoint_ui: true
     visual:
       min_temperature: "50 °F"
       max_temperature: "90 °F"
