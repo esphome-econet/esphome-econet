@@ -25,6 +25,7 @@ static const char *const TAG = "econet.climate";
 void EconetClimate::dump_config() {
   LOG_CLIMATE("", "Econet Climate", this);
   this->dump_traits_(TAG);
+  ESP_LOGCONFIG(TAG, "Single Setpoint UI: %s", YESNO(this->single_setpoint_ui_));
 }
 
 climate::ClimateTraits EconetClimate::traits() {
