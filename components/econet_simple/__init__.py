@@ -1,0 +1,1 @@
+# EcoNet simple climate component.
