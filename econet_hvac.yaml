@@ -13,7 +13,7 @@ econet:
   dst_address: ${thermostat_address}
 
 globals:
-  - id: hvac_last_manual_mode
+  - id: hvac_last_manual_mode1
     type: int
     restore_value: true
     initial_value: '1'
