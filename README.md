@@ -34,6 +34,46 @@ To install the ESPHome-econet software, connect your ESP device to your computer
 
 For alternative software installation methods and details on how to customize your configuration, check out [the detailed Software Configuration and Installation Guide on our wiki](https://github.com/esphome-econet/esphome-econet/wiki/Initial-ESPHome%E2%80%90econet-Software-Configuration-and-Installation).
 
+## HVAC Manual/Auto Climate UI
+
+Communicating EcoNet HVAC systems can expose both a normal single-setpoint thermostat view and a separate Auto/Heat-Cool view in Home Assistant.
+
+The HVAC package creates:
+
+- `HVAC`: manual Heat/Cool/Fan/Off climate entity with a single target setpoint.
+- `HVAC Auto`: Auto/Heat-Cool/Fan/Off climate entity with low and high target setpoints.
+- `HVAC Auto View`: template switch that toggles between Manual and Auto views.
+
+When the physical thermostat is in a mode not supported by one of the climate views, that inactive view displays `off` only in Home Assistant. This is display-only behavior and does not send an OFF command back to the EcoNet device.
+
+The `single_setpoint_ui` option controls whether a climate entity advertises a normal single target temperature or a two-point low/high target temperature to Home Assistant:
+
+```yaml
+climate:
+  - platform: econet
+    id: econet_climate
+    name: "HVAC"
+    single_setpoint_ui: true
+    target_temperature_low_datapoint: HEATSETP
+    target_temperature_high_datapoint: COOLSETP
+    modes:
+      0: "HEAT"
+      1: "COOL"
+      3: "FAN_ONLY"
+      4: "OFF"
+
+  - platform: econet
+    id: econet_climate_auto
+    name: "HVAC Auto"
+    single_setpoint_ui: false
+    target_temperature_low_datapoint: HEATSETP
+    target_temperature_high_datapoint: COOLSETP
+    modes:
+      2: "HEAT_COOL"
+      3: "FAN_ONLY"
+      4: "OFF"
+```
+
 ## Installation Overview
 
 For a video overview of how to setup the recommended hardware and deploy ESPHome-econet to it, please check out this video helpfully created by community member [Ylianst](https://github.com/Ylianst).
