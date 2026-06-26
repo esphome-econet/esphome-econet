@@ -12,6 +12,28 @@ packages:
 econet:
   dst_address: ${thermostat_address}
 
+globals:
+  - id: hvac_last_manual_mode
+    type: int
+    restore_value: true
+    initial_value: '1'
+
+interval:
+  - interval: 10s
+    then:
+      - lambda: |-
+          if (id(econet_climate).mode == climate::CLIMATE_MODE_HEAT) {
+            id(hvac_last_manual_mode) = 0;
+          } else if (id(econet_climate).mode == climate::CLIMATE_MODE_COOL) {
+            id(hvac_last_manual_mode) = 1;
+          }
+
+          if (id(econet_climate_auto).mode == climate::CLIMATE_MODE_HEAT_COOL) {
+            id(hvac_view).publish_state("Auto");
+          } else {
+            id(hvac_view).publish_state("Manual");
+          }
+
 climate:
   - platform: econet
     id: econet_climate
@@ -146,6 +168,35 @@ text_sensor:
     entity_category: "diagnostic"
 
 select:
+  - platform: template
+    name: "HVAC View"
+    id: hvac_view
+    icon: "mdi:thermostat"
+    options:
+      - "Manual"
+      - "Auto"
+    optimistic: false
+    set_action:
+      - if:
+          condition:
+            lambda: 'return x == "Auto";'
+          then:
+            - climate.control:
+                id: econet_climate_auto
+                mode: HEAT_COOL
+          else:
+            - if:
+                condition:
+                  lambda: 'return id(hvac_last_manual_mode) == 0;'
+                then:
+                  - climate.control:
+                      id: econet_climate
+                      mode: HEAT
+                else:
+                  - climate.control:
+                      id: econet_climate
+                      mode: COOL
+
   - platform: "econet"
     name: "Fan Duty Cycle"
     id: fan_duty
