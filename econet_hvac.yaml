@@ -30,8 +30,10 @@ interval:
 
           if (id(econet_climate_auto).mode == climate::CLIMATE_MODE_HEAT_COOL) {
             id(hvac_view).publish_state("Auto");
+            id(hvac_auto_view).publish_state(true);
           } else {
             id(hvac_view).publish_state("Manual");
+            id(hvac_auto_view).publish_state(false);
           }
 
 climate:
@@ -103,6 +105,31 @@ climate:
       5: "Speed 5 (High)"
     current_humidity_datapoint: RELH7005
     target_dehumidification_level_datapoint: DHUMSETP
+
+switch:
+  - platform: template
+    name: "HVAC Auto View"
+    id: hvac_auto_view
+    icon: "mdi:thermostat-auto"
+    optimistic: false
+    lambda: |-
+      return id(econet_climate_auto).mode == climate::CLIMATE_MODE_HEAT_COOL;
+    turn_on_action:
+      - climate.control:
+          id: econet_climate_auto
+          mode: HEAT_COOL
+    turn_off_action:
+      - if:
+          condition:
+            lambda: 'return id(hvac_last_manual_mode) == 0;'
+          then:
+            - climate.control:
+                id: econet_climate
+                mode: HEAT
+          else:
+            - climate.control:
+                id: econet_climate
+                mode: COOL
 
 sensor:
   - platform: econet
