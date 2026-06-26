@@ -4,6 +4,7 @@
 #include "esphome/components/climate/climate_traits.h"
 #include "econet_climate.h"
 #include <algorithm>
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -24,6 +25,7 @@ static const char *const TAG = "econet.climate";
 void EconetClimate::dump_config() {
   LOG_CLIMATE("", "Econet Climate", this);
   this->dump_traits_(TAG);
+  ESP_LOGCONFIG(TAG, "  Single Setpoint UI: %s", YESNO(this->single_setpoint_ui_));
 }
 
 climate::ClimateTraits EconetClimate::traits() {
@@ -40,17 +42,36 @@ climate::ClimateTraits EconetClimate::traits() {
   if (this->target_dehumidification_level_id_ && *this->target_dehumidification_level_id_) {
     traits.add_feature_flags(climate::CLIMATE_SUPPORTS_TARGET_HUMIDITY);
   }
-  if (this->target_temperature_high_id_ && *this->target_temperature_high_id_) {
+  if (!this->single_setpoint_ui_ && this->target_temperature_high_id_ && *this->target_temperature_high_id_) {
     traits.add_feature_flags(climate::CLIMATE_REQUIRES_TWO_POINT_TARGET_TEMPERATURE);
   }
   if (this->mode_id_ && *this->mode_id_) {
     for (const auto &entry : this->modes_) {
+      if (this->single_setpoint_ui_ && entry.mode == climate::CLIMATE_MODE_HEAT_COOL) {
+        continue;
+      }
       traits.add_supported_mode(entry.mode);
     }
   }
   this->traits_ = traits;
   this->traits_initialized_ = true;
   return this->traits_;
+}
+
+void EconetClimate::update_single_setpoint_target_() {
+  if (!this->single_setpoint_ui_) {
+    return;
+  }
+
+  if (this->mode == climate::CLIMATE_MODE_HEAT && !std::isnan(this->target_temperature_low)) {
+    this->target_temperature = this->target_temperature_low;
+  } else if (this->mode == climate::CLIMATE_MODE_COOL && !std::isnan(this->target_temperature_high)) {
+    this->target_temperature = this->target_temperature_high;
+  } else if (!std::isnan(this->target_temperature_high)) {
+    this->target_temperature = this->target_temperature_high;
+  } else if (!std::isnan(this->target_temperature_low)) {
+    this->target_temperature = this->target_temperature_low;
+  }
 }
 
 void EconetClimate::register_float_listener(const char *id, float *member, bool is_temperature) {
@@ -64,6 +85,7 @@ void EconetClimate::register_float_listener(const char *id, float *member, bool 
           } else {
             *member = val;
           }
+          this->update_single_setpoint_target_();
           this->publish_state();
         },
         false, this->src_adr_);
@@ -130,6 +152,7 @@ void EconetClimate::setup() {
                      datapoint.value_enum, datapoint.value_string.c_str());
           } else {
             this->mode = it->mode;
+            this->update_single_setpoint_target_();
             this->publish_state();
           }
         },
@@ -189,9 +212,27 @@ void EconetClimate::set_float_datapoint(const char *id, optional<float> value, b
 }
 
 void EconetClimate::control(const climate::ClimateCall &call) {
-  this->set_float_datapoint(this->target_temperature_id_, call.get_target_temperature(), true);
-  this->set_float_datapoint(this->target_temperature_low_id_, call.get_target_temperature_low(), true);
-  this->set_float_datapoint(this->target_temperature_high_id_, call.get_target_temperature_high(), true);
+  if (this->single_setpoint_ui_) {
+    climate::ClimateMode requested_mode = this->mode;
+    if (call.get_mode().has_value()) {
+      requested_mode = call.get_mode().value();
+    }
+
+    if (call.get_target_temperature().has_value()) {
+      if (requested_mode == climate::CLIMATE_MODE_HEAT) {
+        this->set_float_datapoint(this->target_temperature_low_id_, call.get_target_temperature(), true);
+      } else if (requested_mode == climate::CLIMATE_MODE_COOL) {
+        this->set_float_datapoint(this->target_temperature_high_id_, call.get_target_temperature(), true);
+      } else {
+        ESP_LOGW(TAG, "Ignoring target temperature change while HVAC mode is not heat or cool");
+      }
+    }
+  } else {
+    this->set_float_datapoint(this->target_temperature_id_, call.get_target_temperature(), true);
+    this->set_float_datapoint(this->target_temperature_low_id_, call.get_target_temperature_low(), true);
+    this->set_float_datapoint(this->target_temperature_high_id_, call.get_target_temperature_high(), true);
+  }
+
   this->set_float_datapoint(this->target_dehumidification_level_id_, call.get_target_humidity(), false);
 
   if (call.get_mode().has_value() && this->mode_id_ && *this->mode_id_) {
