@@ -14,7 +14,7 @@ econet:
 
 climate:
   - platform: econet
-    id: econet_climate
+    id: econet_climate_manual
     src_address: ${thermostat_address}
     name: "HVAC"
     single_setpoint_ui: true
