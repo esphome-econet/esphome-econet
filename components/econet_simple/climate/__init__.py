@@ -1,8 +1,6 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import climate
-from esphome.const import CONF_CUSTOM_FAN_MODES, CONF_CUSTOM_PRESETS, CONF_ID
-
 from esphome.components.econet import (
     CONF_ECONET_ID,
     CONF_REQUEST_MOD,
@@ -12,6 +10,7 @@ from esphome.components.econet import (
     EconetClient,
     econet_ns,
 )
+from esphome.const import CONF_CUSTOM_FAN_MODES, CONF_CUSTOM_PRESETS, CONF_ID
 
 DEPENDENCIES = ["econet"]
 AUTO_LOAD = ["econet"]
