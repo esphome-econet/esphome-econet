@@ -16,8 +16,8 @@ packages:
     file: econet_hvac_air_handler.yaml
   # Uncomment if you have an communicating Outdoor Unit
   # econet-hvac-odu:
-  #   url: https://github.com/ViolentPoo/esphome-econet
-  #   ref: main
+  #   url: https://github.com/esphome-econet/esphome-econet
+  #   ref: ${github_ref}
   #   file: econet_hvac_odu.yaml
 
 dashboard_import:
