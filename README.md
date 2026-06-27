@@ -34,11 +34,21 @@ To install the ESPHome-econet software, connect your ESP device to your computer
 
 For alternative software installation methods and details on how to customize your configuration, check out [the detailed Software Configuration and Installation Guide on our wiki](https://github.com/esphome-econet/esphome-econet/wiki/Initial-ESPHome%E2%80%90econet-Software-Configuration-and-Installation).
 
-## HVAC Manual/Auto Climate UI
+## Optional HVAC Dual UI Package
 
-Communicating EcoNet HVAC systems can expose both a normal single-setpoint thermostat view and a separate Auto/Heat-Cool view in Home Assistant.
+Communicating EcoNet HVAC systems can optionally expose separate Home Assistant thermostat views for manual Heat/Cool operation and Auto/Heat-Cool operation.
 
-The HVAC package creates:
+The default HVAC package keeps existing behavior unchanged. Users who want the dual UI can choose the optional package instead:
+
+```yaml
+packages:
+  econet:
+    url: https://github.com/esphome-econet/esphome-econet
+    ref: main
+    file: econet_hvac_air_handler_dual_ui.yaml
+```
+
+The optional dual UI package creates:
 
 - `HVAC`: manual Heat/Cool/Fan/Off climate entity with a single target setpoint.
 - `HVAC Auto`: Auto/Heat-Cool/Fan/Off climate entity with low and high target setpoints.
@@ -46,7 +56,7 @@ The HVAC package creates:
 
 When the physical thermostat is in a mode not supported by one of the climate views, that inactive view displays `off` only in Home Assistant. This is display-only behavior and does not send an OFF command back to the EcoNet device.
 
-The `single_setpoint_ui` option controls whether a climate entity advertises a normal single target temperature or a two-point low/high target temperature to Home Assistant:
+The `single_setpoint_ui` climate option controls whether a climate entity advertises a normal single target temperature or a two-point low/high target temperature to Home Assistant:
 
 ```yaml
 climate:
