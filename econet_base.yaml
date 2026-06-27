@@ -6,7 +6,7 @@ substitutions:
   tx_pin: GPIO19
   rx_pin: GPIO22
   github_ref: main
-  external_components_source: github://ViolentPoo/esphome-econet@main
+  external_components_source: github://esphome-econet/esphome-econet@${github_ref}
   logger_level: DEBUG
   econet_update_interval: 30s
   econet_alarm_update_interval: 30s
