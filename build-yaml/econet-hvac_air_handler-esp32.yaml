@@ -11,7 +11,7 @@ esp32:
 
 packages:
   econet:
-    url: https://github.com/ViolentPoo/esphome-econet
+    url: https://github.com/esphome-econet/esphome-econet
     ref: ${github_ref}
     file: econet_hvac_air_handler.yaml
   # Uncomment if you have an communicating Outdoor Unit
@@ -21,7 +21,7 @@ packages:
   #   file: econet_hvac_odu.yaml
 
 dashboard_import:
-  package_import_url: github://ViolentPoo/esphome-econet/build-yaml/${name}-esp32.yaml@${github_ref}
+  package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-esp32.yaml@${github_ref}
   import_full_config: false
 
 # Uncomment the below to use Wi-Fi settings from your secrets.yaml file
