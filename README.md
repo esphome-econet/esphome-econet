@@ -36,6 +36,24 @@ For alternative software installation methods and details on how to customize yo
 
 ## Optional HVAC Dual UI Package
 
+### Motivation
+
+Home Assistant displays both heating and cooling target temperatures whenever a climate entity advertises support for `HEAT_COOL`. That is useful in Auto mode, but it can make normal Heat or Cool operation more cluttered because the thermostat card still needs to support the dual-setpoint interface.
+
+For many EcoNet HVAC users, day-to-day control is usually a single target temperature in either Heat or Cool mode. The optional dual UI package keeps the standard dual-setpoint Auto experience available while also providing a simpler single-setpoint thermostat view for normal Heat/Cool operation.
+
+### Standard Heat/Cool UI
+
+The normal Heat/Cool thermostat view displays separate heating and cooling targets:
+
+![Standard Heat/Cool thermostat UI](docs/images/hvac-auto-ui.png)
+
+### Optional single-setpoint Heat/Cool UI
+
+The optional dual UI package exposes a separate manual thermostat entity that presents one target temperature in Heat or Cool mode:
+
+![Single setpoint thermostat UI](docs/images/hvac-single-ui.png)
+
 Communicating EcoNet HVAC systems can optionally expose separate Home Assistant thermostat views for manual Heat/Cool operation and Auto/Heat-Cool operation.
 
 The default HVAC package keeps existing behavior unchanged. Users who want the dual UI can choose the optional package instead:
