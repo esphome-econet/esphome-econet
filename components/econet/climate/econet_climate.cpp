@@ -47,8 +47,7 @@ climate::ClimateTraits EconetClimate::traits() {
   }
   if (this->mode_id_ && *this->mode_id_) {
     for (const auto &entry : this->modes_) {
-      if (this->single_setpoint_ui_ &&
-          entry.mode == climate::CLIMATE_MODE_HEAT_COOL) {
+      if (this->single_setpoint_ui_ && entry.mode == climate::CLIMATE_MODE_HEAT_COOL) {
         continue;
       }
       traits.add_supported_mode(entry.mode);
@@ -210,16 +209,11 @@ void EconetClimate::control(const climate::ClimateCall &call) {
       }
     }
   } else {
-    this->set_float_datapoint(this->target_temperature_id_,
-                               call.get_target_temperature(),
-                               true);
-    this->set_float_datapoint(this->target_temperature_low_id_,
-                               call.get_target_temperature_low(),
-                               true);
-    this->set_float_datapoint(this->target_temperature_high_id_,
-                               call.get_target_temperature_high(),
-                               true);
-} else {
+    this->set_float_datapoint(this->target_temperature_id_, call.get_target_temperature(), true);
+    this->set_float_datapoint(this->target_temperature_low_id_, call.get_target_temperature_low(), true);
+    this->set_float_datapoint(this->target_temperature_high_id_, call.get_target_temperature_high(), true);
+  }
+  else {
     this->set_float_datapoint(this->target_temperature_id_, call.get_target_temperature(), true);
     this->set_float_datapoint(this->target_temperature_low_id_, call.get_target_temperature_low(), true);
     this->set_float_datapoint(this->target_temperature_high_id_, call.get_target_temperature_high(), true);
