@@ -33,23 +33,18 @@ climate::ClimateTraits EconetClimate::traits() {
   }
 
   auto traits = climate::ClimateTraits();
-
   if (this->current_temperature_id_ && *this->current_temperature_id_) {
     traits.add_feature_flags(climate::CLIMATE_SUPPORTS_CURRENT_TEMPERATURE);
   }
-
   if (this->current_humidity_id_ && *this->current_humidity_id_) {
     traits.add_feature_flags(climate::CLIMATE_SUPPORTS_CURRENT_HUMIDITY);
   }
-
   if (this->target_dehumidification_level_id_ && *this->target_dehumidification_level_id_) {
     traits.add_feature_flags(climate::CLIMATE_SUPPORTS_TARGET_HUMIDITY);
   }
-
   if (!this->single_setpoint_ui_ && this->target_temperature_high_id_ && *this->target_temperature_high_id_) {
     traits.add_feature_flags(climate::CLIMATE_REQUIRES_TWO_POINT_TARGET_TEMPERATURE);
   }
-
   if (this->mode_id_ && *this->mode_id_) {
     for (const auto &entry : this->modes_) {
       if (this->single_setpoint_ui_ && entry.mode == climate::CLIMATE_MODE_HEAT_COOL) {
@@ -68,7 +63,6 @@ void EconetClimate::update_single_setpoint_target_() {
   if (!this->single_setpoint_ui_) {
     return;
   }
-
   if (this->mode == climate::CLIMATE_MODE_HEAT && !std::isnan(this->target_temperature_low)) {
     this->target_temperature = this->target_temperature_low;
   } else if (this->mode == climate::CLIMATE_MODE_COOL && !std::isnan(this->target_temperature_high)) {
@@ -131,7 +125,6 @@ void EconetClimate::setup() {
     }
     this->set_supported_custom_presets(presets);
   }
-
   if (this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
     std::vector<const char *> fans;
     fans.reserve(this->custom_fan_modes_.size());
@@ -225,11 +218,9 @@ void EconetClimate::set_float_datapoint(const char *id, optional<float> value, b
 void EconetClimate::control(const climate::ClimateCall &call) {
   if (this->single_setpoint_ui_) {
     climate::ClimateMode requested_mode = this->mode;
-
     if (call.get_mode().has_value()) {
       requested_mode = call.get_mode().value();
     }
-
     if (call.get_target_temperature().has_value()) {
       if (requested_mode == climate::CLIMATE_MODE_HEAT) {
         this->set_float_datapoint(this->target_temperature_low_id_, call.get_target_temperature(), true);
@@ -242,9 +233,7 @@ void EconetClimate::control(const climate::ClimateCall &call) {
     this->set_float_datapoint(this->target_temperature_low_id_, call.get_target_temperature_low(), true);
     this->set_float_datapoint(this->target_temperature_high_id_, call.get_target_temperature_high(), true);
   }
-
   this->set_float_datapoint(this->target_dehumidification_level_id_, call.get_target_humidity(), false);
-
   if (call.get_mode().has_value() && this->mode_id_ && *this->mode_id_) {
     climate::ClimateMode mode = call.get_mode().value();
     auto it = std::find_if(this->modes_.begin(), this->modes_.end(),
@@ -253,7 +242,6 @@ void EconetClimate::control(const climate::ClimateCall &call) {
       this->parent_->set_enum_datapoint_value(this->mode_id_, it->id, this->src_adr_);
     }
   }
-
   if (call.has_custom_preset() && this->custom_preset_id_ && *this->custom_preset_id_) {
     auto preset = call.get_custom_preset();
     auto it = std::find_if(this->custom_presets_.begin(), this->custom_presets_.end(),
@@ -262,7 +250,6 @@ void EconetClimate::control(const climate::ClimateCall &call) {
       this->parent_->set_enum_datapoint_value(this->custom_preset_id_, it->id, this->src_adr_);
     }
   }
-
   if (call.has_custom_fan_mode() && this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
     auto fan_mode = call.get_custom_fan_mode();
     auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
