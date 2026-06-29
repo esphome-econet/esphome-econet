@@ -44,15 +44,11 @@ For many EcoNet HVAC users, day-to-day control is usually a single target temper
 
 ### Standard Heat/Cool UI
 
-The normal Heat/Cool thermostat view displays separate heating and cooling targets:
-
-![Standard Heat/Cool thermostat UI](docs/images/hvac-auto-ui.png)
+The normal Heat/Cool thermostat view displays separate heating and cooling targets.
 
 ### Optional single-setpoint Heat/Cool UI
 
-The optional dual UI package exposes a separate manual thermostat entity that presents one target temperature in Heat or Cool mode:
-
-![Single setpoint thermostat UI](docs/images/hvac-single-ui.png)
+The optional dual UI package exposes a separate manual thermostat entity that presents one target temperature in Heat or Cool mode.
 
 Communicating EcoNet HVAC systems can optionally expose separate Home Assistant thermostat views for manual Heat/Cool operation and Auto/Heat-Cool operation.
 
