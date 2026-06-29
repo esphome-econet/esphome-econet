@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <cmath>
 
 using namespace esphome;
 
@@ -24,6 +25,7 @@ static const char *const TAG = "econet.climate";
 void EconetClimate::dump_config() {
   LOG_CLIMATE("", "Econet Climate", this);
   this->dump_traits_(TAG);
+  ESP_LOGCONFIG(TAG, "Single Setpoint UI: %s", YESNO(this->single_setpoint_ui_));
 }
 
 climate::ClimateTraits EconetClimate::traits() {
@@ -32,8 +34,6 @@ climate::ClimateTraits EconetClimate::traits() {
   }
   auto traits = climate::ClimateTraits();
   if (this->current_temperature_id_ && *this->current_temperature_id_) {
-    traits.add_feature_flags(climate::CLIMATE_SUPPORTS_CURRENT_TEMPERATURE);
-  }
   if (this->current_humidity_id_ && *this->current_humidity_id_) {
     traits.add_feature_flags(climate::CLIMATE_SUPPORTS_CURRENT_HUMIDITY);
   }
