@@ -143,7 +143,7 @@ void EconetClimate::setup() {
         this->mode_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
           auto it = std::find_if(this->modes_.begin(), this->modes_.end(),
-                       [&](const EconetClimateMode &m) { return m.id == datapoint.value_enum; });
+                                 [&](const EconetClimateMode &m) { return m.id == datapoint.value_enum; });
           if (it == this->modes_.end()) {
             this->mode = climate::CLIMATE_MODE_OFF;
             this->update_single_setpoint_target_();
