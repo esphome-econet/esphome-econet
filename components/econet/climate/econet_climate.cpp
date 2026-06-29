@@ -209,25 +209,15 @@ void EconetClimate::control(const climate::ClimateCall &call) {
       }
     }
   } else {
-    this->set_float_datapoint(this->target_temperature_id_,
-                               call.get_target_temperature(),
-                               true);
-    this->set_float_datapoint(this->target_temperature_low_id_,
-                               call.get_target_temperature_low(),
-                               true);
-    this->set_float_datapoint(this->target_temperature_high_id_,
-                               call.get_target_temperature_high(),
-                               true);
+    this->set_float_datapoint(this->target_temperature_id_, call.get_target_temperature(), true);
+    this->set_float_datapoint(this->target_temperature_low_id_, call.get_target_temperature_low(), true);
+    this->set_float_datapoint(this->target_temperature_high_id_, call.get_target_temperature_high(), true);
   }
-  this->set_float_datapoint(this->target_dehumidification_level_id_,
-                            call.get_target_humidity(),
-                            false);
+  this->set_float_datapoint(this->target_dehumidification_level_id_, call.get_target_humidity(), false);
   if (call.get_mode().has_value() && this->mode_id_ && *this->mode_id_) {
     climate::ClimateMode mode = call.get_mode().value();
     auto it = std::find_if(this->modes_.begin(), this->modes_.end(),
-                           [&mode](const EconetClimateMode &m) {
-                             return m.mode == mode;
-                           });
+                           [&mode](const EconetClimateMode &m) { return m.mode == mode; });
     if (it != this->modes_.end()) {
       this->parent_->set_enum_datapoint_value(this->mode_id_, it->id, this->src_adr_);
     }
@@ -235,9 +225,7 @@ void EconetClimate::control(const climate::ClimateCall &call) {
   if (call.has_custom_preset() && this->custom_preset_id_ && *this->custom_preset_id_) {
     auto preset = call.get_custom_preset();
     auto it = std::find_if(this->custom_presets_.begin(), this->custom_presets_.end(),
-                           [&preset](const EconetPreset &p) {
-                             return p.name == preset;
-                           });
+                           [&preset](const EconetPreset &p) { return p.name == preset; });
     if (it != this->custom_presets_.end()) {
       this->parent_->set_enum_datapoint_value(this->custom_preset_id_, it->id, this->src_adr_);
     }
@@ -245,9 +233,7 @@ void EconetClimate::control(const climate::ClimateCall &call) {
   if (call.has_custom_fan_mode() && this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
     auto fan_mode = call.get_custom_fan_mode();
     auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
-                           [&fan_mode](const EconetFanMode &m) {
-                             return m.name == fan_mode;
-                           });
+                           [&fan_mode](const EconetFanMode &m) { return m.name == fan_mode; });
     if (it != this->custom_fan_modes_.end()) {
       if (this->follow_schedule_.has_value()) {
         if (this->follow_schedule_.value()) {
