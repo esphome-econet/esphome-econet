@@ -12,12 +12,12 @@ esp32:
 packages:
   econet:
     url: https://github.com/esphome-econet/esphome-econet
-    ref: ${github_ref}
+    ref: main
     file: econet_hvac_air_handler.yaml
   # Uncomment if you have an communicating Outdoor Unit
   # econet-hvac-odu:
   #   url: https://github.com/esphome-econet/esphome-econet
-  #   ref: ${github_ref}
+  #   ref: main
   #   file: econet_hvac_odu.yaml
 
 dashboard_import:
