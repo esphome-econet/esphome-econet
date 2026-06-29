@@ -41,7 +41,7 @@ climate::ClimateTraits EconetClimate::traits() {
     traits.add_feature_flags(climate::CLIMATE_SUPPORTS_TARGET_HUMIDITY);
   }
   if (this->target_temperature_high_id_ && *this->target_temperature_high_id_) {
-    traits.add_feature_flags(climate::CLIMATE_REQUIRES_TWO_POINT_TARGET_TEMPERATURE);
+    traits.add_feature_flags(climate::CLIMATE_SUPPORTS_TWO_POINT_TARGET_TEMPERATURE);
   }
   if (this->mode_id_ && *this->mode_id_) {
     for (const auto &entry : this->modes_) {
