@@ -28,6 +28,16 @@ sensor:
     entity_category: "diagnostic"
     filters:
       - delta: 0.9
+  - platform: econet
+    name: "Air Handler Blower Power"
+    id: air_handler_blower_power
+    sensor_datapoint: ECM_WATT
+    request_mod: none
+    unit_of_measurement: "W"
+    accuracy_decimals: 0
+    device_class: "power"
+    state_class: "measurement"
+    entity_category: "diagnostic"
 
 binary_sensor:
   - platform: econet
