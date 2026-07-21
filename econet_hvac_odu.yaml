@@ -289,6 +289,46 @@ sensor:
     unit_of_measurement: "kWh"
     accuracy_decimals: 1
   - platform: econet
+    name: "ODU AC Input Voltage"
+    id: odu_ac_input_voltage
+    sensor_datapoint: ISACINPV
+    request_mod: none
+    unit_of_measurement: "V"
+    accuracy_decimals: 1
+    device_class: "voltage"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "ODU AC Input Current"
+    id: odu_ac_input_current
+    sensor_datapoint: ISACINPC
+    request_mod: none
+    unit_of_measurement: "A"
+    accuracy_decimals: 1
+    device_class: "current"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "ODU Compressor Current"
+    id: odu_compressor_current
+    sensor_datapoint: IS_COMPC
+    request_mod: none
+    unit_of_measurement: "A"
+    accuracy_decimals: 1
+    device_class: "current"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
+    name: "ODU Reported Power"
+    id: odu_reported_power
+    sensor_datapoint: ODU_POWR
+    request_mod: none
+    unit_of_measurement: "W"
+    accuracy_decimals: 0
+    device_class: "power"
+    state_class: "measurement"
+    entity_category: "diagnostic"
+  - platform: econet
     name: "ODU Defrost Sensor"
     id: odu_defrost_sensor
     sensor_datapoint: ODU_DEFR
