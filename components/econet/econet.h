@@ -8,6 +8,7 @@
 #include <array>
 #include <functional>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -77,6 +78,7 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
 }
 
 struct EconetDatapointListener {
+  uint32_t id;
   EconetDatapointID datapoint_id;
   std::function<void(const EconetDatapoint &)> on_datapoint;
   bool one_shot;
@@ -123,9 +125,11 @@ class Econet : public Component, public uart::UARTDevice {
   void set_float_datapoint_value(const std::string &datapoint_id, float value, uint32_t address = 0);
   void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value, uint32_t address = 0);
 
-  void register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
-                         const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint = false,
-                         uint32_t src_adr = 0, bool one_shot = false, bool run_existing = true);
+  uint32_t register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
+                             const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint = false,
+                             uint32_t src_adr = 0, bool one_shot = false, bool run_existing = true);
+
+  bool unregister_listener(uint32_t listener_id);
 
   std::map<std::string, std::string> homeassistant_read(const std::string &datapoint_id, uint32_t address = 0);
   void homeassistant_write(const std::string &datapoint_id, uint8_t value, uint32_t address = 0);
@@ -161,6 +165,7 @@ class Econet : public Component, public uart::UARTDevice {
   // Large/complex types
   ReadRequest read_req_{};
   std::vector<EconetDatapointListener> listeners_;
+  uint32_t next_listener_id_{1};  // monotonic; 0 is reserved as invalid
   std::array<uint32_t, MAX_REQUEST_MODS> request_mod_addresses_{};
   FixedVector<RequestModUpdateInterval> request_mod_update_interval_millis_map_;
   std::array<uint32_t, MAX_REQUEST_MODS>
@@ -196,6 +201,17 @@ class Econet : public Component, public uart::UARTDevice {
 
   // 1-byte types
   bool mcu_connected_{false};
+
+  // State for the synchronous homeassistant_read() call. Only one read can be
+  // in flight at a time because homeassistant_read() blocks the caller.
+  // The listener callback writes into this struct; the spin loop reads the
+  // `received` flag. On timeout, the listener is unregistered via its handle
+  // so it cannot fire later against a destroyed stack frame.
+  struct PendingRead {
+    EconetDatapoint result;
+    bool received = false;
+  };
+  std::unique_ptr<PendingRead> pending_read_;
 };
 
 class EconetClient {
