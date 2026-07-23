@@ -4,6 +4,7 @@
 #include <cinttypes>
 #include <algorithm>
 #include <cstring>
+#include <memory>
 
 namespace esphome {
 namespace econet {
@@ -336,6 +337,10 @@ void Econet::handle_response_(const EconetDatapointID &datapoint_id, const uint8
       break;
     }
     case EconetDatapointType::TEXT: {
+      if (len < 3) {
+        ESP_LOGE(TAG, "Expected len of at least 3 but was %d for %s", len, datapoint_id.name.c_str());
+        return;
+      }
       p += 3;
       len -= 3;
       std::string s = trim_trailing_whitespace((const char *) p, len);
@@ -711,9 +716,9 @@ void Econet::send_datapoint_(const EconetDatapointID &datapoint_id, const Econet
   }
 }
 
-void Econet::register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
-                               const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint,
-                               uint32_t src_adr, bool one_shot, bool run_existing) {
+uint32_t Econet::register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
+                                   const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint,
+                                   uint32_t src_adr, bool one_shot, bool run_existing) {
   EconetDatapointID dp_id{.name = datapoint_id, .address = src_adr};
 
   if (request_mod >= 0 && static_cast<size_t>(request_mod) < this->request_datapoint_ids_.size()) {
@@ -743,7 +748,9 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
     }
   }
 
+  uint32_t id = this->next_listener_id_++;
   this->listeners_.push_back(EconetDatapointListener{
+      .id = id,
       .datapoint_id = dp_id,
       .on_datapoint = func,
       .one_shot = one_shot,
@@ -757,50 +764,57 @@ void Econet::register_listener(const std::string &datapoint_id, int8_t request_m
       }
     }
   }
+
+  return id;
+}
+
+bool Econet::unregister_listener(uint32_t listener_id) {
+  if (listener_id == 0) {
+    return false;
+  }
+  auto it = std::find_if(this->listeners_.begin(), this->listeners_.end(),
+                         [listener_id](const EconetDatapointListener &l) { return l.id == listener_id; });
+  if (it == this->listeners_.end()) {
+    return false;
+  }
+  this->listeners_.erase(it);
+  return true;
 }
 
 // Called from a Home Assistant exposed service to read a datapoint.
 std::map<std::string, std::string> Econet::homeassistant_read(const std::string &datapoint_id, uint32_t address) {
+  static const uint32_t TIMEOUT_MS = 2000;
+
   if (address == 0) {
     address = this->dst_adr_;
   }
-  std::map<std::string, std::string> data;
-  bool data_received = false;
-  this->register_listener(
+
+  // Reentrancy guard. homeassistant_read() blocks, so two concurrent calls
+  // are not possible in normal operation (the API service handler runs on the
+  // single main loop task). If it ever happens, refuse rather than corrupt
+  // pending_read_.
+  if (this->pending_read_ != nullptr) {
+    ESP_LOGE(TAG, "homeassistant_read(%s) called while another read is pending; refusing", datapoint_id.c_str());
+    return {};
+  }
+
+  this->pending_read_ = std::make_unique<PendingRead>();
+
+  uint32_t listener_id = this->register_listener(
       datapoint_id, -1, true,
-      [&](const EconetDatapoint &datapoint) {
-        data["datapoint_id"] = datapoint_id;
-        switch (datapoint.type) {
-          case EconetDatapointType::FLOAT:
-            data["type"] = "FLOAT";
-            data["value"] = std::to_string(datapoint.value_float);
-            break;
-          case EconetDatapointType::ENUM_TEXT:
-            data["type"] = "ENUM_TEXT";
-            data["value"] = std::to_string(datapoint.value_enum);
-            data["value_string"] = datapoint.value_string;
-            break;
-          case EconetDatapointType::TEXT:
-            data["type"] = "TEXT";
-            data["value_string"] = datapoint.value_string;
-            break;
-          case EconetDatapointType::RAW:
-            data["type"] = "RAW";
-            data["value_raw"] = format_hex_pretty(datapoint.value_raw);
-            break;
-          case EconetDatapointType::UNSUPPORTED:
-            data["type"] = "UNSUPPORTED";
-            break;
+      [this](const EconetDatapoint &datapoint) {
+        if (this->pending_read_ != nullptr) {
+          this->pending_read_->result = datapoint;
+          this->pending_read_->received = true;
         }
-        data_received = true;
       },
-      false, address, true, false);
+      false, address, /*one_shot=*/true, /*run_existing=*/false);
 
   this->datapoint_ids_for_read_service_.push_back(EconetDatapointID{.name = datapoint_id, .address = address});
 
-  uint32_t start_time = millis();
-  while (!data_received) {
-    if (millis() - start_time > 2000) {
+  const uint32_t start_time = millis();
+  while (this->pending_read_ != nullptr && !this->pending_read_->received) {
+    if (millis() - start_time > TIMEOUT_MS) {
       ESP_LOGW(TAG, "Timeout waiting for datapoint %s response", datapoint_id.c_str());
       break;
     }
@@ -809,6 +823,44 @@ std::map<std::string, std::string> Econet::homeassistant_read(const std::string 
     delay(1);
   }
 
+  std::map<std::string, std::string> data;
+
+  if (this->pending_read_ != nullptr && this->pending_read_->received) {
+    const EconetDatapoint &dp = this->pending_read_->result;
+    data["datapoint_id"] = datapoint_id;
+    switch (dp.type) {
+      case EconetDatapointType::FLOAT:
+        data["type"] = "FLOAT";
+        data["value"] = std::to_string(dp.value_float);
+        break;
+      case EconetDatapointType::ENUM_TEXT:
+        data["type"] = "ENUM_TEXT";
+        data["value"] = std::to_string(dp.value_enum);
+        data["value_string"] = dp.value_string;
+        break;
+      case EconetDatapointType::TEXT:
+        data["type"] = "TEXT";
+        data["value_string"] = dp.value_string;
+        break;
+      case EconetDatapointType::RAW:
+        data["type"] = "RAW";
+        data["value_raw"] = format_hex_pretty(dp.value_raw);
+        break;
+      case EconetDatapointType::UNSUPPORTED:
+        data["type"] = "UNSUPPORTED";
+        break;
+    }
+  } else {
+    this->unregister_listener(listener_id);
+    auto queue_it =
+        std::find_if(this->datapoint_ids_for_read_service_.begin(), this->datapoint_ids_for_read_service_.end(),
+                     [&](const EconetDatapointID &id) { return id.name == datapoint_id && id.address == address; });
+    if (queue_it != this->datapoint_ids_for_read_service_.end()) {
+      this->datapoint_ids_for_read_service_.erase(queue_it);
+    }
+  }
+
+  this->pending_read_.reset();
   return data;
 }
 
