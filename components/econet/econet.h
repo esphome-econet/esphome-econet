@@ -125,10 +125,13 @@ class Econet : public Component, public uart::UARTDevice {
   void set_float_datapoint_value(const std::string &datapoint_id, float value, uint32_t address = 0);
   void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value, uint32_t address = 0);
 
+  // Returns a listener id that can later be passed to unregister_listener(). 0 is never a valid id.
   uint32_t register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
                              const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint = false,
                              uint32_t src_adr = 0, bool one_shot = false, bool run_existing = true);
-
+  // Removes a previously registered listener. Safe to call with an id that has already
+  // fired (one-shot) or been unregistered; returns false in that case. Must not be called
+  // from within send_datapoint_()'s own iteration over listeners_ (it snapshots first).
   bool unregister_listener(uint32_t listener_id);
 
   std::map<std::string, std::string> homeassistant_read(const std::string &datapoint_id, uint32_t address = 0);
@@ -180,7 +183,6 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<EconetDatapointID> datapoint_ids_for_read_service_;
   StaticVector<uint8_t, MAX_MESSAGE_SIZE> rx_message_;
   StaticVector<uint8_t, MAX_MESSAGE_SIZE> tx_message_;
-  StaticVector<const std::string *, MAX_OBJECTS_PER_REQUEST> temp_objects_;
 
   // Pointers
   binary_sensor::BinarySensor *mcu_connected_binary_sensor_{nullptr};
@@ -202,11 +204,10 @@ class Econet : public Component, public uart::UARTDevice {
   // 1-byte types
   bool mcu_connected_{false};
 
-  // State for the synchronous homeassistant_read() call. Only one read can be
-  // in flight at a time because homeassistant_read() blocks the caller.
-  // The listener callback writes into this struct; the spin loop reads the
-  // `received` flag. On timeout, the listener is unregistered via its handle
-  // so it cannot fire later against a destroyed stack frame.
+  // State for a synchronous homeassistant_read() call in progress. Using a member (rather
+  // than stack locals captured by reference in the listener lambda) means a listener that
+  // fires after the call has already timed out and returned safely becomes a no-op instead
+  // of writing through a dangling reference.
   struct PendingRead {
     EconetDatapoint result;
     bool received = false;

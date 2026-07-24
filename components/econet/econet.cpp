@@ -4,7 +4,6 @@
 #include <cinttypes>
 #include <algorithm>
 #include <cstring>
-#include <memory>
 
 namespace esphome {
 namespace econet {
@@ -195,6 +194,10 @@ void Econet::parse_message_(bool is_tx) {
 
   // Track Read Requests
   if (command == READ_COMMAND) {
+    if (data_len < 2) {
+      ESP_LOGD(TAG, "  READ_COMMAND payload too short (data_len=%d)", data_len);
+      return;
+    }
     uint8_t type = pdata[0] & 0x7F;
     uint8_t prop_type = pdata[1];
 
@@ -232,13 +235,17 @@ void Econet::parse_message_(bool is_tx) {
   } else if (command == ACK) {
     if (this->read_req_.dst_adr == src_adr && this->read_req_.src_adr == dst_adr && this->read_req_.awaiting_res) {
       if (this->read_req_.type == 1 && this->read_req_.obj_names.size() == 1) {
-        EconetDatapointType item_type = EconetDatapointType(pdata[0] & 0x7F);
-        if (item_type == EconetDatapointType::RAW) {
-          std::vector<uint8_t> raw(pdata, pdata + data_len);
-          const std::string &datapoint_id = this->read_req_.obj_names[0];
-          this->send_datapoint_(
-              EconetDatapointID{.name = datapoint_id, .address = src_adr},
-              EconetDatapoint{.value_raw = raw, .value_string = "", .value_float = 0, .type = item_type});
+        if (data_len < 1) {
+          ESP_LOGD(TAG, "  ACK payload too short for single-object read (data_len=%d)", data_len);
+        } else {
+          EconetDatapointType item_type = EconetDatapointType(pdata[0] & 0x7F);
+          if (item_type == EconetDatapointType::RAW) {
+            std::vector<uint8_t> raw(pdata, pdata + data_len);
+            const std::string &datapoint_id = this->read_req_.obj_names[0];
+            this->send_datapoint_(
+                EconetDatapointID{.name = datapoint_id, .address = src_adr},
+                EconetDatapoint{.value_raw = raw, .value_string = "", .value_float = 0, .type = item_type});
+          }
         }
       } else if (this->read_req_.type == 2) {
         // 1st pass to validate response and avoid any buffer over-read
@@ -261,23 +268,29 @@ void Econet::parse_message_(bool is_tx) {
         } else {
           // 2nd pass to handle response
           tpos = 0;
-          item_num = 0;
-          while (tpos < data_len) {
-            const std::string &datapoint_id = this->read_req_.obj_names[item_num];
+          for (size_t i = 0; i < this->read_req_.obj_names.size(); i++) {
+            if (tpos >= data_len) {
+              ESP_LOGE(TAG, "Internal inconsistency between validation pass and response pass, aborting");
+              break;
+            }
+            const std::string &datapoint_id = this->read_req_.obj_names[i];
             uint8_t item_len = pdata[tpos];
             this->handle_response_(EconetDatapointID{.name = datapoint_id, .address = src_adr}, pdata + tpos + 1,
                                    item_len);
             tpos += item_len + 1;
-            item_num++;
           }
         }
       }
       this->read_req_.awaiting_res = false;
     }
   } else if (command == WRITE_COMMAND) {
+    if (data_len < 1) {
+      ESP_LOGD(TAG, "  WRITE_COMMAND payload too short (data_len=%d)", data_len);
+      return;
+    }
     uint8_t type = pdata[0];
     ESP_LOGV(TAG, "  ClssType: %d", type);
-    if (type == 1 && pdata[1] == 1 && data_len >= WRITE_DATA_POS) {
+    if (type == 1 && data_len >= WRITE_DATA_POS && pdata[1] == 1) {
       std::string item_name((const char *) pdata + OBJ_NAME_POS, OBJ_NAME_SIZE);
       switch (EconetDatapointType(pdata[2])) {
         case EconetDatapointType::FLOAT:
@@ -302,8 +315,10 @@ void Econet::parse_message_(bool is_tx) {
           break;
       }
     } else if (type == 7) {
-      ESP_LOGV(TAG, "  DateTime: %04d/%02d/%02d %02d:%02d:%02d.%02d\n", pdata[9] | pdata[8] << 8, pdata[7], pdata[6],
-               pdata[5], pdata[4], pdata[3], pdata[2]);
+      if (data_len >= 10) {
+        ESP_LOGV(TAG, "  DateTime: %04d/%02d/%02d %02d:%02d:%02d.%02d\n", pdata[9] | pdata[8] << 8, pdata[7], pdata[6],
+                 pdata[5], pdata[4], pdata[3], pdata[2]);
+      }
     } else if (type == 9) {
       if (this->dst_adr_ != src_adr) {
         ESP_LOGW(TAG, "Using 0x%x as dst_address from now on. File an issue if you see this more than once.", src_adr);
@@ -320,9 +335,17 @@ void Econet::parse_message_(bool is_tx) {
 // For ENUM_TEXT it's 1 byte for the enum value, followed by one byte for the length of the enum text, and finally
 // followed by the bytes of the enum text padded with trailing whitespace.
 void Econet::handle_response_(const EconetDatapointID &datapoint_id, const uint8_t *p, uint8_t len) {
+  if (len < 1) {
+    ESP_LOGE(TAG, "Response too short for %s", datapoint_id.name.c_str());
+    return;
+  }
   EconetDatapointType item_type = EconetDatapointType(p[0] & 0x7F);
   switch (item_type) {
     case EconetDatapointType::FLOAT: {
+      if (len < 3 + FLOAT_SIZE) {
+        ESP_LOGE(TAG, "Expected len of at least %d but was %d for %s", 3 + FLOAT_SIZE, len, datapoint_id.name.c_str());
+        return;
+      }
       p += 3;
       len -= 3;
       if (len != FLOAT_SIZE) {
@@ -350,12 +373,12 @@ void Econet::handle_response_(const EconetDatapointID &datapoint_id, const uint8
       break;
     }
     case EconetDatapointType::ENUM_TEXT: {
-      p += 3;
-      len -= 3;
-      if (len < 2) {
-        ESP_LOGE(TAG, "Expected len of at least 2 but was %d for %s", len, datapoint_id.name.c_str());
+      if (len < 5) {
+        ESP_LOGE(TAG, "Expected len of at least 5 but was %d for %s", len, datapoint_id.name.c_str());
         return;
       }
+      p += 3;
+      len -= 3;
       uint8_t item_value = p[0];
       uint8_t item_text_len = p[1];
       if (item_text_len != len - 2) {
@@ -475,7 +498,7 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
 }
 
 void Econet::request_strings_() {
-  this->temp_objects_ = {};
+  StaticVector<const std::string *, MAX_OBJECTS_PER_REQUEST> temp_objects;
   uint32_t dst_adr = this->dst_adr_;
 
   bool is_service_call = false;
@@ -486,15 +509,17 @@ void Econet::request_strings_() {
     dst_adr = entry.address;
 
     // Check if we should request this service item
-    bool request_once =
-        std::find(this->request_once_datapoint_ids_.begin(), this->request_once_datapoint_ids_.end(),
-                  EconetDatapointID{.name = entry.name, .address = dst_adr}) != this->request_once_datapoint_ids_.end();
-    bool exists = std::find_if(this->datapoints_.begin(), this->datapoints_.end(), [&](const DatapointEntry &e) {
-                    return e.id == EconetDatapointID{.name = entry.name, .address = dst_adr};
-                  }) != this->datapoints_.end();
+    EconetDatapointID entry_id{.name = entry.name, .address = dst_adr};
+    bool request_once = std::find(this->request_once_datapoint_ids_.begin(), this->request_once_datapoint_ids_.end(),
+                                  entry_id) != this->request_once_datapoint_ids_.end();
+    auto cached_it = std::find_if(this->datapoints_.begin(), this->datapoints_.end(),
+                                  [&](const DatapointEntry &e) { return e.id == entry_id; });
+    bool exists = cached_it != this->datapoints_.end();
 
     if (!(request_once && exists)) {
-      this->temp_objects_.push_back(&entry.name);
+      temp_objects.push_back(&entry.name);
+    } else {
+      this->send_datapoint_(entry_id, cached_it->data);
     }
   } else {
     // Impose a longer delay restriction for general periodically requested messages
@@ -507,7 +532,7 @@ void Econet::request_strings_() {
         const auto &datapoint_ids = this->request_datapoint_ids_[request_mod];
 
         for (const auto &id : datapoint_ids) {
-          if (this->temp_objects_.size() >= MAX_OBJECTS_PER_REQUEST) {
+          if (temp_objects.size() >= MAX_OBJECTS_PER_REQUEST) {
             ESP_LOGW(TAG, "Too many objects for request_mod %d. Truncating to %d", request_mod,
                      MAX_OBJECTS_PER_REQUEST);
             break;
@@ -523,7 +548,7 @@ void Econet::request_strings_() {
                         }) != this->datapoints_.end();
 
           if (!(request_once && exists)) {
-            this->temp_objects_.push_back(&id);
+            temp_objects.push_back(&id);
           }
         }
         this->request_mod_last_requested_[request_mod] = this->loop_now_;
@@ -532,7 +557,7 @@ void Econet::request_strings_() {
     }
   }
 
-  if (this->temp_objects_.empty()) {
+  if (temp_objects.empty()) {
     // If it was a service call that we skipped because it already exists, remove it from queue now
     if (is_service_call && !this->datapoint_ids_for_read_service_.empty()) {
       this->datapoint_ids_for_read_service_.erase(this->datapoint_ids_for_read_service_.begin());
@@ -545,10 +570,10 @@ void Econet::request_strings_() {
   StaticVector<uint8_t, MAX_MESSAGE_SIZE> data;
 
   // Read Class
-  bool is_raw = std::find(this->raw_datapoint_ids_.begin(), this->raw_datapoint_ids_.end(),
-                          EconetDatapointID{.name = *this->temp_objects_[0], .address = dst_adr}) !=
-                this->raw_datapoint_ids_.end();
-  if (this->temp_objects_.size() == 1 && is_raw) {
+  bool is_raw =
+      std::find(this->raw_datapoint_ids_.begin(), this->raw_datapoint_ids_.end(),
+                EconetDatapointID{.name = *temp_objects[0], .address = dst_adr}) != this->raw_datapoint_ids_.end();
+  if (temp_objects.size() == 1 && is_raw) {
     data.push_back(1);
   } else {
     data.push_back(2);
@@ -557,7 +582,7 @@ void Econet::request_strings_() {
   // Read Property
   data.push_back(1);
 
-  join_obj_names(this->temp_objects_, &data);
+  join_obj_names(temp_objects, &data);
 
   this->transmit_message_(READ_COMMAND, data.data(), data.size(), dst_adr);
 
@@ -701,18 +726,42 @@ void Econet::send_datapoint_(const EconetDatapointID &datapoint_id, const Econet
     ESP_LOGV(TAG, "Datapoint %s unchanged", datapoint_id.name.c_str());
   }
 
-  for (auto it = this->listeners_.begin(); it != this->listeners_.end();) {
-    if (it->datapoint_id.name == datapoint_id.name &&
-        (it->datapoint_id.address == 0 || it->datapoint_id.address == datapoint_id.address)) {
-      if (changed || it->one_shot) {
-        it->on_datapoint(value);
-        if (it->one_shot) {
-          it = this->listeners_.erase(it);
-          continue;
-        }
+  // Collect matching listeners into a local snapshot before invoking any callbacks.
+  // A callback can trigger a Home Assistant service call (e.g. the read service) that
+  // itself calls register_listener()/unregister_listener(), mutating this->listeners_.
+  // Iterating this->listeners_ directly while invoking callbacks risks the vector
+  // reallocating mid-iteration, which would invalidate `it` -- a use-after-free on the
+  // next ++it. Working from a snapshot avoids holding any iterator into listeners_
+  // across a callback invocation.
+  struct ListenerToNotify {
+    uint32_t id;
+    std::function<void(const EconetDatapoint &)> callback;
+    bool one_shot;
+  };
+  std::vector<ListenerToNotify> to_notify;
+  to_notify.reserve(this->listeners_.size());
+
+  for (const auto &listener : this->listeners_) {
+    if (listener.datapoint_id.name == datapoint_id.name &&
+        (listener.datapoint_id.address == 0 || listener.datapoint_id.address == datapoint_id.address)) {
+      if (changed || listener.one_shot) {
+        to_notify.push_back({listener.id, listener.on_datapoint, listener.one_shot});
       }
     }
-    ++it;
+  }
+
+  // Unregister one-shot listeners before invoking any callbacks, so a callback can't
+  // observe (or be confused by) its own still-registered listener.
+  for (const auto &item : to_notify) {
+    if (item.one_shot) {
+      this->unregister_listener(item.id);
+    }
+  }
+
+  for (const auto &item : to_notify) {
+    if (item.callback) {
+      item.callback(value);
+    }
   }
 }
 
@@ -757,11 +806,16 @@ uint32_t Econet::register_listener(const std::string &datapoint_id, int8_t reque
   });
 
   if (run_existing) {
-    // Run through existing datapoints
+    // Snapshot matching values before invoking func(), in case func() itself mutates
+    // this->datapoints_ (e.g. via a synchronous write) while we're iterating it.
+    std::vector<EconetDatapoint> matching;
     for (const auto &entry : this->datapoints_) {
       if (entry.id.name == datapoint_id && (entry.id.address == src_adr || entry.id.address == 0)) {
-        func(entry.data);
+        matching.push_back(entry.data);
       }
+    }
+    for (const auto &data : matching) {
+      func(data);
     }
   }
 
@@ -789,10 +843,9 @@ std::map<std::string, std::string> Econet::homeassistant_read(const std::string 
     address = this->dst_adr_;
   }
 
-  // Reentrancy guard. homeassistant_read() blocks, so two concurrent calls
-  // are not possible in normal operation (the API service handler runs on the
-  // single main loop task). If it ever happens, refuse rather than corrupt
-  // pending_read_.
+  // homeassistant_read() blocks (see the loop below), so under normal operation two
+  // concurrent calls can't happen -- the API service handler runs on the single main
+  // loop task. Refuse rather than clobber pending_read_ if it ever does.
   if (this->pending_read_ != nullptr) {
     ESP_LOGE(TAG, "homeassistant_read(%s) called while another read is pending; refusing", datapoint_id.c_str());
     return {};
@@ -800,6 +853,9 @@ std::map<std::string, std::string> Econet::homeassistant_read(const std::string 
 
   this->pending_read_ = std::make_unique<PendingRead>();
 
+  // Capture only `this` (a long-lived Component), never stack locals. If this lambda
+  // ever fires after homeassistant_read() has already returned and reset pending_read_,
+  // it's a safe no-op instead of a write through a dangling reference.
   uint32_t listener_id = this->register_listener(
       datapoint_id, -1, true,
       [this](const EconetDatapoint &datapoint) {
@@ -851,7 +907,11 @@ std::map<std::string, std::string> Econet::homeassistant_read(const std::string 
         break;
     }
   } else {
+    // Timed out: explicitly unregister the listener instead of leaving it dangling in
+    // listeners_.
     this->unregister_listener(listener_id);
+    // If the queued read hasn't been sent yet, drop it too rather than firing a UART
+    // request nobody's waiting for.
     auto queue_it =
         std::find_if(this->datapoint_ids_for_read_service_.begin(), this->datapoint_ids_for_read_service_.end(),
                      [&](const EconetDatapointID &id) { return id.name == datapoint_id && id.address == address; });
