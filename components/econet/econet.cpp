@@ -168,8 +168,8 @@ void Econet::parse_message_(bool is_tx) {
 
   ESP_LOGV(TAG, "%s %s", is_tx ? ">>>" : "<<<",
            format_hex_pretty(b, MSG_HEADER_SIZE + data_len + MSG_CRC_SIZE).c_str());
-  ESP_LOGV(TAG, "  Dst Adr : 0x%x", dst_adr);
-  ESP_LOGV(TAG, "  Src Adr : 0x%x", src_adr);
+  ESP_LOGV(TAG, "  Dst Adr : 0x%lx", (unsigned long) dst_adr);
+  ESP_LOGV(TAG, "  Src Adr : 0x%lx", (unsigned long) src_adr);
   ESP_LOGV(TAG, "  Command : %d", command);
   ESP_LOGV(TAG, "  Data    : %s", format_hex_pretty(pdata, data_len).c_str());
 
@@ -321,7 +321,8 @@ void Econet::parse_message_(bool is_tx) {
       }
     } else if (type == 9) {
       if (this->dst_adr_ != src_adr) {
-        ESP_LOGW(TAG, "Using 0x%x as dst_address from now on. File an issue if you see this more than once.", src_adr);
+        ESP_LOGW(TAG, "Using 0x%lx as dst_address from now on. File an issue if you see this more than once.",
+                 (unsigned long) src_adr);
         this->dst_adr_ = src_adr;
       }
     }
