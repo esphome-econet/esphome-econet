@@ -109,6 +109,9 @@ class Econet : public Component, public uart::UARTDevice {
   }
   void init_request_mod_update_intervals(size_t size) { this->request_mod_update_interval_millis_map_.init(size); }
   void add_request_mod_update_interval(uint8_t mod, uint32_t interval) {
+    if (mod >= MAX_REQUEST_MODS) {
+      return;
+    }
     this->request_mod_update_interval_millis_map_.push_back({mod, interval});
     this->update_intervals_();
   }
@@ -223,7 +226,7 @@ class EconetClient {
   void set_src_adr(uint32_t src_adr) { this->src_adr_ = src_adr; }
 
  protected:
-  Econet *parent_;
+  Econet *parent_{nullptr};
   uint32_t src_adr_{0};
   int8_t request_mod_{0};
   bool request_once_{false};
