@@ -39,6 +39,24 @@ ensure_climate_mode_map = unique_value_map(climate.validate_climate_mode)
 ensure_option_map = unique_value_map(cv.string_strict)
 
 
+def validate_target_temperature_datapoints(config):
+    """Reject a single-point target temperature combined with a two-point one.
+
+    Climate stores target_temperature in a union with target_temperature_low/high, so
+    listeners for both would write over each other's value.
+    """
+    if config[CONF_TARGET_TEMPERATURE_DATAPOINT] and (
+        config[CONF_TARGET_TEMPERATURE_LOW_DATAPOINT]
+        or config[CONF_TARGET_TEMPERATURE_HIGH_DATAPOINT]
+    ):
+        raise cv.Invalid(
+            f"{CONF_TARGET_TEMPERATURE_DATAPOINT} cannot be combined with "
+            f"{CONF_TARGET_TEMPERATURE_LOW_DATAPOINT} or "
+            f"{CONF_TARGET_TEMPERATURE_HIGH_DATAPOINT}: they share the same storage."
+        )
+    return config
+
+
 CONFIG_SCHEMA = cv.All(
     climate.climate_schema(EconetClimate)
     .extend(
@@ -64,7 +82,8 @@ CONFIG_SCHEMA = cv.All(
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
-    .extend(ECONET_CLIENT_SCHEMA)
+    .extend(ECONET_CLIENT_SCHEMA),
+    validate_target_temperature_datapoints,
 )
 
 
