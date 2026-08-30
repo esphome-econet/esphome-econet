@@ -218,8 +218,10 @@ void EconetClimate::control(const climate::ClimateCall &call) {
       if (this->follow_schedule_.has_value()) {
         if (this->follow_schedule_.value()) {
           this->parent_->set_enum_datapoint_value(this->custom_fan_mode_id_, it->id, this->src_adr_);
-        } else {
+        } else if (this->custom_fan_mode_no_schedule_id_ && *this->custom_fan_mode_no_schedule_id_) {
           this->parent_->set_enum_datapoint_value(this->custom_fan_mode_no_schedule_id_, it->id, this->src_adr_);
+        } else {
+          ESP_LOGW(TAG, "Not following the schedule but custom_fan_mode_no_schedule_datapoint is not configured");
         }
       }
     }
