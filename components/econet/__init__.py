@@ -52,6 +52,29 @@ def assign_declare_id(value):
     return value
 
 
+def unique_value_map(value_validator):
+    """Build a validator for a {uint8: value} mapping whose values must be unique.
+
+    Duplicate values make one of the keys unreachable: the C++ side resolves a value back
+    to the first key that maps to it.
+    """
+
+    def validator(value):
+        cv.check_not_templatable(value)
+        value = cv.Schema({cv.uint8_t: value_validator})(value)
+        seen = {}
+        for key, mapped in value.items():
+            if mapped in seen:
+                raise cv.Invalid(
+                    f"Mapping values must be unique, but {mapped!r} is used for both "
+                    f"{seen[mapped]} and {key}."
+                )
+            seen[mapped] = key
+        return value
+
+    return validator
+
+
 def validate_request_mod_range(value):
     return cv.int_range(min=0, max=15)(value)
 
