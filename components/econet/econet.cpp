@@ -520,7 +520,10 @@ void Econet::request_strings_() {
     if (!(request_once && exists)) {
       temp_objects.push_back(&entry.name);
     } else {
-      this->send_datapoint_(entry_id, cached_it->data);
+      // Copy before publishing: send_datapoint_() can push_back into datapoints_, which would
+      // reallocate and leave a reference into that vector dangling for the rest of the call.
+      EconetDatapoint cached = cached_it->data;
+      this->send_datapoint_(entry_id, cached);
     }
   } else {
     // Impose a longer delay restriction for general periodically requested messages
