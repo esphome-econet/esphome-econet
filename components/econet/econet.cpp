@@ -98,6 +98,11 @@ void Econet::setup() {
   if (this->flow_control_pin_ != nullptr) {
     this->flow_control_pin_->setup();
   }
+  if (this->mcu_connected_binary_sensor_ != nullptr) {
+    // Publish the initial disconnected state so the entity doesn't stay unknown until the
+    // first message arrives -- which never happens if the MCU is not wired up correctly.
+    this->mcu_connected_binary_sensor_->publish_initial_state(this->mcu_connected_);
+  }
 }
 
 void Econet::dump_config() {
