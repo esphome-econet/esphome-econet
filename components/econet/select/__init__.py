@@ -11,6 +11,7 @@ from .. import (
     ECONET_CLIENT_SCHEMA,
     EconetClient,
     econet_ns,
+    unique_value_map,
 )
 
 DEPENDENCIES = ["econet"]
@@ -20,15 +21,7 @@ EconetSelect = econet_ns.class_(
 )
 
 
-def ensure_option_map(value):
-    cv.check_not_templatable(value)
-    options_map_schema = cv.Schema({cv.uint8_t: cv.string_strict})
-    value = options_map_schema(value)
-    all_values = list(value.keys())
-    unique_values = set(value.keys())
-    if len(all_values) != len(unique_values):
-        raise cv.Invalid("Mapping values must be unique.")
-    return value
+ensure_option_map = unique_value_map(cv.string_strict)
 
 
 CONFIG_SCHEMA = (
@@ -49,7 +42,7 @@ async def to_code(config):
     var = await select.new_select(config, options=list(options_map.values()))
     await cg.register_component(var, config)
     cg.add(var.init_select_mappings(len(options_map)))
-    for key in options_map.keys():
+    for key in options_map:
         cg.add(var.add_select_mapping(key))
     paren = await cg.get_variable(config[CONF_ECONET_ID])
     cg.add(var.set_econet_parent(paren))
