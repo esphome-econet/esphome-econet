@@ -16,7 +16,7 @@ packages:
     file: econet_heatpump_water_heater.yaml
 
 dashboard_import:
-  package_import_url: github://esphome-econet/esphome-econet/build-yaml/${name}-esp32s3.yaml@${github_ref}
+  package_import_url: github://esphome-econet/esphome-econet/build-yaml/econet-hpwh-esp32s3.yaml@${github_ref}
   import_full_config: false
 
 # Uncomment the below to use Wi-Fi settings from your secrets.yaml file
