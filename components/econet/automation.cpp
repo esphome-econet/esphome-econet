@@ -1,8 +1,4 @@
-#include "esphome/core/log.h"
-
 #include "automation.h"
-
-static const char *const TAG = "econet.automation";
 
 namespace esphome {
 namespace econet {

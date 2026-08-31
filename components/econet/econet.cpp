@@ -98,6 +98,11 @@ void Econet::setup() {
   if (this->flow_control_pin_ != nullptr) {
     this->flow_control_pin_->setup();
   }
+  if (this->mcu_connected_binary_sensor_ != nullptr) {
+    // Publish the initial disconnected state so the entity doesn't stay unknown until the
+    // first message arrives -- which never happens if the MCU is not wired up correctly.
+    this->mcu_connected_binary_sensor_->publish_initial_state(this->mcu_connected_);
+  }
 }
 
 void Econet::dump_config() {
@@ -263,7 +268,7 @@ void Econet::parse_message_(bool is_tx) {
           item_num++;
         }
         if (item_num != this->read_req_.obj_names.size()) {
-          ESP_LOGE(TAG, "We requested %d objects but we received %d. Ignoring response.",
+          ESP_LOGE(TAG, "We requested %zu objects but we received %d. Ignoring response.",
                    this->read_req_.obj_names.size(), item_num);
         } else {
           // 2nd pass to handle response
@@ -498,6 +503,26 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
   this->transmit_message_(WRITE_COMMAND, data.data(), data.size(), address);
 }
 
+// A datapoint registered without an explicit src_address (address 0) applies to every device,
+// mirroring how send_datapoint_() matches listeners. Lookups pass a resolved destination
+// address, so a stored address of 0 is treated as a wildcard.
+static bool matches_datapoint_id(const std::vector<EconetDatapointID> &ids, const std::string &name, uint32_t address) {
+  for (const auto &id : ids) {
+    if (id.name == name && (id.address == 0 || id.address == address)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Econet::is_request_once_(const std::string &name, uint32_t address) const {
+  return matches_datapoint_id(this->request_once_datapoint_ids_, name, address);
+}
+
+bool Econet::is_raw_datapoint_(const std::string &name, uint32_t address) const {
+  return matches_datapoint_id(this->raw_datapoint_ids_, name, address);
+}
+
 void Econet::request_strings_() {
   StaticVector<const std::string *, MAX_OBJECTS_PER_REQUEST> temp_objects;
   uint32_t dst_adr = this->dst_adr_;
@@ -511,8 +536,7 @@ void Econet::request_strings_() {
 
     // Check if we should request this service item
     EconetDatapointID entry_id{.name = entry.name, .address = dst_adr};
-    bool request_once = std::find(this->request_once_datapoint_ids_.begin(), this->request_once_datapoint_ids_.end(),
-                                  entry_id) != this->request_once_datapoint_ids_.end();
+    bool request_once = this->is_request_once_(entry.name, dst_adr);
     auto cached_it = std::find_if(this->datapoints_.begin(), this->datapoints_.end(),
                                   [&](const DatapointEntry &e) { return e.id == entry_id; });
     bool exists = cached_it != this->datapoints_.end();
@@ -520,7 +544,10 @@ void Econet::request_strings_() {
     if (!(request_once && exists)) {
       temp_objects.push_back(&entry.name);
     } else {
-      this->send_datapoint_(entry_id, cached_it->data);
+      // Copy before publishing: send_datapoint_() can push_back into datapoints_, which would
+      // reallocate and leave a reference into that vector dangling for the rest of the call.
+      EconetDatapoint cached = cached_it->data;
+      this->send_datapoint_(entry_id, cached);
     }
   } else {
     // Impose a longer delay restriction for general periodically requested messages
@@ -532,6 +559,15 @@ void Econet::request_strings_() {
           this->request_mod_update_interval_millis_[request_mod]) {
         const auto &datapoint_ids = this->request_datapoint_ids_[request_mod];
 
+        // Resolve the destination for this request_mod up front. An unset (0) request_mod
+        // address means "use the component's dst_address", which is the same fallback
+        // transmit_message_() applies. Resolving it here keeps the request_once and cache
+        // lookups below keyed on the address the response will actually come from.
+        dst_adr = this->request_mod_addresses_[request_mod];
+        if (dst_adr == 0) {
+          dst_adr = this->dst_adr_;
+        }
+
         for (const auto &id : datapoint_ids) {
           if (temp_objects.size() >= MAX_OBJECTS_PER_REQUEST) {
             ESP_LOGW(TAG, "Too many objects for request_mod %d. Truncating to %d", request_mod,
@@ -539,11 +575,7 @@ void Econet::request_strings_() {
             break;
           }
 
-          dst_adr = this->request_mod_addresses_[request_mod];
-
-          bool request_once =
-              std::find(this->request_once_datapoint_ids_.begin(), this->request_once_datapoint_ids_.end(),
-                        EconetDatapointID{.name = id, .address = dst_adr}) != this->request_once_datapoint_ids_.end();
+          bool request_once = this->is_request_once_(id, dst_adr);
           bool exists = std::find_if(this->datapoints_.begin(), this->datapoints_.end(), [&](const DatapointEntry &e) {
                           return e.id == EconetDatapointID{.name = id, .address = dst_adr};
                         }) != this->datapoints_.end();
@@ -571,9 +603,7 @@ void Econet::request_strings_() {
   StaticVector<uint8_t, MAX_MESSAGE_SIZE> data;
 
   // Read Class
-  bool is_raw =
-      std::find(this->raw_datapoint_ids_.begin(), this->raw_datapoint_ids_.end(),
-                EconetDatapointID{.name = *temp_objects[0], .address = dst_adr}) != this->raw_datapoint_ids_.end();
+  bool is_raw = this->is_raw_datapoint_(*temp_objects[0], dst_adr);
   if (temp_objects.size() == 1 && is_raw) {
     data.push_back(1);
   } else {
