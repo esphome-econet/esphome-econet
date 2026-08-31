@@ -268,7 +268,7 @@ void Econet::parse_message_(bool is_tx) {
           item_num++;
         }
         if (item_num != this->read_req_.obj_names.size()) {
-          ESP_LOGE(TAG, "We requested %d objects but we received %d. Ignoring response.",
+          ESP_LOGE(TAG, "We requested %zu objects but we received %d. Ignoring response.",
                    this->read_req_.obj_names.size(), item_num);
         } else {
           // 2nd pass to handle response
