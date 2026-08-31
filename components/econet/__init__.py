@@ -52,6 +52,29 @@ def assign_declare_id(value):
     return value
 
 
+def unique_value_map(value_validator):
+    """Build a validator for a {uint8: value} mapping whose values must be unique.
+
+    Duplicate values make one of the keys unreachable: the C++ side resolves a value back
+    to the first key that maps to it.
+    """
+
+    def validator(value):
+        cv.check_not_templatable(value)
+        value = cv.Schema({cv.uint8_t: value_validator})(value)
+        seen = {}
+        for key, mapped in value.items():
+            if mapped in seen:
+                raise cv.Invalid(
+                    f"Mapping values must be unique, but {mapped!r} is used for both "
+                    f"{seen[mapped]} and {key}."
+                )
+            seen[mapped] = key
+        return value
+
+    return validator
+
+
 def validate_request_mod_range(value):
     return cv.int_range(min=0, max=15)(value)
 
@@ -71,9 +94,18 @@ def validate_request_mod_update_intervals(value):
     return value
 
 
+# Addresses are encoded into 3 bytes on the wire (see address_to_bytes in econet.cpp), so
+# anything wider would be silently truncated when transmitted.
+MAX_ADDRESS = 0xFFFFFF
+
+
+def econet_address(value):
+    return cv.int_range(min=0, max=MAX_ADDRESS)(value)
+
+
 def validate_request_mod_addresses(value):
     cv.check_not_templatable(value)
-    options_map_schema = cv.Schema({validate_request_mod_range: cv.uint32_t})
+    options_map_schema = cv.Schema({validate_request_mod_range: econet_address})
     value = options_map_schema(value)
     return value
 
@@ -82,8 +114,8 @@ CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(Econet),
-            cv.Required(CONF_SRC_ADDRESS): cv.uint32_t,
-            cv.Optional(CONF_DST_ADDRESS, default="0"): cv.uint32_t,
+            cv.Required(CONF_SRC_ADDRESS): econet_address,
+            cv.Optional(CONF_DST_ADDRESS, default="0"): econet_address,
             cv.Optional(CONF_ON_DATAPOINT_UPDATE): automation.validate_automation(
                 {
                     cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(
@@ -95,7 +127,7 @@ CONFIG_SCHEMA = (
                     cv.Optional(CONF_DATAPOINT_TYPE, default=DPTYPE_RAW): cv.one_of(
                         *DATAPOINT_TRIGGERS, lower=True
                     ),
-                    cv.Optional(CONF_SRC_ADDRESS, default=0): cv.uint32_t,
+                    cv.Optional(CONF_SRC_ADDRESS, default=0): econet_address,
                 },
                 extra_validators=assign_declare_id,
             ),
@@ -126,7 +158,7 @@ ECONET_CLIENT_SCHEMA = cv.Schema(
         cv.GenerateID(CONF_ECONET_ID): cv.use_id(Econet),
         cv.Optional(CONF_REQUEST_MOD, default=0): request_mod,
         cv.Optional(CONF_REQUEST_ONCE, default=False): cv.boolean,
-        cv.Optional(CONF_SRC_ADDRESS, default=0): cv.uint32_t,
+        cv.Optional(CONF_SRC_ADDRESS, default=0): econet_address,
     }
 )
 

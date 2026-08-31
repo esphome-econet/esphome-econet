@@ -47,6 +47,9 @@ econet:
             id(high_heat_lifetime_hrs).publish_state((x[132] << 8) + x[133]);
             id(blower_lifetime_hrs).publish_state((x[135] << 8) + x[136]);
             id(powered_lifetime_days).publish_state((x[137] << 8) + x[138]);
+            if (x.size() <= 146) {
+              return;
+            }
             id(supply_air_temperature).publish_state(((x[145] << 8) + x[146])/10.0);
     - sensor_datapoint: HRHEEMID
       request_mod: 5
