@@ -80,7 +80,8 @@ jobs:
             yq -P -i
             '
               .improv_serial = "" |
-              .improv_serial tag = "!!null"
+              .improv_serial tag = "!!null" |
+              .esphome.name_add_mac_suffix = true
             '
             build-yaml/econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}.yaml
       - name: Force Verbose Logging
