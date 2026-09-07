@@ -13,8 +13,24 @@ water_heater:
       min_temperature: "110 °F"
       max_temperature: "140 °F"
       target_temperature_step: 1
-    current_temperature: !lambda "return id(econet_climate).current_temperature;"
-    target_temperature: !lambda "return id(econet_climate).target_temperature;"
+    # Return {} (don't publish) while the value is unknown: NAN never compares equal to itself,
+    # so the template water heater treats it as a change on every loop iteration and republishes
+    # the state until the MCU reports a value.
+    # TODO: once https://github.com/esphome/esphome/pull/19013 is in a release, raise min_version
+    # in econet_base.yaml to it and simplify both lambdas back to a plain
+    # `return id(econet_climate).<field>;`.
+    current_temperature: !lambda |-
+      const float temp = id(econet_climate).current_temperature;
+      if (std::isnan(temp)) {
+        return {};
+      }
+      return temp;
+    target_temperature: !lambda |-
+      const float temp = id(econet_climate).target_temperature;
+      if (std::isnan(temp)) {
+        return {};
+      }
+      return temp;
     is_on: !lambda |-
       if (id(econet_climate).mode == climate::CLIMATE_MODE_OFF) {
         return false;
