@@ -33,8 +33,8 @@ jobs:
       # release are attributed to the app bot (e.g. `my-app[bot]`) instead of
       # a personal account. Setup: register an App with Contents (read/write)
       # permission, install it on this repo, then store its numeric App ID in
-      # RELEASE_APP_ID and its private key (.pem contents) in
-      # RELEASE_APP_PRIVATE_KEY. Unlike GITHUB_TOKEN, an App token still
+      # the RELEASE_APP_ID variable and its private key (.pem contents) in
+      # the RELEASE_APP_PRIVATE_KEY secret. Unlike GITHUB_TOKEN, an App token
       # triggers the downstream `release: published` workflow
       # (build-and-publish). For the App to push to a protected branch, also
       # add it to the branch ruleset's bypass list.
@@ -42,7 +42,7 @@ jobs:
         id: release-token
         uses: actions/create-github-app-token@v2
         with:
-          app-id: ${{ secrets.RELEASE_APP_ID }}
+          app-id: ${{ vars.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       - uses: actions/checkout@v7
         with:
