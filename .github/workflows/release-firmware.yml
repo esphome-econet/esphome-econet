@@ -18,6 +18,8 @@ jobs:
   update-version-strings:
     name: Update Version Strings
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Generate Release Version
         id: generate_release_version
@@ -27,9 +29,24 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prefix: "v"
           dry_run: true
+      # Mint an installation token for a GitHub App so the commit push and
+      # release are attributed to the app bot (e.g. `my-app[bot]`) instead of
+      # a personal account. Setup: register an App with Contents (read/write)
+      # permission, install it on this repo, then store its numeric App ID in
+      # the RELEASE_APP_ID variable and its private key (.pem contents) in
+      # the RELEASE_APP_PRIVATE_KEY secret. Unlike GITHUB_TOKEN, an App token
+      # triggers the downstream `release: published` workflow
+      # (build-and-publish). For the App to push to a protected branch, also
+      # add it to the branch ruleset's bypass list.
+      - name: Mint release automation token
+        id: release-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
       - uses: actions/checkout@v7
         with:
-          token: ${{ secrets.RELEASE_AUTOMATION_ACTION }}
+          token: ${{ steps.release-token.outputs.token }}
       - name: Update Project Version String
         uses: mikefarah/yq@v4
         with:
@@ -44,9 +61,16 @@ jobs:
         with:
           commit_message: "Automated project versioning update"
           push_options: '--force'
+          # Attribute the commit author to whoever dispatched the workflow
+          # (github.actor) instead of the token owner, with the bot as
+          # committer. These match the action defaults but are explicit so
+          # attribution doesn't silently regress on action upgrades.
+          commit_user_name: github-actions[bot]
+          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit_author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
           generateReleaseNotes: true
           tag: ${{ steps.generate_release_version.outputs.version_tag }}
-          token: ${{ secrets.RELEASE_AUTOMATION_ACTION }}
+          token: ${{ steps.release-token.outputs.token }}
