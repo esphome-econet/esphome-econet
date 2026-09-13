@@ -94,6 +94,13 @@ struct DatapointEntry {
   EconetDatapoint data;
 };
 
+// Identification datapoints (HRHEEMID, HWELL_ID) carry two fixed-width 24-character fields --
+// model and serial number, or the two software versions. Splits `payload` into those two fields,
+// with the padding trimmed. The pair is not always at the same offset: some hardware prefixes it
+// with extra header bytes, so rather than hardcoding an offset we look for the first long run of
+// printable characters. Returns false and leaves the outputs untouched when there is no such pair.
+bool extract_id_fields(const std::vector<uint8_t> &payload, std::string *first, std::string *second);
+
 class Econet : public Component, public uart::UARTDevice {
  public:
   void setup() override;
