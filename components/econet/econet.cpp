@@ -94,6 +94,37 @@ std::string trim_trailing_whitespace(const char *p, uint8_t len) {
   return std::string(p, endp);
 }
 
+// See extract_id_fields() in econet.h.
+static const size_t ID_FIELD_SIZE = 24;
+// The two fields have never been seen to start before this offset, so don't look earlier.
+static const size_t MIN_ID_FIELD_OFFSET = 4;
+// A run of printable characters at least this long is taken to be the start of the first field
+// rather than part of the header in front of it.
+static const size_t MIN_ID_FIELD_RUN = 8;
+
+bool extract_id_fields(const std::vector<uint8_t> &payload, std::string *first, std::string *second) {
+  size_t start = 0;
+  size_t run = 0;
+  for (size_t i = MIN_ID_FIELD_OFFSET; i < payload.size() && run < MIN_ID_FIELD_RUN; i++) {
+    const uint8_t c = payload[i];
+    if (c > ' ' && c < 0x7F) {
+      if (run == 0) {
+        start = i;
+      }
+      run++;
+    } else {
+      run = 0;
+    }
+  }
+  if (run < MIN_ID_FIELD_RUN || payload.size() < start + 2 * ID_FIELD_SIZE) {
+    return false;
+  }
+  const char *p = (const char *) payload.data() + start;
+  *first = trim_trailing_whitespace(p, ID_FIELD_SIZE);
+  *second = trim_trailing_whitespace(p + ID_FIELD_SIZE, ID_FIELD_SIZE);
+  return true;
+}
+
 void Econet::setup() {
   if (this->flow_control_pin_ != nullptr) {
     this->flow_control_pin_->setup();
