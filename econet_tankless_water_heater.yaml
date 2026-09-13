@@ -80,7 +80,7 @@ sensor:
     unit_of_measurement: "gal"
     accuracy_decimals: 1
     device_class: "water"
-    state_class: "measurement"
+    state_class: "total_increasing"
     entity_category: "diagnostic"
   - platform: econet
     name: "Flow Rate"
