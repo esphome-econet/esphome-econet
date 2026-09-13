@@ -70,11 +70,11 @@ void EconetClimate::register_float_listener(const char *id, float *member, bool 
   }
 }
 
-void EconetClimate::register_fan_listener(const char *id, std::string *member, bool schedule_val) {
+void EconetClimate::register_fan_listener(const char *id, std::string *member) {
   if (id && *id) {
     this->parent_->register_listener(
         id, this->request_mod_, this->request_once_,
-        [this, member, schedule_val](const EconetDatapoint &datapoint) {
+        [this, member](const EconetDatapoint &datapoint) {
           auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
                                  [&](const EconetFanMode &m) { return m.id == datapoint.value_enum; });
           if (it == this->custom_fan_modes_.end()) {
@@ -82,16 +82,38 @@ void EconetClimate::register_fan_listener(const char *id, std::string *member, b
                      datapoint.value_string.c_str());
           } else {
             *member = it->name;
-            if (this->follow_schedule_.has_value()) {
-              if (this->follow_schedule_.value() == schedule_val) {
-                this->set_custom_fan_mode_(member->c_str(), member->length());
-                this->publish_state();
-              }
-            }
+            this->update_active_fan_mode_();
+            this->publish_state();
           }
         },
         false, this->src_adr_);
   }
+}
+
+// Which of the two fan speed datapoints is in charge: the no-schedule one whenever the schedule
+// isn't being followed -- see #177 -- and, per the readings in #646, also whenever the system is
+// in fan only mode, where the regular datapoint stays frozen at whatever was last written to it
+// and only the no-schedule one tracks the blower.
+bool EconetClimate::uses_no_schedule_fan_mode_(climate::ClimateMode mode) const {
+  return !*this->follow_schedule_ || mode == climate::CLIMATE_MODE_FAN_ONLY;
+}
+
+// Reflect whichever of the two is in charge, falling back to the regular one while the schedule is
+// being followed so that a config without a no-schedule datapoint keeps reporting what it used to.
+void EconetClimate::update_active_fan_mode_() {
+  if (!this->follow_schedule_.has_value()) {
+    return;
+  }
+  const std::string *active = nullptr;
+  if (this->uses_no_schedule_fan_mode_(this->mode) && !this->fan_mode_no_schedule_.empty()) {
+    active = &this->fan_mode_no_schedule_;
+  } else if (*this->follow_schedule_ && !this->fan_mode_.empty()) {
+    active = &this->fan_mode_;
+  }
+  if (active == nullptr) {
+    return;
+  }
+  this->set_custom_fan_mode_(active->c_str(), active->length());
 }
 
 void EconetClimate::setup() {
@@ -130,6 +152,8 @@ void EconetClimate::setup() {
                      datapoint.value_enum, datapoint.value_string.c_str());
           } else {
             this->mode = it->mode;
+            // Which fan speed datapoint is in charge depends on the mode.
+            this->update_active_fan_mode_();
             this->publish_state();
           }
         },
@@ -152,8 +176,8 @@ void EconetClimate::setup() {
         false, this->src_adr_);
   }
 
-  this->register_fan_listener(this->custom_fan_mode_id_, &this->fan_mode_, true);
-  this->register_fan_listener(this->custom_fan_mode_no_schedule_id_, &this->fan_mode_no_schedule_, false);
+  this->register_fan_listener(this->custom_fan_mode_id_, &this->fan_mode_);
+  this->register_fan_listener(this->custom_fan_mode_no_schedule_id_, &this->fan_mode_no_schedule_);
 
   if (this->follow_schedule_id_ && *this->follow_schedule_id_) {
     this->parent_->register_listener(
@@ -162,17 +186,8 @@ void EconetClimate::setup() {
           ESP_LOGV(TAG, "MCU reported climate sensor %s is: %s", this->follow_schedule_id_,
                    datapoint.value_string.c_str());
           this->follow_schedule_ = datapoint.value_enum > 0;
-          if (this->follow_schedule_.value()) {
-            if (!this->fan_mode_.empty()) {
-              this->set_custom_fan_mode_(this->fan_mode_.c_str(), this->fan_mode_.length());
-              this->publish_state();
-            }
-          } else {
-            if (!this->fan_mode_no_schedule_.empty()) {
-              this->set_custom_fan_mode_(this->fan_mode_no_schedule_.c_str(), this->fan_mode_no_schedule_.length());
-              this->publish_state();
-            }
-          }
+          this->update_active_fan_mode_();
+          this->publish_state();
         },
         false, this->src_adr_);
   }
@@ -214,15 +229,18 @@ void EconetClimate::control(const climate::ClimateCall &call) {
     auto fan_mode = call.get_custom_fan_mode();
     auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
                            [&fan_mode](const EconetFanMode &m) { return m.name == fan_mode; });
-    if (it != this->custom_fan_modes_.end()) {
-      if (this->follow_schedule_.has_value()) {
-        if (this->follow_schedule_.value()) {
-          this->parent_->set_enum_datapoint_value(this->custom_fan_mode_id_, it->id, this->src_adr_);
-        } else if (this->custom_fan_mode_no_schedule_id_ && *this->custom_fan_mode_no_schedule_id_) {
-          this->parent_->set_enum_datapoint_value(this->custom_fan_mode_no_schedule_id_, it->id, this->src_adr_);
-        } else {
-          ESP_LOGW(TAG, "Not following the schedule but custom_fan_mode_no_schedule_datapoint is not configured");
-        }
+    if (it != this->custom_fan_modes_.end() && this->follow_schedule_.has_value()) {
+      // A mode change in the same call takes effect before the fan speed does.
+      const climate::ClimateMode mode = call.get_mode().value_or(this->mode);
+      const bool no_schedule = this->uses_no_schedule_fan_mode_(mode);
+      if (no_schedule && this->custom_fan_mode_no_schedule_id_ && *this->custom_fan_mode_no_schedule_id_) {
+        this->parent_->set_enum_datapoint_value(this->custom_fan_mode_no_schedule_id_, it->id, this->src_adr_);
+      } else if (*this->follow_schedule_) {
+        // Either the schedule is being followed outside of fan only mode, or there is no
+        // no-schedule datapoint to write and this is the only thing left to try.
+        this->parent_->set_enum_datapoint_value(this->custom_fan_mode_id_, it->id, this->src_adr_);
+      } else {
+        ESP_LOGW(TAG, "Not following the schedule but custom_fan_mode_no_schedule_datapoint is not configured");
       }
     }
   }
