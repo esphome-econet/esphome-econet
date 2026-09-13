@@ -48,7 +48,9 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   };
 
   void register_float_listener(const char *id, float *member, bool is_temperature);
-  void register_fan_listener(const char *id, std::string *member, bool schedule_val);
+  void register_fan_listener(const char *id, std::string *member);
+  void update_active_fan_mode_();
+  bool uses_no_schedule_fan_mode_(climate::ClimateMode mode) const;
   void set_float_datapoint(const char *id, optional<float> value, bool is_temperature);
 
   const char *current_temperature_id_{nullptr};
