@@ -82,6 +82,8 @@ struct EconetDatapointListener {
   EconetDatapointID datapoint_id;
   std::function<void(const EconetDatapoint &)> on_datapoint;
   bool one_shot;
+  // Notify on every response rather than only when the value differs from the previous one.
+  bool publish_unchanged;
 };
 
 struct RequestModUpdateInterval {
@@ -138,7 +140,8 @@ class Econet : public Component, public uart::UARTDevice {
   // Returns a listener id that can later be passed to unregister_listener(). 0 is never a valid id.
   uint32_t register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
                              const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint = false,
-                             uint32_t src_adr = 0, bool one_shot = false, bool run_existing = true);
+                             uint32_t src_adr = 0, bool one_shot = false, bool run_existing = true,
+                             bool publish_unchanged = false);
   // Removes a previously registered listener. Safe to call with an id that has already
   // fired (one-shot) or been unregistered; returns false in that case. Must not be called
   // from within send_datapoint_()'s own iteration over listeners_ (it snapshots first).
