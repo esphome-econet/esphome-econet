@@ -720,9 +720,16 @@ void Econet::set_datapoint_(const EconetDatapointID &datapoint_id, const EconetD
 
   auto specific_it = std::find_if(this->datapoints_.begin(), this->datapoints_.end(),
                                   [&](const DatapointEntry &e) { return e.id == specific; });
-  if (specific_it == this->datapoints_.end()) {
-    ESP_LOGW(TAG, "Setting unknown datapoint %s", datapoint_id.name.c_str());
-  } else {
+  auto any_it = std::find_if(this->datapoints_.begin(), this->datapoints_.end(),
+                             [&](const DatapointEntry &e) { return e.id == any; });
+
+  // send_datapoint_() always creates the address-specific and the address-agnostic entry together,
+  // so a miss on either is the same condition and deserves a single warning rather than two.
+  if (specific_it == this->datapoints_.end() || any_it == this->datapoints_.end()) {
+    ESP_LOGW(TAG, "Writing datapoint %s before any value for it has been read from the MCU", datapoint_id.name.c_str());
+  }
+
+  if (specific_it != this->datapoints_.end()) {
     const EconetDatapoint &old_value = specific_it->data;
     if (old_value.type != value.type) {
       ESP_LOGE(TAG, "Attempt to set datapoint %s with incorrect type", datapoint_id.name.c_str());
@@ -737,11 +744,7 @@ void Econet::set_datapoint_(const EconetDatapointID &datapoint_id, const EconetD
     }
   }
 
-  auto any_it = std::find_if(this->datapoints_.begin(), this->datapoints_.end(),
-                             [&](const DatapointEntry &e) { return e.id == any; });
-  if (any_it == this->datapoints_.end()) {
-    ESP_LOGW(TAG, "Setting unknown datapoint %s", datapoint_id.name.c_str());
-  } else if (any_it->data == value) {
+  if (any_it != this->datapoints_.end() && any_it->data == value) {
     ESP_LOGV(TAG, "Not setting unchanged value for datapoint %s", datapoint_id.name.c_str());
     send_any = false;
   }
