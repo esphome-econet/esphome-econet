@@ -161,6 +161,9 @@ class Econet : public Component, public uart::UARTDevice {
   void parse_rx_message_();
   void parse_tx_message_();
   void handle_response_(const EconetDatapointID &datapoint_id, const uint8_t *p, uint8_t len);
+  // Warns about a read request issued while the previous one is still unanswered, rate limited,
+  // and adds a hint about the usual causes while no read has ever been answered.
+  void log_unanswered_read_();
 
   void transmit_message_(uint8_t command, const uint8_t *data, size_t len, uint32_t dst_adr = 0, uint32_t src_adr = 0);
   void request_strings_();
@@ -198,6 +201,13 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<EconetDatapointID> datapoint_ids_for_read_service_;
   StaticVector<uint8_t, MAX_MESSAGE_SIZE> rx_message_;
   StaticVector<uint8_t, MAX_MESSAGE_SIZE> tx_message_;
+
+  // Read requests issued while the previous one was still unanswered, reset on every answer.
+  uint32_t unanswered_reads_{0};
+  uint32_t last_unanswered_read_log_{0};
+  // Whether the MCU has answered at least one read request since boot. Distinguishes a busy MCU
+  // from a setup that has never worked, which need very different advice.
+  bool mcu_answers_reads_{false};
 
   // Pointers
   binary_sensor::BinarySensor *mcu_connected_binary_sensor_{nullptr};
