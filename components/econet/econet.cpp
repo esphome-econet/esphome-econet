@@ -13,6 +13,12 @@ static const char *const TAG = "econet";
 static const uint32_t RECEIVE_TIMEOUT = 100;
 static const uint32_t REQUEST_DELAY = 100;
 
+// A silent bus produces one unanswered read per update interval, forever. Log the first few at
+// full rate so a transient stall is still visible, then back off to one message per interval so
+// the warning cannot drown out the rest of the log.
+static const uint32_t UNANSWERED_READS_BEFORE_BACKOFF = 3;
+static const uint32_t UNANSWERED_READ_LOG_INTERVAL = 60000;
+
 static const uint8_t DST_ADR_POS = 0;
 static const uint8_t SRC_ADR_POS = 5;
 static const uint8_t LEN_POS = 10;
@@ -193,6 +199,25 @@ void Econet::parse_tx_message_() { this->parse_message_(true); }
 
 void Econet::parse_rx_message_() { this->parse_message_(false); }
 
+void Econet::log_unanswered_read_() {
+  if (this->unanswered_reads_ > UNANSWERED_READS_BEFORE_BACKOFF &&
+      this->loop_now_ - this->last_unanswered_read_log_ < UNANSWERED_READ_LOG_INTERVAL) {
+    return;
+  }
+  this->last_unanswered_read_log_ = this->loop_now_;
+  ESP_LOGW(TAG, "New read request while waiting for response to previous read request (%" PRIu32 " in a row)",
+           this->unanswered_reads_);
+  if (!this->mcu_answers_reads_) {
+    // Nothing has ever answered a read, so this is a setup problem rather than a busy MCU.
+    // These four causes account for nearly every report of this warning.
+    ESP_LOGW(TAG,
+             "No read request has ever been answered. Check that the RS485 A and B lines are not swapped, that "
+             "tx_pin and rx_pin match your board, that flow_control_pin is set if your RS485 module has a DE/RE "
+             "pin, and that dst_address (0x%lx) matches your appliance.",
+             (unsigned long) this->dst_adr_);
+  }
+}
+
 void Econet::parse_message_(bool is_tx) {
   const uint8_t *b = is_tx ? &this->tx_message_[0] : &this->rx_message_[0];
 
@@ -250,7 +275,8 @@ void Econet::parse_message_(bool is_tx) {
     }
 
     if (this->read_req_.awaiting_res) {
-      ESP_LOGW(TAG, "New read request while waiting for response to previous read request");
+      this->unanswered_reads_++;
+      this->log_unanswered_read_();
     }
     std::vector<std::string> obj_names;
     if (data_len > 4) {
@@ -318,6 +344,8 @@ void Econet::parse_message_(bool is_tx) {
         }
       }
       this->read_req_.awaiting_res = false;
+      this->unanswered_reads_ = 0;
+      this->mcu_answers_reads_ = true;
     }
   } else if (command == WRITE_COMMAND) {
     if (data_len < 1) {
