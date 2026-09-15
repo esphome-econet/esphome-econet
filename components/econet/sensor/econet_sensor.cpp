@@ -18,7 +18,8 @@ void EconetSensor::setup() {
           this->publish_state(datapoint.value_enum);
         }
       },
-      false, this->src_adr_);
+      false, this->src_adr_, /*one_shot=*/false, /*run_existing=*/true,
+      /*publish_unchanged=*/this->get_force_update());
 }
 
 void EconetSensor::dump_config() {

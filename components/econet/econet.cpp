@@ -809,7 +809,7 @@ void Econet::send_datapoint_(const EconetDatapointID &datapoint_id, const Econet
   for (const auto &listener : this->listeners_) {
     if (listener.datapoint_id.name == datapoint_id.name &&
         (listener.datapoint_id.address == 0 || listener.datapoint_id.address == datapoint_id.address)) {
-      if (changed || listener.one_shot) {
+      if (changed || listener.one_shot || listener.publish_unchanged) {
         to_notify.push_back({listener.id, listener.on_datapoint, listener.one_shot});
       }
     }
@@ -832,7 +832,7 @@ void Econet::send_datapoint_(const EconetDatapointID &datapoint_id, const Econet
 
 uint32_t Econet::register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
                                    const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint,
-                                   uint32_t src_adr, bool one_shot, bool run_existing) {
+                                   uint32_t src_adr, bool one_shot, bool run_existing, bool publish_unchanged) {
   EconetDatapointID dp_id{.name = datapoint_id, .address = src_adr};
 
   if (request_mod >= 0 && static_cast<size_t>(request_mod) < this->request_datapoint_ids_.size()) {
@@ -868,6 +868,7 @@ uint32_t Econet::register_listener(const std::string &datapoint_id, int8_t reque
       .datapoint_id = dp_id,
       .on_datapoint = func,
       .one_shot = one_shot,
+      .publish_unchanged = publish_unchanged,
   });
 
   if (run_existing) {
