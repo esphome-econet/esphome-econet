@@ -22,7 +22,7 @@ Most modern Rheem Heat Pump Water Heaters, Tankless Water Heaters, Electric Tank
 
 ## Required ESPHome Hardware
 
-ESPHome-econet is a great first ESPHome project due to the easy hardware setup. All that's needed to run ESPHome-econet is an ESP32 or ESP8266 microcontroller and an RS485 Interface, plus a phone cord to hook it up to your Rheem appliance and a USB-C charger to power it. For simplicity, we recommend the m5Stack K045 Kit, which includes both the ESP32 & RS485 components in a simple package.
+ESPHome-econet is a great first ESPHome project due to the easy hardware setup. All that's needed to run ESPHome-econet is an ESP32 or ESP8266 microcontroller and an RS485 Interface, plus a phone cord to hook it up to your Rheem appliance and a USB-C charger to power it. For simplicity, we recommend the m5Stack AtomS3 Lite paired with the m5Stack ATOMIC RS485 Base, which stack together into a single package and need no change to the default pin configuration. The m5Stack K045 Kit bundled the same combination, but m5Stack has marked it end-of-life.
 
 For full details on what hardware to buy and how to set it up, head over to the [Recommended Hardware Purchase and Setup page on our wiki](https://github.com/esphome-econet/esphome-econet/wiki/Recommended-Hardware-Purchase-and-Setup-Instructions).
 
