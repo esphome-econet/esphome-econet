@@ -21,7 +21,7 @@ water_heater:
     # TODO: once https://github.com/esphome/esphome/pull/19013 is in a release, raise min_version
     # in econet_base.yaml to it and drop the NAN checks.
     current_temperature: !lambda |-
-      if (!id(econet_climate).has_mode_state()) {
+      if (!id(econet_climate).has_reported_state()) {
         return {};
       }
       const float temp = id(econet_climate).current_temperature;
@@ -30,7 +30,7 @@ water_heater:
       }
       return temp;
     target_temperature: !lambda |-
-      if (!id(econet_climate).has_mode_state()) {
+      if (!id(econet_climate).has_reported_state()) {
         return {};
       }
       const float temp = id(econet_climate).target_temperature;
@@ -39,7 +39,7 @@ water_heater:
       }
       return temp;
     is_on: !lambda |-
-      if (!id(econet_climate).has_mode_state()) {
+      if (!id(econet_climate).has_reported_state()) {
         return {};
       }
       if (id(econet_climate).mode == climate::CLIMATE_MODE_OFF) {
@@ -52,7 +52,7 @@ water_heater:
       }
       return true;
     mode: |-
-      if (!id(econet_climate).has_mode_state()) {
+      if (!id(econet_climate).has_reported_state()) {
         return {};
       }
       if (id(econet_climate).mode == climate::CLIMATE_MODE_OFF) {

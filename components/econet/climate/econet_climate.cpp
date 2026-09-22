@@ -54,10 +54,11 @@ climate::ClimateTraits EconetClimate::traits() {
 }
 
 // A climate state message carries every value at once, so publishing before the MCU has reported
-// the mode would send the default-initialized CLIMATE_MODE_OFF as if the appliance were really off.
-// Hold every publish until that first report; the entity reads as unknown until then.
-void EconetClimate::publish_state_if_mode_known_() {
-  if (!this->mode_state_known_) {
+// the mode would send the default-initialized CLIMATE_MODE_OFF as if the appliance were really off,
+// and publishing before it has reported the preset would leave consumers of the preset guessing.
+// Hold every publish until both have been reported; the entity reads as unknown until then.
+void EconetClimate::publish_state_if_reported_() {
+  if (!this->has_reported_state()) {
     return;
   }
   this->publish_state();
@@ -74,7 +75,7 @@ void EconetClimate::register_float_listener(const char *id, float *member, bool 
           } else {
             *member = val;
           }
-          this->publish_state_if_mode_known_();
+          this->publish_state_if_reported_();
         },
         false, this->src_adr_);
   }
@@ -93,7 +94,7 @@ void EconetClimate::register_fan_listener(const char *id, std::string *member) {
           } else {
             *member = it->name;
             this->update_active_fan_mode_();
-            this->publish_state_if_mode_known_();
+            this->publish_state_if_reported_();
           }
         },
         false, this->src_adr_);
@@ -165,7 +166,7 @@ void EconetClimate::setup() {
             this->mode_state_known_ = true;
             // Which fan speed datapoint is in charge depends on the mode.
             this->update_active_fan_mode_();
-            this->publish_state_if_mode_known_();
+            this->publish_state_if_reported_();
           }
         },
         false, this->src_adr_);
@@ -184,10 +185,14 @@ void EconetClimate::setup() {
                      datapoint.value_string.c_str());
           } else {
             this->set_custom_preset_(it->name);
-            this->publish_state_if_mode_known_();
+            this->custom_preset_state_known_ = true;
+            this->publish_state_if_reported_();
           }
         },
         false, this->src_adr_);
+  } else {
+    // Nothing to wait for: an appliance without a preset datapoint has no preset to report.
+    this->custom_preset_state_known_ = true;
   }
 
   this->register_fan_listener(this->custom_fan_mode_id_, &this->fan_mode_);
@@ -201,7 +206,7 @@ void EconetClimate::setup() {
                    datapoint.value_string.c_str());
           this->follow_schedule_ = datapoint.value_enum > 0;
           this->update_active_fan_mode_();
-          this->publish_state_if_mode_known_();
+          this->publish_state_if_reported_();
         },
         false, this->src_adr_);
   }
@@ -242,11 +247,18 @@ void EconetClimate::control(const climate::ClimateCall &call) {
     }
   }
   if (call.has_custom_preset() && this->custom_preset_id_ && *this->custom_preset_id_) {
-    auto preset = call.get_custom_preset();
-    auto it = std::find_if(this->custom_presets_.begin(), this->custom_presets_.end(),
-                           [&preset](const EconetPreset &p) { return p.name == preset; });
-    if (it != this->custom_presets_.end()) {
-      this->parent_->set_enum_datapoint_value(this->custom_preset_id_, it->id, this->src_adr_);
+    // Same reasoning as the mode above: a caller that sends the preset alongside another field
+    // rebuilds it from this entity's state, or from what it last saw, so before the first report
+    // it writes a preset the appliance never told us about.
+    if (!this->custom_preset_state_known_) {
+      ESP_LOGW(TAG, "Not writing preset %s before the MCU has reported one", call.get_custom_preset().c_str());
+    } else {
+      auto preset = call.get_custom_preset();
+      auto it = std::find_if(this->custom_presets_.begin(), this->custom_presets_.end(),
+                             [&preset](const EconetPreset &p) { return p.name == preset; });
+      if (it != this->custom_presets_.end()) {
+        this->parent_->set_enum_datapoint_value(this->custom_preset_id_, it->id, this->src_adr_);
+      }
     }
   }
   if (call.has_custom_fan_mode() && this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
