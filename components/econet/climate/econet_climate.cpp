@@ -53,6 +53,16 @@ climate::ClimateTraits EconetClimate::traits() {
   return this->traits_;
 }
 
+// A climate state message carries every value at once, so publishing before the MCU has reported
+// the mode would send the default-initialized CLIMATE_MODE_OFF as if the appliance were really off.
+// Hold every publish until that first report; the entity reads as unknown until then.
+void EconetClimate::publish_state_if_mode_known_() {
+  if (!this->mode_state_known_) {
+    return;
+  }
+  this->publish_state();
+}
+
 void EconetClimate::register_float_listener(const char *id, float *member, bool is_temperature) {
   if (id && *id) {
     this->parent_->register_listener(
@@ -64,7 +74,7 @@ void EconetClimate::register_float_listener(const char *id, float *member, bool 
           } else {
             *member = val;
           }
-          this->publish_state();
+          this->publish_state_if_mode_known_();
         },
         false, this->src_adr_);
   }
@@ -83,7 +93,7 @@ void EconetClimate::register_fan_listener(const char *id, std::string *member) {
           } else {
             *member = it->name;
             this->update_active_fan_mode_();
-            this->publish_state();
+            this->publish_state_if_mode_known_();
           }
         },
         false, this->src_adr_);
@@ -152,12 +162,16 @@ void EconetClimate::setup() {
                      datapoint.value_enum, datapoint.value_string.c_str());
           } else {
             this->mode = it->mode;
+            this->mode_state_known_ = true;
             // Which fan speed datapoint is in charge depends on the mode.
             this->update_active_fan_mode_();
-            this->publish_state();
+            this->publish_state_if_mode_known_();
           }
         },
         false, this->src_adr_);
+  } else {
+    // Nothing to wait for: an appliance without a mode datapoint has no mode to report.
+    this->mode_state_known_ = true;
   }
   if (this->custom_preset_id_ && *this->custom_preset_id_) {
     this->parent_->register_listener(
@@ -170,7 +184,7 @@ void EconetClimate::setup() {
                      datapoint.value_string.c_str());
           } else {
             this->set_custom_preset_(it->name);
-            this->publish_state();
+            this->publish_state_if_mode_known_();
           }
         },
         false, this->src_adr_);
@@ -187,7 +201,7 @@ void EconetClimate::setup() {
                    datapoint.value_string.c_str());
           this->follow_schedule_ = datapoint.value_enum > 0;
           this->update_active_fan_mode_();
-          this->publish_state();
+          this->publish_state_if_mode_known_();
         },
         false, this->src_adr_);
   }
