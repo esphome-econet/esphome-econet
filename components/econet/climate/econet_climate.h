@@ -31,6 +31,12 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   void init_custom_fan_modes(size_t size) { this->custom_fan_modes_.init(size); }
   void add_custom_fan_mode(uint8_t id, const char *name) { this->custom_fan_modes_.push_back({id, name}); }
 
+  /// Whether the MCU has reported everything this entity's state is built from -- the mode, and
+  /// the preset when the appliance has one -- or there is nothing to wait for. Entities built on
+  /// top of this one, the water heater template, use it to hold back their own state until it can
+  /// be reported truthfully.
+  bool has_reported_state() const { return this->mode_state_known_ && this->custom_preset_state_known_; }
+
  protected:
   struct EconetClimateMode {
     uint8_t id;
@@ -48,6 +54,7 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   };
 
   void register_float_listener(const char *id, float *member, bool is_temperature);
+  void publish_state_if_reported_();
   void register_fan_listener(const char *id, std::string *member);
   void update_active_fan_mode_();
   bool uses_no_schedule_fan_mode_(climate::ClimateMode mode) const;
@@ -72,6 +79,8 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   FixedVector<EconetFanMode> custom_fan_modes_;
   climate::ClimateTraits traits_;
   bool traits_initialized_{false};
+  bool mode_state_known_{false};
+  bool custom_preset_state_known_{false};
   void control(const climate::ClimateCall &call) override;
   climate::ClimateTraits traits() override;
 };

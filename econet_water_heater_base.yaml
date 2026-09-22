@@ -13,25 +13,35 @@ water_heater:
       min_temperature: "110 °F"
       max_temperature: "140 °F"
       target_temperature_step: 1
-    # Return {} (don't publish) while the value is unknown: NAN never compares equal to itself,
-    # so the template water heater treats it as a change on every loop iteration and republishes
-    # the state until the MCU reports a value.
+    # Every lambda returns {} (don't publish) until the MCU has reported the mode, so the entity
+    # reads as unknown rather than reporting the mode the climate is default-initialized to, which
+    # is OFF and indistinguishable from the appliance really being off.
+    # NAN is checked for the same reason, and because NAN never compares equal to itself, so the
+    # template water heater would treat it as a change on every loop iteration and republish.
     # TODO: once https://github.com/esphome/esphome/pull/19013 is in a release, raise min_version
-    # in econet_base.yaml to it and simplify both lambdas back to a plain
-    # `return id(econet_climate).<field>;`.
+    # in econet_base.yaml to it and drop the NAN checks.
     current_temperature: !lambda |-
+      if (!id(econet_climate).has_reported_state()) {
+        return {};
+      }
       const float temp = id(econet_climate).current_temperature;
       if (std::isnan(temp)) {
         return {};
       }
       return temp;
     target_temperature: !lambda |-
+      if (!id(econet_climate).has_reported_state()) {
+        return {};
+      }
       const float temp = id(econet_climate).target_temperature;
       if (std::isnan(temp)) {
         return {};
       }
       return temp;
     is_on: !lambda |-
+      if (!id(econet_climate).has_reported_state()) {
+        return {};
+      }
       if (id(econet_climate).mode == climate::CLIMATE_MODE_OFF) {
         return false;
       }
@@ -42,6 +52,9 @@ water_heater:
       }
       return true;
     mode: |-
+      if (!id(econet_climate).has_reported_state()) {
+        return {};
+      }
       if (id(econet_climate).mode == climate::CLIMATE_MODE_OFF) {
         return water_heater::WATER_HEATER_MODE_OFF;
       }

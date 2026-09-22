@@ -30,6 +30,9 @@ climate:
 water_heater:
   - id: !extend econet_water_heater
     away: !lambda |-
+      if (!id(econet_climate).has_reported_state()) {
+        return {};
+      }
       return id(vaca_net).current_option() == "Permanent";
 
 sensor:
