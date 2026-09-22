@@ -26,6 +26,32 @@ jobs:
     with:
       force-verbose-logging: true
       esphome-version: ${{ matrix.esphome-version.shorthand }}
+  close-issue-on-success:
+    name: Close Issue on Success
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    needs: build
+    if: success()
+    steps:
+      # create-an-issue reuses a single open issue titled "Nightly Build
+      # Failed", but nothing ever closes it once the build recovers, so a
+      # stale issue sits open until someone notices. Close it here instead.
+      - name: Close the open nightly failure issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: |-
+          gh issue list --state open --label bug --limit 100 \
+            --json number,title \
+            --jq '.[] | select(.title == "Nightly Build Failed") | .number' \
+          | while read -r number; do
+              echo "Closing #${number}"
+              gh issue comment "${number}" \
+                --body "The nightly build passed: ${RUN_URL}"
+              gh issue close "${number}" --reason completed
+            done
   create-issue-on-failure:
     name: Create Issue on Failure
     runs-on: ubuntu-latest
