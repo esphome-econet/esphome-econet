@@ -14,12 +14,22 @@ on:
           - minor
           - major
 
+# A release pushes a version bump to main and then cuts a tag from it. Two
+# dispatches overlapping would race over the same ref, so queue them instead
+# of cancelling: a half-finished release should still publish its tag.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 jobs:
   update-version-strings:
     name: Update Version Strings
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      # Read-only is enough: every write below goes through the App token, not
+      # GITHUB_TOKEN. The only GITHUB_TOKEN consumer is semver-release-action,
+      # which runs with dry_run and just reads existing tags.
+      contents: read
     steps:
       - name: Generate Release Version
         id: generate_release_version
@@ -60,7 +70,6 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "Automated project versioning update"
-          push_options: '--force'
           # Attribute the commit author to whoever dispatched the workflow
           # (github.actor) instead of the token owner, with the bot as
           # committer. These match the action defaults but are explicit so
