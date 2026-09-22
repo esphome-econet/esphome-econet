@@ -3,7 +3,11 @@ name: Nightly Build
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    # Deliberately off both midnight and the top of the hour. Runs queued at
+    # popular times are delayed by GitHub's scheduler (this one had been
+    # starting ~2h20m late) and land in peak Docker Hub load, which is where
+    # the flaky "connection reset by peer" buildx failures come from.
+    - cron: "43 5 * * *"
   workflow_dispatch:
 
 concurrency:
