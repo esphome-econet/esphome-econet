@@ -59,7 +59,11 @@ jobs:
             shorthand: hvac_air_handler
           - name: tankless_water_heater
             shorthand: tlwh
-      fail-fast: true
+      # Let every appliance/platform combination report on its own. A single
+      # transient failure -- e.g. a Docker Hub reset while build-action sets up
+      # buildx -- would otherwise cancel the other 19 builds, hiding whether
+      # anything is genuinely broken and forcing a full re-run.
+      fail-fast: false
     steps:
       - uses: actions/checkout@v7
       - name: Force Manifest to Build Local Code

@@ -53,9 +53,16 @@ jobs:
       - name: Make output directory
         run: |-
           mkdir output
+      # On a release, github.ref_name is the tag (e.g. v3.8.2). On a manual
+      # dispatch it is the branch name, which would publish a manifest claiming
+      # to be version "main", so label those builds "dev" instead. Passed via
+      # env and --arg rather than interpolated into the jq program, so the ref
+      # name is data instead of script.
       - name: Consolidate manifests
+        env:
+          VERSION: ${{ github.event_name == 'release' && github.ref_name || 'dev' }}
         run: |-
-          jq -s '{"name": "esphome-econet", "new_install_improv_wait_time": 15, "new_install_prompt_erase": false, "version": "${{ github.ref_name }}", "home_assistant_domain": "esphome", "builds":.}' firmwares/*/econet-${{ matrix.appliance.shorthand }}-*/manifest.json > output/econet-${{ matrix.appliance.shorthand }}.json
+          jq -s --arg version "$VERSION" '{"name": "esphome-econet", "new_install_improv_wait_time": 15, "new_install_prompt_erase": false, "version": $version, "home_assistant_domain": "esphome", "builds":.}' firmwares/*/econet-${{ matrix.appliance.shorthand }}-*/manifest.json > output/econet-${{ matrix.appliance.shorthand }}.json
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:

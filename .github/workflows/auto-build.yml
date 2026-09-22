@@ -6,7 +6,10 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  # pull_request.number is empty on workflow_dispatch, which would put every
+  # manual run in one shared group and have unrelated branches cancel each
+  # other. Fall back to the ref in that case.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
