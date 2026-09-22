@@ -224,11 +224,21 @@ void EconetClimate::control(const climate::ClimateCall &call) {
   this->set_float_datapoint(this->target_dehumidification_level_id_, call.get_target_humidity(), false);
 
   if (call.get_mode().has_value() && this->mode_id_ && *this->mode_id_) {
-    climate::ClimateMode mode = call.get_mode().value();
-    auto it = std::find_if(this->modes_.begin(), this->modes_.end(),
-                           [&mode](const EconetClimateMode &m) { return m.mode == mode; });
-    if (it != this->modes_.end()) {
-      this->parent_->set_enum_datapoint_value(this->mode_id_, it->id, this->src_adr_);
+    // Callers that send the mode alongside another field rebuild it from this entity's state, so
+    // before the MCU has reported one they send whatever climate default-initializes to, which is
+    // CLIMATE_MODE_OFF. The water heater template does exactly that on a target temperature
+    // change, so accepting the write would turn the appliance off on a temperature change that
+    // lands in the window after a restart. Drop it and keep the rest of the call.
+    if (!this->mode_state_known_) {
+      ESP_LOGW(TAG, "Not writing mode %s before the MCU has reported one",
+               LOG_STR_ARG(climate::climate_mode_to_string(call.get_mode().value())));
+    } else {
+      climate::ClimateMode mode = call.get_mode().value();
+      auto it = std::find_if(this->modes_.begin(), this->modes_.end(),
+                             [&mode](const EconetClimateMode &m) { return m.mode == mode; });
+      if (it != this->modes_.end()) {
+        this->parent_->set_enum_datapoint_value(this->mode_id_, it->id, this->src_adr_);
+      }
     }
   }
   if (call.has_custom_preset() && this->custom_preset_id_ && *this->custom_preset_id_) {
