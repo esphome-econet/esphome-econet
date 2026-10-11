@@ -1,4 +1,5 @@
 #include "econet.h"
+#include "esphome/core/alloc_helpers.h"
 #include "esphome/core/application.h"
 
 #include <cinttypes>
