@@ -24,6 +24,10 @@ static const char *const TAG = "econet.climate";
 void EconetClimate::dump_config() {
   LOG_CLIMATE("", "Econet Climate", this);
   this->dump_traits_(TAG);
+  for (const auto &entry : this->action_datapoints_) {
+    ESP_LOGCONFIG(TAG, "  Action %s while datapoint %s is on",
+                  LOG_STR_ARG(climate::climate_action_to_string(entry.action)), entry.id);
+  }
 }
 
 climate::ClimateTraits EconetClimate::traits() {
@@ -42,6 +46,9 @@ climate::ClimateTraits EconetClimate::traits() {
   }
   if (this->target_temperature_high_id_ && *this->target_temperature_high_id_) {
     traits.add_feature_flags(climate::CLIMATE_SUPPORTS_TWO_POINT_TARGET_TEMPERATURE);
+  }
+  if (!this->action_datapoints_.empty()) {
+    traits.add_feature_flags(climate::CLIMATE_SUPPORTS_ACTION);
   }
   if (this->mode_id_ && *this->mode_id_) {
     for (const auto &entry : this->modes_) {
@@ -127,6 +134,26 @@ void EconetClimate::update_active_fan_mode_() {
   this->set_custom_fan_mode_(active->c_str(), active->length());
 }
 
+// Report what the appliance is doing from the datapoints listed in action_datapoints, in the order
+// they are listed: the first one that is on wins and none on means idle. With a mode datapoint,
+// a mode of off reports off whatever the datapoints say.
+void EconetClimate::update_action_() {
+  if (this->action_datapoints_.empty()) {
+    return;
+  }
+  if (this->mode_id_ && *this->mode_id_ && this->mode == climate::CLIMATE_MODE_OFF) {
+    this->action = climate::CLIMATE_ACTION_OFF;
+    return;
+  }
+  for (const auto &entry : this->action_datapoints_) {
+    if (entry.active) {
+      this->action = entry.action;
+      return;
+    }
+  }
+  this->action = climate::CLIMATE_ACTION_IDLE;
+}
+
 void EconetClimate::setup() {
   if (this->custom_preset_id_ && *this->custom_preset_id_) {
     std::vector<const char *> presets;
@@ -164,6 +191,8 @@ void EconetClimate::setup() {
           } else {
             this->mode = it->mode;
             this->mode_state_known_ = true;
+            // An appliance switched off is off, whatever its action datapoints say.
+            this->update_action_();
             // Which fan speed datapoint is in charge depends on the mode.
             this->update_active_fan_mode_();
             this->publish_state_if_reported_();
@@ -197,6 +226,30 @@ void EconetClimate::setup() {
 
   this->register_fan_listener(this->custom_fan_mode_id_, &this->fan_mode_);
   this->register_fan_listener(this->custom_fan_mode_no_schedule_id_, &this->fan_mode_no_schedule_);
+
+  for (size_t i = 0; i < this->action_datapoints_.size(); i++) {
+    this->parent_->register_listener(
+        this->action_datapoints_[i].id, this->request_mod_, this->request_once_,
+        [this, i](const EconetDatapoint &datapoint) {
+          // On means a nonzero value: an enum other than its first (off) option, or a nonzero float.
+          bool active = false;
+          switch (datapoint.type) {
+            case EconetDatapointType::FLOAT:
+              active = datapoint.value_float != 0.0f;
+              break;
+            case EconetDatapointType::TEXT:
+            case EconetDatapointType::ENUM_TEXT:
+              active = datapoint.value_enum != 0;
+              break;
+            default:
+              break;
+          }
+          this->action_datapoints_[i].active = active;
+          this->update_action_();
+          this->publish_state_if_reported_();
+        },
+        false, this->src_adr_);
+  }
 
   if (this->follow_schedule_id_ && *this->follow_schedule_id_) {
     this->parent_->register_listener(

@@ -30,6 +30,10 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   void add_custom_preset(uint8_t id, const char *name) { this->custom_presets_.push_back({id, name}); }
   void init_custom_fan_modes(size_t size) { this->custom_fan_modes_.init(size); }
   void add_custom_fan_mode(uint8_t id, const char *name) { this->custom_fan_modes_.push_back({id, name}); }
+  void init_action_datapoints(size_t size) { this->action_datapoints_.init(size); }
+  void add_action_datapoint(const char *id, climate::ClimateAction action) {
+    this->action_datapoints_.push_back({id, action, false});
+  }
 
   /// Whether the MCU has reported everything this entity's state is built from -- the mode, and
   /// the preset when the appliance has one -- or there is nothing to wait for. Entities built on
@@ -53,10 +57,17 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
     const char *name;
   };
 
+  struct EconetActionDatapoint {
+    const char *id;
+    climate::ClimateAction action;
+    bool active;
+  };
+
   void register_float_listener(const char *id, float *member, bool is_temperature);
   void publish_state_if_reported_();
   void register_fan_listener(const char *id, std::string *member);
   void update_active_fan_mode_();
+  void update_action_();
   bool uses_no_schedule_fan_mode_(climate::ClimateMode mode) const;
   void set_float_datapoint(const char *id, optional<float> value, bool is_temperature);
 
@@ -77,6 +88,7 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   FixedVector<EconetClimateMode> modes_;
   FixedVector<EconetPreset> custom_presets_;
   FixedVector<EconetFanMode> custom_fan_modes_;
+  FixedVector<EconetActionDatapoint> action_datapoints_;
   climate::ClimateTraits traits_;
   bool traits_initialized_{false};
   bool mode_state_known_{false};

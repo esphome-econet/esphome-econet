@@ -28,6 +28,9 @@ CONF_FOLLOW_SCHEDULE_DATAPOINT = "follow_schedule_datapoint"
 CONF_MODES = "modes"
 CONF_CURRENT_HUMIDITY_DATAPOINT = "current_humidity_datapoint"
 CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT = "target_dehumidification_level_datapoint"
+CONF_ACTION_DATAPOINTS = "action_datapoints"
+CONF_DATAPOINT = "datapoint"
+CONF_ACTION = "action"
 
 EconetClimate = econet_ns.class_(
     "EconetClimate", climate.Climate, cg.Component, EconetClient
@@ -37,6 +40,25 @@ EconetClimate = econet_ns.class_(
 ensure_climate_mode_map = unique_value_map(climate.validate_climate_mode)
 
 ensure_option_map = unique_value_map(cv.string_strict)
+
+
+def validate_reported_action(value):
+    """Accept any climate action except the two this component derives itself."""
+    value = climate.validate_climate_action(value)
+    if value in ("OFF", "IDLE"):
+        raise cv.Invalid(
+            f"{value} is reported automatically: OFF while the mode is off, IDLE while "
+            f"none of the {CONF_ACTION_DATAPOINTS} is on."
+        )
+    return value
+
+
+ACTION_DATAPOINT_SCHEMA = cv.Schema(
+    {
+        cv.Required(CONF_DATAPOINT): cv.string,
+        cv.Required(CONF_ACTION): validate_reported_action,
+    }
+)
 
 
 def validate_target_temperature_datapoints(config):
@@ -79,6 +101,9 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(
                 CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT, default=""
             ): cv.string,
+            cv.Optional(CONF_ACTION_DATAPOINTS, default=[]): cv.ensure_list(
+                ACTION_DATAPOINT_SCHEMA
+            ),
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
@@ -137,3 +162,7 @@ async def to_code(config):
             config[CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT]
         )
     )
+    if action_datapoints := config[CONF_ACTION_DATAPOINTS]:
+        cg.add(var.init_action_datapoints(len(action_datapoints)))
+        for item in action_datapoints:
+            cg.add(var.add_action_datapoint(item[CONF_DATAPOINT], item[CONF_ACTION]))
