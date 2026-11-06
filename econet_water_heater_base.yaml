@@ -16,28 +16,16 @@ water_heater:
     # Every lambda returns {} (don't publish) until the MCU has reported the mode, so the entity
     # reads as unknown rather than reporting the mode the climate is default-initialized to, which
     # is OFF and indistinguishable from the appliance really being off.
-    # NAN is checked for the same reason, and because NAN never compares equal to itself, so the
-    # template water heater would treat it as a change on every loop iteration and republish.
-    # TODO: once https://github.com/esphome/esphome/pull/19013 is in a release, raise min_version
-    # in econet_base.yaml to it and drop the NAN checks.
     current_temperature: !lambda |-
       if (!id(econet_climate).has_reported_state()) {
         return {};
       }
-      const float temp = id(econet_climate).current_temperature;
-      if (std::isnan(temp)) {
-        return {};
-      }
-      return temp;
+      return id(econet_climate).current_temperature;
     target_temperature: !lambda |-
       if (!id(econet_climate).has_reported_state()) {
         return {};
       }
-      const float temp = id(econet_climate).target_temperature;
-      if (std::isnan(temp)) {
-        return {};
-      }
-      return temp;
+      return id(econet_climate).target_temperature;
     is_on: !lambda |-
       if (!id(econet_climate).has_reported_state()) {
         return {};
