@@ -7,10 +7,6 @@ substitutions:
   water_heater_off_preset: "Off"
   water_heater_default_mode: "water_heater::WATER_HEATER_MODE_HEAT_PUMP"
   water_heater_default_mode_preset: "Heat Pump"
-  # Climate action reported while each heat source runs. Set either to another action
-  # (COOLING, DRYING, FAN) to tell them apart, for example on a history graph.
-  heating_element_action: "HEATING"
-  heatpump_compressor_action: "HEATING"
 
 packages:
   econet: !include econet_electric_water_heater_common.yaml
@@ -28,11 +24,6 @@ climate:
       4: "Electric"
       # Vacation preset doesn't seem to have any effect
       # 5: "Vacation"
-    action_datapoints:
-      - datapoint: HEATCTRL
-        action: "${heating_element_action}"
-      - datapoint: COMP_RLY
-        action: "${heatpump_compressor_action}"
 
 water_heater:
   - id: !extend econet_water_heater

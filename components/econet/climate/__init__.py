@@ -28,9 +28,9 @@ CONF_FOLLOW_SCHEDULE_DATAPOINT = "follow_schedule_datapoint"
 CONF_MODES = "modes"
 CONF_CURRENT_HUMIDITY_DATAPOINT = "current_humidity_datapoint"
 CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT = "target_dehumidification_level_datapoint"
-CONF_ACTION_DATAPOINTS = "action_datapoints"
-CONF_DATAPOINT = "datapoint"
-CONF_ACTION = "action"
+CONF_ACTION_DATAPOINT = "action_datapoint"
+CONF_ACTIONS = "actions"
+CONF_DEFAULT_ACTION = "default_action"
 
 EconetClimate = econet_ns.class_(
     "EconetClimate", climate.Climate, cg.Component, EconetClient
@@ -42,23 +42,28 @@ ensure_climate_mode_map = unique_value_map(climate.validate_climate_mode)
 ensure_option_map = unique_value_map(cv.string_strict)
 
 
-def validate_reported_action(value):
-    """Accept any climate action except the two this component derives itself."""
-    value = climate.validate_climate_action(value)
-    if value in ("OFF", "IDLE"):
+def ensure_climate_action_map(value):
+    """Validate a {uint8: action} mapping.
+
+    Unlike modes and presets, several values may report the same action: the action is
+    only ever read from the appliance, never written back.
+    """
+    cv.check_not_templatable(value)
+    return cv.Schema({cv.uint8_t: climate.validate_climate_action})(value)
+
+
+def validate_action_datapoint(config):
+    """Require the action datapoint and something to map its values with, or neither."""
+    has_mapping = bool(config[CONF_ACTIONS]) or CONF_DEFAULT_ACTION in config
+    if config[CONF_ACTION_DATAPOINT] and not has_mapping:
         raise cv.Invalid(
-            f"{value} is reported automatically: OFF while the mode is off, IDLE while "
-            f"none of the {CONF_ACTION_DATAPOINTS} is on."
+            f"{CONF_ACTION_DATAPOINT} needs {CONF_ACTIONS}, {CONF_DEFAULT_ACTION} or both."
         )
-    return value
-
-
-ACTION_DATAPOINT_SCHEMA = cv.Schema(
-    {
-        cv.Required(CONF_DATAPOINT): cv.string,
-        cv.Required(CONF_ACTION): validate_reported_action,
-    }
-)
+    if has_mapping and not config[CONF_ACTION_DATAPOINT]:
+        raise cv.Invalid(
+            f"{CONF_ACTIONS} and {CONF_DEFAULT_ACTION} need {CONF_ACTION_DATAPOINT}."
+        )
+    return config
 
 
 def validate_target_temperature_datapoints(config):
@@ -101,14 +106,15 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(
                 CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT, default=""
             ): cv.string,
-            cv.Optional(CONF_ACTION_DATAPOINTS, default=[]): cv.ensure_list(
-                ACTION_DATAPOINT_SCHEMA
-            ),
+            cv.Optional(CONF_ACTION_DATAPOINT, default=""): cv.string,
+            cv.Optional(CONF_ACTIONS, default={}): ensure_climate_action_map,
+            cv.Optional(CONF_DEFAULT_ACTION): climate.validate_climate_action,
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
     .extend(ECONET_CLIENT_SCHEMA),
     validate_target_temperature_datapoints,
+    validate_action_datapoint,
 )
 
 
@@ -162,7 +168,10 @@ async def to_code(config):
             config[CONF_TARGET_DEHUMIDIFICATION_LEVEL_DATAPOINT]
         )
     )
-    if action_datapoints := config[CONF_ACTION_DATAPOINTS]:
-        cg.add(var.init_action_datapoints(len(action_datapoints)))
-        for item in action_datapoints:
-            cg.add(var.add_action_datapoint(item[CONF_DATAPOINT], item[CONF_ACTION]))
+    cg.add(var.set_action_id(config[CONF_ACTION_DATAPOINT]))
+    if actions := config[CONF_ACTIONS]:
+        cg.add(var.init_actions(len(actions)))
+        for key, value in actions.items():
+            cg.add(var.add_action(key, value))
+    if CONF_DEFAULT_ACTION in config:
+        cg.add(var.set_default_action(config[CONF_DEFAULT_ACTION]))

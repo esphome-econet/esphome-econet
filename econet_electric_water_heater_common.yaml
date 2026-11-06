@@ -26,6 +26,13 @@ climate:
       0: "OFF"
       1: "HEAT"
     custom_preset_datapoint: WHTRCNFG
+    # WHTRMODE reads "Off", "Off: No Demand", or how the heater is meeting demand, such as
+    # "High Demand" or "Heat Pump", so every value not listed here means it is heating.
+    action_datapoint: WHTRMODE
+    actions:
+      0: "OFF"
+      4: "IDLE"
+    default_action: "HEATING"
 
 water_heater:
   - id: !extend econet_water_heater
