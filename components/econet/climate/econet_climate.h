@@ -30,6 +30,10 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   void add_custom_preset(uint8_t id, const char *name) { this->custom_presets_.push_back({id, name}); }
   void init_custom_fan_modes(size_t size) { this->custom_fan_modes_.init(size); }
   void add_custom_fan_mode(uint8_t id, const char *name) { this->custom_fan_modes_.push_back({id, name}); }
+  void set_action_id(const char *id) { this->action_id_ = id; }
+  void init_actions(size_t size) { this->actions_.init(size); }
+  void add_action(uint8_t id, climate::ClimateAction action) { this->actions_.push_back({id, action}); }
+  void set_default_action(climate::ClimateAction action) { this->default_action_ = action; }
 
   /// Whether the MCU has reported everything this entity's state is built from -- the mode, and
   /// the preset when the appliance has one -- or there is nothing to wait for. Entities built on
@@ -53,6 +57,11 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
     const char *name;
   };
 
+  struct EconetClimateAction {
+    uint8_t id;
+    climate::ClimateAction action;
+  };
+
   void register_float_listener(const char *id, float *member, bool is_temperature);
   void publish_state_if_reported_();
   void register_fan_listener(const char *id, std::string *member);
@@ -71,16 +80,20 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   const char *follow_schedule_id_{nullptr};
   const char *current_humidity_id_{nullptr};
   const char *target_dehumidification_level_id_{nullptr};
+  const char *action_id_{nullptr};
   optional<bool> follow_schedule_;
   std::string fan_mode_;
   std::string fan_mode_no_schedule_;
   FixedVector<EconetClimateMode> modes_;
   FixedVector<EconetPreset> custom_presets_;
   FixedVector<EconetFanMode> custom_fan_modes_;
+  FixedVector<EconetClimateAction> actions_;
+  optional<climate::ClimateAction> default_action_;
   climate::ClimateTraits traits_;
   bool traits_initialized_{false};
   bool mode_state_known_{false};
   bool custom_preset_state_known_{false};
+  bool action_state_known_{false};
   void control(const climate::ClimateCall &call) override;
   climate::ClimateTraits traits() override;
 };
