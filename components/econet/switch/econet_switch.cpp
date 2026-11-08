@@ -19,7 +19,6 @@ void EconetSwitch::setup() {
 void EconetSwitch::write_state(bool state) {
   ESP_LOGV(TAG, "Setting switch %s: %s", this->switch_id_, ONOFF(state));
   this->parent_->set_enum_datapoint_value(this->switch_id_, state, this->src_adr_);
-  this->publish_state(state);
 }
 
 void EconetSwitch::dump_config() {

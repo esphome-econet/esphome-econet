@@ -13,9 +13,13 @@ substitutions:
 
 esphome:
   name: $devicename
-  platform: esp32
-  board: esp32dev
   name_add_mac_suffix: false
+
+esp32:
+  board: esp32dev
+  variant: esp32
+  framework:
+    type: esp-idf
 
 packages:
   econet:

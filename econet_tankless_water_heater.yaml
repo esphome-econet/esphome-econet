@@ -111,6 +111,9 @@ sensor:
     entity_category: "diagnostic"
     # yamllint disable rule:line-length
     lambda: |-
+      if (std::isnan(id(temp_out).state) || std::isnan(id(temp_in).state) || std::isnan(id(flow_rate).state)) {
+        return {};
+      }
       return max((id(temp_out).state - id(temp_in).state) * id(flow_rate).state * 8.334 * 60 / 0.92 / 1000, 0.0);
     # yamllint enable rule:line-length
     update_interval: ${econet_update_interval}

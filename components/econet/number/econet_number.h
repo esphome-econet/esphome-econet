@@ -17,7 +17,7 @@ class EconetNumber : public number::Number, public Component, public EconetClien
   void control(float value) override;
 
   const char *number_id_{nullptr};
-  EconetDatapointType type_{};
+  EconetDatapointType type_{EconetDatapointType::FLOAT};
 };
 
 }  // namespace econet
