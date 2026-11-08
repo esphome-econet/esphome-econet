@@ -360,6 +360,9 @@ binary_sensor:
     device_class: running
     entity_category: "diagnostic"
     lambda: |-
+      if (std::isnan(id(odu_defrost_sensor).state)) {
+        return {};
+      }
       return (id(odu_defrost_sensor).state == 1);
 
 text_sensor:

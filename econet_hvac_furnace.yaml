@@ -423,6 +423,10 @@ interval:
   - interval: 5s
     then:
       - lambda: |-
+          if (std::isnan(id(furnace_hh_btus).state) || std::isnan(id(heat_capacity).state) ||
+              std::isnan(id(furnace_afue).state) || id(furnace_afue).state <= 0) {
+            return;
+          }
           float furnace_kbtus = id(furnace_hh_btus).state / 1000.0 * id(heat_capacity).state / 100.0;
           float furnace_eff = id(furnace_afue).state / 100.0;
           id(instant_btu_output).publish_state(furnace_kbtus);

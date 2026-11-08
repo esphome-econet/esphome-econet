@@ -42,9 +42,7 @@ void EconetNumber::control(float value) {
     // No write was sent, so don't publish the new value: doing so would report success in
     // Home Assistant for a change that never reached the unit.
     ESP_LOGW(TAG, "Cannot write number %s: datapoint type is not writable", this->number_id_);
-    return;
   }
-  this->publish_state(value);
 }
 
 void EconetNumber::dump_config() {

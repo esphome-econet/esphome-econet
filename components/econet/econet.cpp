@@ -87,7 +87,7 @@ void join_obj_names(const StaticVector<const std::string *, MAX_OBJECTS_PER_REQU
     data->push_back(0);
     data->push_back(0);
     size_t s_len = s.length();
-    for (int j = 0; j < OBJ_NAME_SIZE; j++) {
+    for (size_t j = 0; j < OBJ_NAME_SIZE; j++) {
       data->push_back(j < s_len ? s[j] : 0);
     }
   }
@@ -549,7 +549,7 @@ void Econet::write_value_(const std::string &object, EconetDatapointType type, f
   data.push_back(0);
 
   size_t obj_len = object.length();
-  for (int j = 0; j < OBJ_NAME_SIZE; j++) {
+  for (size_t j = 0; j < OBJ_NAME_SIZE; j++) {
     data.push_back(j < obj_len ? object[j] : 0);
   }
 
@@ -905,7 +905,7 @@ uint32_t Econet::register_listener(const std::string &datapoint_id, int8_t reque
     // this->datapoints_ (e.g. via a synchronous write) while we're iterating it.
     std::vector<EconetDatapoint> matching;
     for (const auto &entry : this->datapoints_) {
-      if (entry.id.name == datapoint_id && (entry.id.address == src_adr || entry.id.address == 0)) {
+      if (entry.id.name == datapoint_id && entry.id.address == src_adr) {
         matching.push_back(entry.data);
       }
     }
