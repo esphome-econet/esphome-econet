@@ -37,6 +37,6 @@ repos:
 
 # Configuration per https://pre-commit.ci/#configuration
 ci:
-  autoupdate_schedule: monthly
+  autoupdate_schedule: quarterly
   skip: [no-commit-to-branch]
   autoupdate_commit_msg: 'ci(pre-commit.ci): pre-commit autoupdate'
