@@ -35,6 +35,16 @@ climate:
       2: "HEAT_COOL"
       3: "FAN_ONLY"
       4: "OFF"
+    # HVACMODE reads "Off" (also when idle), "Fan", "Low Cool", "High Cool", "Low Heat", or
+    # "High Heat".
+    action_datapoint: HVACMODE
+    actions:
+      0: "IDLE"
+      1: "FAN"
+      2: "COOLING"
+      3: "COOLING"
+      4: "HEATING"
+      5: "HEATING"
     custom_fan_mode_datapoint: STAT_FAN
     custom_fan_mode_no_schedule_datapoint: STATNFAN
     follow_schedule_datapoint: SCHEDULE
