@@ -16,6 +16,9 @@ void EconetSensor::setup() {
         } else if (datapoint.type == EconetDatapointType::ENUM_TEXT) {
           ESP_LOGV(TAG, "MCU reported sensor %s is: %u", this->sensor_id_, datapoint.value_enum);
           this->publish_state(datapoint.value_enum);
+        } else if (datapoint.type != EconetDatapointType::UNSUPPORTED) {
+          ESP_LOGW(TAG, "Unexpected datapoint type %u for sensor %s", static_cast<uint8_t>(datapoint.type),
+                   this->sensor_id_);
         }
       },
       false, this->src_adr_, /*one_shot=*/false, /*run_existing=*/true,
