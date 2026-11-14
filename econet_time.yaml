@@ -11,24 +11,18 @@ time:
               format: "System clock was synced; synchronizing microcontroller to Home Assistant time"
               level: INFO
               tag: homeassistant_time_sync
-          - number.set:
-              id: irtc_year
-              value: !lambda return id(homeassistant_time).now().year - 2000;
-          - number.set:
-              id: irtc_month
-              value: !lambda return id(homeassistant_time).now().month;
-          - number.set:
-              id: irtc_day
-              value: !lambda return id(homeassistant_time).now().day_of_month;
-          - number.set:
-              id: irtc_hour
-              value: !lambda return id(homeassistant_time).now().hour;
-          - number.set:
-              id: irtc_minute
-              value: !lambda return id(homeassistant_time).now().minute;
-          - number.set:
-              id: irtc_seconds
-              value: !lambda return id(homeassistant_time).now().second;
+          - lambda: |-
+              const auto now = id(homeassistant_time).now();
+              if (!now.is_valid() || now.year < 2024 || now.year > 2099) {
+                ESP_LOGW("homeassistant_time_sync", "System clock time is out of range (year=%d)", now.year);
+                return;
+              }
+              id(irtc_year).make_call().set_value(now.year - 2000).perform();
+              id(irtc_month).make_call().set_value(now.month).perform();
+              id(irtc_day).make_call().set_value(now.day_of_month).perform();
+              id(irtc_hour).make_call().set_value(now.hour).perform();
+              id(irtc_minute).make_call().set_value(now.minute).perform();
+              id(irtc_seconds).make_call().set_value(now.second).perform();
         else:
           - logger.log:
               format: "System clock was synced but time is invalid"
@@ -44,24 +38,28 @@ text_sensor:
     disabled_by_default: true
     lambda: |-
       if (std::isnan(id(irtc_year).state) || std::isnan(id(irtc_month).state) ||
-          std::isnan(id(irtc_day).state) || !id(irtc_day).state ||
+          id(irtc_month).state < 1.0f || id(irtc_month).state > 12.0f ||
+          std::isnan(id(irtc_day).state) || id(irtc_day).state < 1.0f || id(irtc_day).state > 31.0f ||
           std::isnan(id(irtc_hour).state) || std::isnan(id(irtc_minute).state) ||
           std::isnan(id(irtc_seconds).state)) {
         // Return undefined if values haven't been successfully fetched yet
         return {};
       }
-      tm controller_time = {
-        .tm_sec = (int) id(irtc_seconds).state,
-        .tm_min = (int) id(irtc_minute).state,
-        .tm_hour = (int) id(irtc_hour).state,
-        .tm_mday = (int) id(irtc_day).state,
-        .tm_mon = (int) id(irtc_month).state - 1,  // C++: 0-11, econet: 1-12
-        .tm_year = (int) id(irtc_year).state + 2000 - 1900  // C++: years since 1900, econet: since 2000
-      };
-      char time_string[sizeof("yyyy-mm-ddThh:mm:ss-hhmm")];
-      std::strftime(time_string, sizeof(time_string), "%FT%T%z", &controller_time);
-      std::string controller_time_string(time_string);
-      return controller_time_string;
+      tm controller_time{};
+      controller_time.tm_sec = static_cast<int>(id(irtc_seconds).state);
+      controller_time.tm_min = static_cast<int>(id(irtc_minute).state);
+      controller_time.tm_hour = static_cast<int>(id(irtc_hour).state);
+      controller_time.tm_mday = static_cast<int>(id(irtc_day).state);
+      controller_time.tm_mon = static_cast<int>(id(irtc_month).state) - 1;  // C++: 0-11, econet: 1-12
+      controller_time.tm_year = static_cast<int>(id(irtc_year).state) + 2000 - 1900;  // C++: since 1900
+      controller_time.tm_isdst = -1;
+      std::mktime(&controller_time);
+      char time_string[32];
+      size_t len = std::strftime(time_string, sizeof(time_string), "%FT%T%z", &controller_time);
+      if (len == 0) {
+        return {};
+      }
+      return std::string(time_string, len);
 number:
   - platform: econet
     name: "IRTC Year"

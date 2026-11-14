@@ -9,7 +9,7 @@ substitutions:
   zone6name: Zone6Name-test
   devicename: esphome-econet
   friendly_name: HVAC
-  logger_level: VERBOSE
+  logger_level: DEBUG
 
 esphome:
   name: $devicename

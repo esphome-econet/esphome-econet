@@ -9,12 +9,18 @@ econet:
       src_address: ${zone_controlboard1_address}
       then:
         - lambda: |-
-            if (x.size() <= 14) {
+            if (x.size() < 14) {
               return;
             }
-            id(zone1_percent_open).publish_state((x[11] *100/35));
-            id(zone2_percent_open).publish_state((x[12] *100/35));
-            id(zone3_percent_open).publish_state((x[13] *100/35));
+            if (x[11] != 0xFF) {
+              id(zone1_percent_open).publish_state(x[11] * 100.0f / 35.0f);
+            }
+            if (x[12] != 0xFF) {
+              id(zone2_percent_open).publish_state(x[12] * 100.0f / 35.0f);
+            }
+            if (x[13] != 0xFF) {
+              id(zone3_percent_open).publish_state(x[13] * 100.0f / 35.0f);
+            }
 
 sensor:
   - platform: template

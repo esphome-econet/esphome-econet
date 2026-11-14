@@ -116,12 +116,80 @@ jobs:
           name: econet-${{ matrix.appliance.shorthand }}-${{ matrix.platform }}
           path: output
           retention-days: 7
+  validate-addons:
+    name: Validate Add-on Packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create add-on test manifests
+        env:
+          LOGGER_LEVEL: ${{ inputs.force-verbose-logging && 'VERY_VERBOSE' || 'DEBUG' }}
+        run: |
+          cat <<'EOF' > build-yaml/ci-addons-standalone-bypass.yaml
+          ---
+          substitutions:
+            tx_pin: GPIO19
+            rx_pin: GPIO22
+            external_components_source: ../components
+            zone3name: Bypass3
+            zone6name: Bypass6
+          esp32:
+            board: esp32dev
+            variant: esp32
+            framework:
+              type: esp-idf
+          packages:
+            econet: !include ../econet_hvac_air_handler.yaml
+            bypass3: !include ../hvac-zone-yaml/econet_hvac_zone3_electronicbypass.yaml
+            bypass6: !include ../hvac-zone-yaml/econet_hvac_zone6_electronicbypass.yaml
+          EOF
+          cat <<EOF > build-yaml/ci-addons-full.yaml
+          ---
+          substitutions:
+            tx_pin: GPIO19
+            rx_pin: GPIO22
+            external_components_source: ../components
+            logger_level: ${LOGGER_LEVEL}
+            zone1name: Zone1
+            zone2name: Zone2
+            zone3name: Zone3
+            zone4name: Zone4
+            zone5name: Zone5
+            zone6name: Bypass6
+          esp32:
+            board: esp32dev
+            variant: esp32
+            framework:
+              type: esp-idf
+          packages:
+            econet: !include ../econet_hvac_furnace.yaml
+            odu: !include ../econet_hvac_odu.yaml
+            basic: !include ../econet_hvac_basic_settings.yaml
+            time: !include ../econet_time.yaml
+            z123: !include ../hvac-zone-yaml/econet_hvac_zone123status.yaml
+            z456: !include ../hvac-zone-yaml/econet_hvac_zone456status.yaml
+            z1: !include ../hvac-zone-yaml/econet_hvac_zone1.yaml
+            z2: !include ../hvac-zone-yaml/econet_hvac_zone2.yaml
+            z3: !include ../hvac-zone-yaml/econet_hvac_zone3.yaml
+            z4: !include ../hvac-zone-yaml/econet_hvac_zone4.yaml
+            z6b: !include ../hvac-zone-yaml/econet_hvac_zone6_electronicbypass.yaml
+          EOF
+      - name: Validate standalone electronic bypass config
+        run: |
+          docker run --rm -v "${PWD}:/config" \
+            "ghcr.io/esphome/esphome:${{ inputs.esphome-version }}" \
+            config build-yaml/ci-addons-standalone-bypass.yaml
+      - name: Build full add-ons firmware
+        uses: esphome/build-action@v7
+        with:
+          yaml-file: build-yaml/ci-addons-full.yaml
+          version: ${{ inputs.esphome-version }}
   build-status:  # Needed to provide an overall status on this job rather than just the various matrix jobs
     name: Compile Build Status
-    needs: build
+    needs: [build, validate-addons]
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
       - name: Check build matrix status
-        if: ${{ needs.build.result != 'success' }}
+        if: ${{ needs.build.result != 'success' || needs.validate-addons.result != 'success' }}
         run: exit 1
