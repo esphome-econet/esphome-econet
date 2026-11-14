@@ -6,9 +6,9 @@
 #include "esphome/components/uart/uart.h"
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <functional>
 #include <map>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -64,7 +64,7 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
   }
   switch (lhs.type) {
     case EconetDatapointType::FLOAT:
-      return lhs.value_float == rhs.value_float;
+      return lhs.value_float == rhs.value_float || (std::isnan(lhs.value_float) && std::isnan(rhs.value_float));
     case EconetDatapointType::TEXT:
       return lhs.value_string == rhs.value_string;
     case EconetDatapointType::ENUM_TEXT:
@@ -72,7 +72,7 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
     case EconetDatapointType::RAW:
       return lhs.value_raw == rhs.value_raw;
     case EconetDatapointType::UNSUPPORTED:
-      return false;
+      return true;
   }
   return false;
 }
@@ -94,6 +94,7 @@ struct RequestModUpdateInterval {
 struct DatapointEntry {
   EconetDatapointID id;
   EconetDatapoint data;
+  bool from_mcu{false};
 };
 
 // Identification datapoints (HRHEEMID, HWELL_ID) carry two fixed-width 24-character fields --
@@ -110,7 +111,10 @@ class Econet : public Component, public uart::UARTDevice {
   void dump_config() override;
 
   void set_src_address(uint32_t address) { this->src_adr_ = address; }
-  void set_dst_address(uint32_t address) { this->dst_adr_ = address; }
+  void set_dst_address(uint32_t address) {
+    this->dst_adr_ = address;
+    this->dst_adr_configured_ = address != 0;
+  }
   void add_request_mod_address(uint8_t mod, uint32_t address) {
     if (mod < MAX_REQUEST_MODS) {
       this->request_mod_addresses_[mod] = address;
@@ -142,9 +146,8 @@ class Econet : public Component, public uart::UARTDevice {
                              const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint = false,
                              uint32_t src_adr = 0, bool one_shot = false, bool run_existing = true,
                              bool publish_unchanged = false);
-  // Removes a previously registered listener. Safe to call with an id that has already
-  // fired (one-shot) or been unregistered; returns false in that case. Must not be called
-  // from within send_datapoint_()'s own iteration over listeners_ (it snapshots first).
+  // Removes a previously registered listener. Safe to call at any time, including from within
+  // a listener callback or with an id that has already fired (one-shot) or been unregistered.
   bool unregister_listener(uint32_t listener_id);
 
   std::map<std::string, std::string> homeassistant_read(const std::string &datapoint_id, uint32_t address = 0);
@@ -152,14 +155,18 @@ class Econet : public Component, public uart::UARTDevice {
   void homeassistant_write(const std::string &datapoint_id, float value, uint32_t address = 0);
 
  protected:
+  struct ServiceReadRequest {
+    EconetDatapointID id;
+    bool force_raw{false};
+  };
+
   void set_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value);
-  void send_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value);
+  void send_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value, bool from_mcu = true);
 
   void make_request_();
   void read_buffer_(int bytes_available);
-  void parse_message_(bool is_tx);
+  void parse_message_(const uint8_t *b, bool is_tx);
   void parse_rx_message_();
-  void parse_tx_message_();
   void handle_response_(const EconetDatapointID &datapoint_id, const uint8_t *p, uint8_t len);
   // Warns about a read request issued while the previous one is still unanswered, rate limited,
   // and adds a hint about the usual causes while no read has ever been answered.
@@ -169,6 +176,7 @@ class Econet : public Component, public uart::UARTDevice {
   void request_strings_();
   bool is_request_once_(const std::string &name, uint32_t address) const;
   bool is_raw_datapoint_(const std::string &name, uint32_t address) const;
+  bool is_cached_from_mcu_(const std::string &name, uint32_t address) const;
   void write_value_(const std::string &object, EconetDatapointType type, float value, uint32_t address = 0);
 
   void update_intervals_() {
@@ -193,21 +201,23 @@ class Econet : public Component, public uart::UARTDevice {
       request_mod_update_interval_millis_{};  // Initialized in loop/update_intervals_
   std::array<std::vector<std::string>, MAX_REQUEST_MODS> request_datapoint_ids_;
   std::array<uint32_t, MAX_REQUEST_MODS> request_mod_last_requested_{};
+  std::array<size_t, MAX_REQUEST_MODS> request_mod_offset_{};
+  std::array<bool, MAX_REQUEST_MODS> request_mod_requested_{};
   std::vector<uint8_t> request_mods_;
   std::vector<EconetDatapointID> raw_datapoint_ids_;
   std::vector<EconetDatapointID> request_once_datapoint_ids_;
   std::vector<DatapointEntry> datapoints_;
   std::vector<DatapointEntry> pending_writes_;
-  std::vector<EconetDatapointID> datapoint_ids_for_read_service_;
+  std::vector<ServiceReadRequest> datapoint_ids_for_read_service_;
   StaticVector<uint8_t, MAX_MESSAGE_SIZE> rx_message_;
-  StaticVector<uint8_t, MAX_MESSAGE_SIZE> tx_message_;
+
+  // State for a synchronous homeassistant_read() call in progress.
+  EconetDatapointID pending_read_id_{};
+  EconetDatapoint pending_read_result_{};
 
   // Read requests issued while the previous one was still unanswered, reset on every answer.
   uint32_t unanswered_reads_{0};
   uint32_t last_unanswered_read_log_{0};
-  // Whether the MCU has answered at least one read request since boot. Distinguishes a busy MCU
-  // from a setup that has never worked, which need very different advice.
-  bool mcu_answers_reads_{false};
 
   // Pointers
   binary_sensor::BinarySensor *mcu_connected_binary_sensor_{nullptr};
@@ -228,16 +238,13 @@ class Econet : public Component, public uart::UARTDevice {
 
   // 1-byte types
   bool mcu_connected_{false};
-
-  // State for a synchronous homeassistant_read() call in progress. Using a member (rather
-  // than stack locals captured by reference in the listener lambda) means a listener that
-  // fires after the call has already timed out and returned safely becomes a no-op instead
-  // of writing through a dangling reference.
-  struct PendingRead {
-    EconetDatapoint result;
-    bool received = false;
-  };
-  std::unique_ptr<PendingRead> pending_read_;
+  // Whether the MCU has answered at least one read request since boot. Distinguishes a busy MCU
+  // from a setup that has never worked, which need very different advice.
+  bool mcu_answers_reads_{false};
+  bool dst_adr_configured_{false};
+  bool has_read_requested_{false};
+  bool pending_read_active_{false};
+  bool pending_read_received_{false};
 };
 
 class EconetClient {
