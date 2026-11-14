@@ -22,7 +22,7 @@ Most modern Rheem Heat Pump Water Heaters, Tankless Water Heaters, Electric Tank
 
 ## Required ESPHome Hardware
 
-ESPHome-econet is a great first ESPHome project due to the easy hardware setup. All that's needed to run ESPHome-econet is an ESP32 or ESP8266 microcontroller and an RS485 Interface, plus a phone cord to hook it up to your Rheem appliance and a USB-C charger to power it. For simplicity, we recommend the m5Stack AtomS3 Lite paired with the m5Stack ATOMIC RS485 Base, which stack together into a single package and need no change to the default pin configuration. The m5Stack K045 Kit bundled the same combination, but m5Stack has marked it end-of-life.
+ESPHome-econet is a great first ESPHome project due to the easy hardware setup. All that's needed to run ESPHome-econet is an ESP32 or ESP8266 microcontroller and an RS485 Interface, plus a phone cord to hook it up to your Rheem appliance and a USB-C charger to power it. For simplicity, we recommend the m5Stack AtomS3 Lite paired with the m5Stack ATOMIC RS485 Base, which stack together into a single package and use preconfigured pins (`tx_pin: GPIO6`, `rx_pin: GPIO5`) in the web installer and `build-yaml/*-esp32s3.yaml` manifests (note that `econet_base.yaml` defaults to `GPIO19`/`GPIO22` if writing custom YAML directly). The m5Stack K045 Kit bundled the same combination, but m5Stack has marked it end-of-life.
 
 For full details on what hardware to buy and how to set it up, head over to the [Recommended Hardware Purchase and Setup page on our wiki](https://github.com/esphome-econet/esphome-econet/wiki/Recommended-Hardware-Purchase-and-Setup-Instructions).
 
@@ -38,17 +38,17 @@ For alternative software installation methods and details on how to customize yo
 
 For a video overview of how to setup the recommended hardware and deploy ESPHome-econet to it, please check out this video helpfully created by community member [Ylianst](https://github.com/Ylianst).
 
-[![Water Heater - Home Assistant - ESP-Home EcoNET](https://img.youtube.com/vi/5u0_TsBOTEI/0.jpg)](https://www.youtube.com/shorts/K75njuvRIks)
+[![Water Heater - Home Assistant - ESP-Home EcoNET](https://img.youtube.com/vi/K75njuvRIks/0.jpg)](https://www.youtube.com/shorts/K75njuvRIks)
 
 ## Contributing to ESPHome EcoNet
 
 Contributions to the ESPHome-econet are welcome and encouraged! If you're looking to help out and need inspiration, please check out [the list of open issues](https://github.com/esphome-econet/esphome-econet/issues).
 
-Contributors will want to install esphome and pre-commit, then install pre-commit hooks for your forked repo:
+Contributors will want to install the development dependencies (`esphome` and `pre-commit`), then install pre-commit hooks for your forked repo:
 
 ```bash
-pip install -U esphome pre-commit  # Install required python packages
 cd esphome-econet  # CD into the directory where you cloned your forked esphome-econet repo
+pip install -U -r requirements.txt  # Install required python packages (esphome, pre-commit)
 pre-commit install  # Enable pre-commit hooks to run prior to any commit
 ```
 

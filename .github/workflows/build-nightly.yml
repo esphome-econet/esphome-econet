@@ -14,6 +14,9 @@ concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build:
     strategy:
@@ -64,12 +67,20 @@ jobs:
     needs: build
     if: failure()
     steps:
-      - uses: actions/checkout@v7
-      - name: Create Issue on Failure
-        uses: JasonEtco/create-an-issue@v2
+      - name: Create or update the open nightly failure issue
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE_LINK: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        with:
-          filename: .github/nightly-build-failure-issue-template.md
-          update_existing: true
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: |-
+          body="The nightly build failed: [${RUN_URL}](${RUN_URL})"
+          existing=$(gh issue list --state open --label bug --limit 100 \
+            --json number,title \
+            --jq 'first(.[] | select(.title == "Nightly Build Failed") | .number) // empty')
+          if [[ -n "${existing}" ]]; then
+            echo "Updating #${existing}"
+            gh issue edit "${existing}" --body "${body}"
+            gh issue comment "${existing}" --body "${body}"
+          else
+            gh issue create --title "Nightly Build Failed" --label bug --body "${body}"
+          fi
