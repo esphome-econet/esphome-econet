@@ -4,7 +4,7 @@ econet:
     10: 0x380
 
 packages:  # Comment out the bypass section if your system has a mechanical (non-electrical) for the bypass zone
-  bypasszone: !include
+  bypasszone3: !include
     file: econet_hvac_zone_sensors_template.yaml
     vars:
       zonename: ${zone3name}

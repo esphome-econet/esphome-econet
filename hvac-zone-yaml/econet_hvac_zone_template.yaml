@@ -1,7 +1,4 @@
 ---
-substitutions:
-  primary_thermostat_address: "0x380"
-
 text_sensor:
   - platform: econet
     id: zone${zonenumber}_equipment_name
@@ -24,6 +21,8 @@ climate:
       temperature_step:
         target_temperature: "0.5 °F"
         current_temperature: "0.1 °F"
+      min_humidity: 10
+      max_humidity: 80
     current_temperature_datapoint: SPT
     target_temperature_low_datapoint: HEATSETP
     target_temperature_high_datapoint: COOLSETP
