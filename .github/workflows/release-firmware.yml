@@ -21,6 +21,9 @@ concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
 jobs:
   update-version-strings:
     name: Update Version Strings
@@ -59,14 +62,15 @@ jobs:
           token: ${{ steps.release-token.outputs.token }}
       - name: Update Project Version String
         uses: mikefarah/yq@v4
+        env:
+          VERSION_TAG: ${{ steps.generate_release_version.outputs.version_tag }}
         with:
           cmd: >
             yq -i
-            '
-              .esphome.project.version = "${{ steps.generate_release_version.outputs.version_tag }}"
-            '
+            '.esphome.project.version = strenv(VERSION_TAG)'
             econet_base.yaml
       - name: Commit Changes
+        id: commit
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "Automated project versioning update"
@@ -80,6 +84,7 @@ jobs:
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
+          commit: ${{ steps.commit.outputs.commit_hash || github.sha }}
           generateReleaseNotes: true
           tag: ${{ steps.generate_release_version.outputs.version_tag }}
           token: ${{ steps.release-token.outputs.token }}

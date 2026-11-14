@@ -1,4 +1,4 @@
-/secrets.yaml
+secrets.yaml
 *.bak
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -126,7 +126,6 @@ tests/build/
 tests/.esphome/
 /.temp-clang-tidy.cpp
 /.temp/
-.pio/
 
 sdkconfig.*
 !sdkconfig.defaults
