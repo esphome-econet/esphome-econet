@@ -67,12 +67,15 @@ sensor:
     sensor_datapoint: WTR_BTUS
     unit_of_measurement: "kbtu"
     accuracy_decimals: 3
+    state_class: "total_increasing"
     entity_category: "diagnostic"
     icon: "mdi:flash"
     on_value:
       then:
         - lambda: |-
-            id(total_gas_usage).publish_state(id(btus).state / ${tankless_kbtus_per_m3});
+            if (!std::isnan(x)) {
+              id(total_gas_usage).publish_state(x / static_cast<float>(${tankless_kbtus_per_m3}));
+            }
   - platform: econet
     name: "Water Used"
     id: water_used
@@ -100,6 +103,7 @@ sensor:
     sensor_datapoint: IGNCYCLS
     unit_of_measurement: ""
     accuracy_decimals: 0
+    state_class: "total_increasing"
     entity_category: "diagnostic"
     icon: "mdi:heating-coil"
   - platform: template
@@ -109,13 +113,18 @@ sensor:
     accuracy_decimals: 3
     state_class: "measurement"
     entity_category: "diagnostic"
-    # yamllint disable rule:line-length
+    filters:
+      - delta: 0.0009
     lambda: |-
       if (std::isnan(id(temp_out).state) || std::isnan(id(temp_in).state) || std::isnan(id(flow_rate).state)) {
         return {};
       }
-      return max((id(temp_out).state - id(temp_in).state) * id(flow_rate).state * 8.334 * 60 / 0.92 / 1000, 0.0);
-    # yamllint enable rule:line-length
+      if (id(flow_rate).state <= 0.0f) {
+        return 0.0f;
+      }
+      return std::max((id(temp_out).state - id(temp_in).state) * id(flow_rate).state *
+                          (8.334f * 60.0f / 0.92f / 1000.0f),
+                      0.0f);
     update_interval: ${econet_update_interval}
   - platform: template
     name: "Total Gas Usage"

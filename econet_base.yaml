@@ -11,7 +11,7 @@ substitutions:
   econet_update_interval: 30s
   econet_alarm_update_interval: 30s
   econet_alarm_history_update_interval: 60s
-  mcu_connected_timeout: ${econet_update_interval}
+  mcu_connected_timeout: 120s
   wifi_module_address: "0x340"
 esphome:
   name: ${name}
@@ -35,6 +35,11 @@ api:
       then:
         - api.respond:
             data: !lambda |-
+              if (datapoint_id.empty() || datapoint_id.size() > 8) {
+                ESP_LOGE("econet", "Invalid datapoint_id '%s' (must be 1-8 characters)", datapoint_id.c_str());
+                root["error"] = "Invalid datapoint_id (must be 1-8 characters)";
+                return;
+              }
               std::map<std::string, std::string> result = id(econet_id).homeassistant_read(datapoint_id);
               for (auto const& item : result) {
                 root[item.first] = item.second;
@@ -47,7 +52,18 @@ api:
       then:
         - api.respond:
             data: !lambda |-
-              std::map<std::string, std::string> result = id(econet_id).homeassistant_read(datapoint_id, address);
+              if (datapoint_id.empty() || datapoint_id.size() > 8) {
+                ESP_LOGE("econet", "Invalid datapoint_id '%s' (must be 1-8 characters)", datapoint_id.c_str());
+                root["error"] = "Invalid datapoint_id (must be 1-8 characters)";
+                return;
+              }
+              if (address < 0 || address > 0xFFFFFF) {
+                ESP_LOGE("econet", "Address %d out of range (0..0xFFFFFF)", (int) address);
+                root["error"] = "Address out of range (0..0xFFFFFF)";
+                return;
+              }
+              std::map<std::string, std::string> result =
+                  id(econet_id).homeassistant_read(datapoint_id, static_cast<uint32_t>(address));
               for (auto const& item : result) {
                 root[item.first] = item.second;
               }
@@ -56,27 +72,71 @@ api:
         datapoint_id: string
         value: int
       then:
-        - lambda: id(econet_id).homeassistant_write(datapoint_id, (uint8_t) value);
+        - lambda: |-
+            if (datapoint_id.empty() || datapoint_id.size() > 8) {
+              ESP_LOGE("econet", "Invalid datapoint_id '%s' (must be 1-8 characters)", datapoint_id.c_str());
+              return;
+            }
+            if (value < 0 || value > 255) {
+              ESP_LOGE("econet", "Enum value %d out of range (0..255)", (int) value);
+              return;
+            }
+            id(econet_id).homeassistant_write(datapoint_id, static_cast<uint8_t>(value));
     - action: write_enum_from_address
       variables:
         datapoint_id: string
         value: int
         address: int
       then:
-        - lambda: id(econet_id).homeassistant_write(datapoint_id, (uint8_t) value, address);
+        - lambda: |-
+            if (datapoint_id.empty() || datapoint_id.size() > 8) {
+              ESP_LOGE("econet", "Invalid datapoint_id '%s' (must be 1-8 characters)", datapoint_id.c_str());
+              return;
+            }
+            if (value < 0 || value > 255) {
+              ESP_LOGE("econet", "Enum value %d out of range (0..255)", (int) value);
+              return;
+            }
+            if (address < 0 || address > 0xFFFFFF) {
+              ESP_LOGE("econet", "Address %d out of range (0..0xFFFFFF)", (int) address);
+              return;
+            }
+            id(econet_id).homeassistant_write(datapoint_id, static_cast<uint8_t>(value), static_cast<uint32_t>(address));
     - action: write_float
       variables:
         datapoint_id: string
         value: float
       then:
-        - lambda: id(econet_id).homeassistant_write(datapoint_id, value);
+        - lambda: |-
+            if (datapoint_id.empty() || datapoint_id.size() > 8) {
+              ESP_LOGE("econet", "Invalid datapoint_id '%s' (must be 1-8 characters)", datapoint_id.c_str());
+              return;
+            }
+            if (!std::isfinite(value)) {
+              ESP_LOGE("econet", "Refusing to write non-finite float value");
+              return;
+            }
+            id(econet_id).homeassistant_write(datapoint_id, value);
     - action: write_float_from_address
       variables:
         datapoint_id: string
         value: float
         address: int
       then:
-        - lambda: id(econet_id).homeassistant_write(datapoint_id, value, address);
+        - lambda: |-
+            if (datapoint_id.empty() || datapoint_id.size() > 8) {
+              ESP_LOGE("econet", "Invalid datapoint_id '%s' (must be 1-8 characters)", datapoint_id.c_str());
+              return;
+            }
+            if (!std::isfinite(value)) {
+              ESP_LOGE("econet", "Refusing to write non-finite float value");
+              return;
+            }
+            if (address < 0 || address > 0xFFFFFF) {
+              ESP_LOGE("econet", "Address %d out of range (0..0xFFFFFF)", (int) address);
+              return;
+            }
+            id(econet_id).homeassistant_write(datapoint_id, value, static_cast<uint32_t>(address));
 ota:
   platform: esphome
 logger:
