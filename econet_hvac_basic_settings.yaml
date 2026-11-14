@@ -8,7 +8,7 @@ select:
       1: "EAC"
       2: "EAC w/ Media"
     icon: "mdi:filter-settings-outline"
-    request_mod: 9
+    request_mod: 14
   - platform: "econet"
     name: "Room Sensor Selection"
     id: room_sensor_type
@@ -18,7 +18,7 @@ select:
       1: "Remote"
       2: "Averaged"
     icon: "mdi:home-thermometer"
-    request_mod: 9
+    request_mod: 14
   - platform: "econet"
     name: "Outdoor Air Temperature Source"
     id: oat_source
@@ -27,7 +27,7 @@ select:
       1: "Equipment"
       2: "Internet"
     icon: "mdi:home-thermometer"
-    request_mod: 9
+    request_mod: 14
   - platform: "econet"
     name: "Hi Heat Airflow Adjustment"
     id: hh_airflow_adjust
@@ -38,7 +38,7 @@ select:
       2: "None"
       3: "Highest"
     icon: "mdi:waves-arrow-right"
-    request_mod: 9
+    request_mod: 14
   - platform: "econet"
     name: "Lo Heat Airflow Adjustment"
     id: lh_airflow_adjust
@@ -49,7 +49,7 @@ select:
       2: "None"
       3: "Highest"
     icon: "mdi:waves-arrow-right"
-    request_mod: 9
+    request_mod: 14
   - platform: "econet"
     name: "Aux 1 Contacts Configuration"
     id: aux_one_config
@@ -62,7 +62,7 @@ select:
       4: "Furnace Lockout"
       5: "HP Heat Lockout"
     icon: "mdi:dots-vertical"
-    request_mod: 9
+    request_mod: 14
   - platform: "econet"
     name: "Aux 1 Contacts Logic"
     id: aux_one_logic
@@ -71,7 +71,7 @@ select:
       0: "N.O"
       1: "N.C"
     icon: "mdi:toggle-switch-outline"
-    request_mod: 9
+    request_mod: 14
   - platform: "econet"
     name: "Aux 2 Contacts Configuration"
     id: aux_2_config
@@ -84,7 +84,7 @@ select:
       4: "Furnace Lockout"
       5: "HP Heat Lockout"
     icon: "mdi:dots-vertical"
-    request_mod: 9
+    request_mod: 14
   - platform: "econet"
     name: "Aux 2 Contacts Logic"
     id: aux_two_logic
@@ -93,7 +93,7 @@ select:
       0: "N.O"
       1: "N.C"
     icon: "mdi:toggle-switch-outline"
-    request_mod: 9
+    request_mod: 15
   - platform: "econet"
     name: "Elevation (ft)"
     id: elevation_geologic
@@ -110,7 +110,7 @@ select:
       8: "US 8001-9000"
       9: "US >9001"
     icon: "mdi:elevation-rise"
-    request_mod: 9
+    request_mod: 15
 
 switch:
   - platform: econet
@@ -118,16 +118,19 @@ switch:
     id: smooth_arrival
     switch_datapoint: SMARTREC
     icon: "mdi:image-lock"
+    request_mod: 15
   - platform: econet
     name: "Proximity Sensing"
     id: proximity_sensing
     switch_datapoint: MOT_ENAB
     icon: "mdi:human-greeting-proximity"
+    request_mod: 15
   - platform: econet
     name: "(Thermostat) Backlight Enable"
     id: thermostat_backlight
     switch_datapoint: BL__ENAB
     icon: "mdi:brightness-5"
+    request_mod: 15
 
 number:
   - platform: econet
@@ -139,7 +142,7 @@ number:
     step: 0.5
     mode: "slider"
     icon: "mdi:skew-more"
-    request_mod: 9
+    request_mod: 15
   - platform: econet
     name: "Temperature Dead Band"
     id: temperature_dead_band
@@ -149,7 +152,7 @@ number:
     step: 1
     mode: "slider"
     icon: "mdi:skew-more"
-    request_mod: 9
+    request_mod: 15
   - platform: econet
     name: "Auto Changeover Time (mins)"
     id: auto_change_tim
@@ -159,7 +162,7 @@ number:
     step: 1
     mode: "slider"
     icon: "mdi:home-clock-outline"
-    request_mod: 9
+    request_mod: 15
   - platform: econet
     name: "Furnace Blower Off Delay"
     id: furnace_blower_off_delay
@@ -169,4 +172,4 @@ number:
     step: 30
     mode: "slider"
     icon: "mdi:timer-plus"
-    request_mod: 9
+    request_mod: 15

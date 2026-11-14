@@ -46,15 +46,15 @@ econet:
             id(compressor_stage).publish_state(x[12]);
             id(heat_stage).publish_state(x[26]);
             if (static_p != UNPOPULATED) {
-              id(static_pressure).publish_state(static_p / 5280.0);
+              id(static_pressure).publish_state(static_p / 5280.0f);
             }
             if (return_temp <= MAX_TEMPERATURE) {
-              id(return_air_temperature).publish_state(return_temp / 10.0);
+              id(return_air_temperature).publish_state(return_temp / 10.0f);
             }
             if (outdoor_temp <= MAX_TEMPERATURE) {
-              id(outdoor_air_temperature).publish_state(outdoor_temp / 10.0);
+              id(outdoor_air_temperature).publish_state(outdoor_temp / 10.0f);
             }
-            id(flame_sensor).publish_state(x[33] / 10.0);
+            id(flame_sensor).publish_state(x[33] / 10.0f);
             // Accumulators
             id(low_heat_2week_cycles).publish_state((x[102] << 8) + x[103]);
             id(high_heat_2week_cycles).publish_state((x[104] << 8) + x[105]);
@@ -76,7 +76,7 @@ econet:
             }
             const uint16_t supply_temp = (x[145] << 8) + x[146];
             if (supply_temp <= MAX_TEMPERATURE) {
-              id(supply_air_temperature).publish_state(supply_temp / 10.0);
+              id(supply_air_temperature).publish_state(supply_temp / 10.0f);
             }
     - sensor_datapoint: HRHEEMID
       request_mod: 5
@@ -356,6 +356,7 @@ sensor:
     name: "Total Daily Gas"
     sensor: gas_usage_m3_h
     time_unit: h
+    integration_method: left
     state_class: total_increasing
     device_class: gas
     accuracy_decimals: 5
@@ -424,11 +425,14 @@ interval:
     then:
       - lambda: |-
           if (std::isnan(id(furnace_hh_btus).state) || std::isnan(id(heat_capacity).state) ||
-              std::isnan(id(furnace_afue).state) || id(furnace_afue).state <= 0) {
+              std::isnan(id(furnace_afue).state) || id(furnace_afue).state <= 0.0f) {
             return;
           }
-          float furnace_kbtus = id(furnace_hh_btus).state / 1000.0 * id(heat_capacity).state / 100.0;
-          float furnace_eff = id(furnace_afue).state / 100.0;
+          float furnace_kbtus = id(furnace_hh_btus).state / 1000.0f * id(heat_capacity).state / 100.0f;
+          float furnace_eff = id(furnace_afue).state / 100.0f;
+          float gas_m3_h = furnace_kbtus / furnace_eff / static_cast<float>(${furnace_kbtus_per_m3});
           id(instant_btu_output).publish_state(furnace_kbtus);
           id(instant_btu_usage).publish_state(furnace_kbtus / furnace_eff);
-          id(gas_usage_m3_h).publish_state(furnace_kbtus / furnace_eff / ${furnace_kbtus_per_m3});
+          if (gas_m3_h > 0.0f || !id(gas_usage_m3_h).has_state() || id(gas_usage_m3_h).state != 0.0f) {
+            id(gas_usage_m3_h).publish_state(gas_m3_h);
+          }
