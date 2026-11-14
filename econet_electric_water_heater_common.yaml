@@ -1,8 +1,18 @@
 ---
 substitutions:
   sensor_power_filters_lambda: return x;
-  # yamllint disable-line rule:line-length
-  water_heater_set_away_code: 'auto call = id(vaca_net).make_call(); call.set_option(id(econet_water_heater).is_away() ? "Permanent" : "Off"); call.perform();'
+  water_heater_set_away_code: |-
+    if (id(econet_water_heater).is_away()) {
+      if (id(vaca_net).current_option() != "Permanent") {
+        auto call = id(vaca_net).make_call();
+        call.set_option("Permanent");
+        call.perform();
+      }
+    } else if (id(vaca_net).current_option() == "Permanent") {
+      auto call = id(vaca_net).make_call();
+      call.set_option("Off");
+      call.perform();
+    }
 
 packages:
   econet: !include econet_base.yaml
@@ -37,7 +47,7 @@ climate:
 water_heater:
   - id: !extend econet_water_heater
     away: !lambda |-
-      if (!id(econet_climate).has_reported_state()) {
+      if (!id(econet_climate).has_reported_state() || !id(vaca_net).has_state()) {
         return {};
       }
       return id(vaca_net).current_option() == "Permanent";

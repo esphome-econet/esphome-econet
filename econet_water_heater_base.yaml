@@ -12,7 +12,7 @@ water_heater:
     visual:
       min_temperature: "110 °F"
       max_temperature: "140 °F"
-      target_temperature_step: 1
+      target_temperature_step: "1.0 °F"
     # Every lambda returns {} (don't publish) until the MCU has reported the mode, so the entity
     # reads as unknown rather than reporting the mode the climate is default-initialized to, which
     # is OFF and indistinguishable from the appliance really being off.
@@ -69,58 +69,48 @@ water_heater:
       }
       return ${water_heater_default_mode};
     set_action:
-      - climate.control:
-          id: econet_climate
-          target_temperature: !lambda "return id(econet_water_heater).get_target_temperature();"
-          mode: !lambda |-
-            const bool req_on = id(econet_water_heater).is_on();
-            const auto req_mode = id(econet_water_heater).get_mode();
-            const auto climate_mode = id(econet_climate).mode;
+      - lambda: |-
+          auto call = id(econet_climate).make_call();
+          bool has_climate_change = false;
 
-            // Turn off: was on, now requested off.
-            if (!req_on && climate_mode != climate::CLIMATE_MODE_OFF) {
-              return climate::CLIMATE_MODE_OFF;
-            }
-            // Turn on via action: was off, now requested on.
-            if (req_on && climate_mode == climate::CLIMATE_MODE_OFF) {
-              return climate::CLIMATE_MODE_HEAT;
-            }
-            // Mode selected from UI while off: implicit turn on.
-            if (!req_on &&
-                req_mode != water_heater::WATER_HEATER_MODE_OFF &&
-                climate_mode == climate::CLIMATE_MODE_OFF) {
-              return climate::CLIMATE_MODE_HEAT;
-            }
-            if (req_mode == water_heater::WATER_HEATER_MODE_OFF) {
-              return climate::CLIMATE_MODE_OFF;
-            }
-            return climate::CLIMATE_MODE_HEAT;
-          custom_preset: !lambda |-
-            const bool req_on = id(econet_water_heater).is_on();
-            const auto req_mode = id(econet_water_heater).get_mode();
-            const auto climate_mode = id(econet_climate).mode;
+          const float target_temp = id(econet_water_heater).get_target_temperature();
+          if (!std::isnan(target_temp) && target_temp != id(econet_climate).target_temperature) {
+            call.set_target_temperature(target_temp);
+            has_climate_change = true;
+          }
 
-            // Turn off: save current preset before switching off.
-            if (!req_on && climate_mode != climate::CLIMATE_MODE_OFF) {
-              if (id(econet_climate).has_custom_preset()) {
-                const auto current = id(econet_climate).get_custom_preset();
-                if (current != "${water_heater_off_preset}") {
-                  id(wh_last_active_preset) = current;
-                }
-              }
-              return {"${water_heater_off_preset}"};
-            }
+          const bool req_on = id(econet_water_heater).is_on();
+          const auto req_mode = id(econet_water_heater).get_mode();
+          const auto climate_mode = id(econet_climate).mode;
+          const bool preset_is_off =
+              id(econet_climate).has_custom_preset() &&
+              id(econet_climate).get_custom_preset() == "${water_heater_off_preset}";
+          const bool was_off = climate_mode == climate::CLIMATE_MODE_OFF || preset_is_off;
 
-            // Turn on via action: mode_ is corrupted to OFF by the loop,
-            // so restore the last saved preset.
-            if (climate_mode == climate::CLIMATE_MODE_OFF &&
-                req_mode == water_heater::WATER_HEATER_MODE_OFF) {
-              return {id(wh_last_active_preset)};
-            }
+          climate::ClimateMode desired_mode = climate::CLIMATE_MODE_HEAT;
+          std::string preset;
 
-            // Mode change (while on, or selected from UI while off):
-            // map mode to preset, save it, and apply.
-            std::string preset;
+          if (!was_off && (!req_on || req_mode == water_heater::WATER_HEATER_MODE_OFF)) {
+            // Turn off (via turn_off or selecting OFF mode): save current preset before switching off.
+            if (id(econet_climate).has_custom_preset() && !preset_is_off) {
+              id(wh_last_active_preset) = id(econet_climate).get_custom_preset().str();
+            }
+            desired_mode = climate::CLIMATE_MODE_OFF;
+            preset = "${water_heater_off_preset}";
+          } else if (was_off && !req_on && req_mode == water_heater::WATER_HEATER_MODE_OFF) {
+            // Stay off (e.g. changing setpoint or away mode while off).
+            desired_mode = climate::CLIMATE_MODE_OFF;
+            preset = "${water_heater_off_preset}";
+          } else if (was_off && req_on && req_mode == water_heater::WATER_HEATER_MODE_OFF) {
+            // Turn on via action: mode_ was synced to OFF while off, so restore the last saved preset.
+            desired_mode = climate::CLIMATE_MODE_HEAT;
+            preset = id(wh_last_active_preset);
+            if (preset.empty() || preset == "${water_heater_off_preset}") {
+              preset = "${water_heater_default_mode_preset}";
+            }
+          } else {
+            // Mode change (while on, or selected from UI while off): map mode to preset, save it, and apply.
+            desired_mode = climate::CLIMATE_MODE_HEAT;
             if (req_mode == water_heater::WATER_HEATER_MODE_ECO) {
               preset = "${water_heater_eco_preset}";
             } else if (req_mode == water_heater::WATER_HEATER_MODE_PERFORMANCE) {
@@ -140,6 +130,19 @@ water_heater:
             if (preset != "${water_heater_off_preset}") {
               id(wh_last_active_preset) = preset;
             }
-            return {preset};
+          }
+
+          if (desired_mode != climate_mode) {
+            call.set_mode(desired_mode);
+            has_climate_change = true;
+          }
+          if (id(econet_climate).get_traits().supports_custom_preset(preset) &&
+              (!id(econet_climate).has_custom_preset() || id(econet_climate).get_custom_preset() != preset)) {
+            call.set_preset(preset);
+            has_climate_change = true;
+          }
+          if (has_climate_change) {
+            call.perform();
+          }
       - lambda: |-
           ${water_heater_set_away_code}
