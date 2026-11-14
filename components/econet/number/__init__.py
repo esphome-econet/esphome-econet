@@ -10,13 +10,11 @@ from esphome.const import (
 )
 
 from .. import (
-    CONF_ECONET_ID,
-    CONF_REQUEST_MOD,
-    CONF_REQUEST_ONCE,
-    CONF_SRC_ADDRESS,
     ECONET_CLIENT_SCHEMA,
     EconetClient,
+    datapoint_id,
     econet_ns,
+    register_econet_client,
 )
 
 DEPENDENCIES = ["econet"]
@@ -36,7 +34,7 @@ CONFIG_SCHEMA = cv.All(
     number.number_schema(EconetNumber)
     .extend(
         {
-            cv.Required(CONF_NUMBER_DATAPOINT): cv.string,
+            cv.Required(CONF_NUMBER_DATAPOINT): datapoint_id,
             cv.Required(CONF_MAX_VALUE): cv.float_,
             cv.Required(CONF_MIN_VALUE): cv.float_,
             cv.Required(CONF_STEP): cv.positive_float,
@@ -58,10 +56,5 @@ async def to_code(config):
         max_value=config[CONF_MAX_VALUE],
         step=config[CONF_STEP],
     )
-
-    paren = await cg.get_variable(config[CONF_ECONET_ID])
-    cg.add(var.set_econet_parent(paren))
-    cg.add(var.set_request_mod(config[CONF_REQUEST_MOD]))
-    cg.add(var.set_request_once(config[CONF_REQUEST_ONCE]))
+    await register_econet_client(var, config)
     cg.add(var.set_number_id(config[CONF_NUMBER_DATAPOINT]))
-    cg.add(var.set_src_adr(config[CONF_SRC_ADDRESS]))

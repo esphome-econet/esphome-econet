@@ -18,6 +18,9 @@ void EconetNumber::setup() {
         } else if (datapoint.type == EconetDatapointType::ENUM_TEXT) {
           ESP_LOGV(TAG, "MCU reported number %s is: %u", this->number_id_, datapoint.value_enum);
           this->publish_state(datapoint.value_enum);
+        } else if (datapoint.type != EconetDatapointType::UNSUPPORTED) {
+          ESP_LOGW(TAG, "Unexpected datapoint type %u for number %s", static_cast<uint8_t>(datapoint.type),
+                   this->number_id_);
         }
         this->type_ = datapoint.type;
       },

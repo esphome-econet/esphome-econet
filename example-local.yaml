@@ -30,7 +30,8 @@ packages:  # Change this file to the correct one(s) for your device
   # econet-zone2: !include hvac-zone-yaml/econet_hvac_zone2.yaml
   # econet-zone3: !include hvac-zone-yaml/econet_hvac_zone3.yaml
   # econet-zone3-bypass: !include hvac-zone-yaml/econet_hvac_zone3_electronicbypass.yaml
-  # zones 4, 5, 6 not yet supported.  only zone6 as bypass is supported.  if you have these zones, please file an issue
+  # econet-zone4: !include hvac-zone-yaml/econet_hvac_zone4.yaml
+  # zones 5, 6 not yet supported.  only zone6 as bypass is supported.  if you have these zones, please file an issue
   # econet-zone6-bypass: !include hvac-zone-yaml/econet_hvac_zone6_electronicbypass.yaml
 
 wifi:

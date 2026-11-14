@@ -1,4 +1,7 @@
 ---
+substitutions:
+  primary_thermostat_address: "0x380"
+
 sensor:
   - platform: econet
     src_address: ${primary_thermostat_address}

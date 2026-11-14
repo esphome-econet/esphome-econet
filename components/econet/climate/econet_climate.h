@@ -4,7 +4,6 @@
 #include "esphome/core/helpers.h"
 #include "../econet.h"
 #include "esphome/components/climate/climate.h"
-#include <string>
 
 namespace esphome {
 namespace econet {
@@ -64,7 +63,7 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
 
   void register_float_listener(const char *id, float *member, bool is_temperature);
   void publish_state_if_reported_();
-  void register_fan_listener(const char *id, std::string *member);
+  void register_fan_listener(const char *id, const char **member);
   void update_active_fan_mode_();
   bool uses_no_schedule_fan_mode_(climate::ClimateMode mode) const;
   void set_float_datapoint(const char *id, optional<float> value, bool is_temperature);
@@ -81,16 +80,14 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   const char *current_humidity_id_{nullptr};
   const char *target_dehumidification_level_id_{nullptr};
   const char *action_id_{nullptr};
-  optional<bool> follow_schedule_;
-  std::string fan_mode_;
-  std::string fan_mode_no_schedule_;
+  const char *fan_mode_{nullptr};
+  const char *fan_mode_no_schedule_{nullptr};
   FixedVector<EconetClimateMode> modes_;
   FixedVector<EconetPreset> custom_presets_;
   FixedVector<EconetFanMode> custom_fan_modes_;
   FixedVector<EconetClimateAction> actions_;
   optional<climate::ClimateAction> default_action_;
-  climate::ClimateTraits traits_;
-  bool traits_initialized_{false};
+  optional<bool> follow_schedule_;
   bool mode_state_known_{false};
   bool custom_preset_state_known_{false};
   bool action_state_known_{false};
