@@ -3,13 +3,10 @@ substitutions:
   name: "econet-etwh"
   friendly_name: "Water Heater"
   device_description: "Rheem Electric Tank Water Heater"
-  sensor_power_filters_lambda: return x;
   water_heater_eco_preset: "Energy Saver"
   water_heater_off_preset: "None"
   water_heater_default_mode: "water_heater::WATER_HEATER_MODE_PERFORMANCE"
   water_heater_default_mode_preset: "Performance"
-  # yamllint disable-line rule:line-length
-  water_heater_set_away_code: 'auto call = id(vaca_net).make_call(); call.set_option(id(econet_water_heater).is_away() ? "Permanent" : "Off"); call.perform();'
 
 packages:
   econet: !include econet_electric_water_heater_common.yaml
