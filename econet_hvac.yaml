@@ -93,6 +93,7 @@ sensor:
     name: "Thermostat Current Humidity"
     id: thermostat_current_humidity
     sensor_datapoint: RELH7005
+    src_address: ${thermostat_address}
     unit_of_measurement: "%"
     accuracy_decimals: 1
     device_class: "humidity"
@@ -126,6 +127,7 @@ select:
     name: "Fan Duty Cycle"
     id: fan_duty
     enum_datapoint: FAN_MODE
+    src_address: ${thermostat_address}
     options:
       0: "Continuous"
       1: "Timed, 10 min"
@@ -138,6 +140,7 @@ select:
     name: "Humidify During"
     id: humidify_during
     enum_datapoint: HUMDCTRL
+    src_address: ${thermostat_address}
     options:
       0: "Heat"
       1: "Heat/Fan"
@@ -148,6 +151,7 @@ select:
     name: "Humidify with Fan - Level"
     id: hum_w_fan_level
     enum_datapoint: HUM_WFAN
+    src_address: ${thermostat_address}
     options:
       0: "Off"
       1: "Low"
@@ -161,6 +165,7 @@ select:
     name: "Humidity Smart Control"
     id: hum_smart_control
     enum_datapoint: HUMSMART
+    src_address: ${thermostat_address}
     options:
       0: "Off"
       1: "Low"
@@ -174,6 +179,7 @@ number:
     name: "Humidification Target Percentage"
     id: humidification_target_percentage
     number_datapoint: HMTARGET
+    src_address: ${thermostat_address}
     min_value: 10
     max_value: 80
     step: 1
@@ -184,6 +190,7 @@ number:
     name: "Relative Humidity Offset"
     id: humidification_offset
     number_datapoint: RELHOFFS
+    src_address: ${thermostat_address}
     min_value: -9.5
     max_value: 9.5
     step: 0.5
@@ -191,21 +198,22 @@ number:
     icon: "mdi:skew-more"
     request_mod: 9
 
-
 switch:
   - platform: econet
     name: "Dehumidification Enable State"
     id: dehumidification_enable_state
     switch_datapoint: DHUMENAB
+    src_address: ${thermostat_address}
     icon: "mdi:air-humidifier-off"
   - platform: econet
     name: "Humidification Enable State"
     id: humidification_enable_state
     switch_datapoint: HUMDCNFG
+    src_address: ${thermostat_address}
     icon: "mdi:air-humidifier-on"
-    restore_mode: RESTORE_DEFAULT_OFF
     request_mod: 9
   - platform: econet
     name: "Follow Schedule"
     id: schedule
     switch_datapoint: SCHEDULE
+    src_address: ${thermostat_address}
