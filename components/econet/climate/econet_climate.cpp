@@ -4,7 +4,6 @@
 #include "esphome/components/climate/climate_traits.h"
 #include "econet_climate.h"
 #include <algorithm>
-#include <string>
 #include <vector>
 
 using namespace esphome;
@@ -37,10 +36,7 @@ void EconetClimate::dump_config() {
 }
 
 climate::ClimateTraits EconetClimate::traits() {
-  if (this->traits_initialized_) {
-    return this->traits_;
-  }
-  auto traits = climate::ClimateTraits();
+  climate::ClimateTraits traits;
   if (this->current_temperature_id_ && *this->current_temperature_id_) {
     traits.add_feature_flags(climate::CLIMATE_SUPPORTS_CURRENT_TEMPERATURE);
   }
@@ -61,9 +57,7 @@ climate::ClimateTraits EconetClimate::traits() {
       traits.add_supported_mode(entry.mode);
     }
   }
-  this->traits_ = traits;
-  this->traits_initialized_ = true;
-  return this->traits_;
+  return traits;
 }
 
 // A climate state message carries every value at once, so publishing before the MCU has reported
@@ -83,7 +77,15 @@ void EconetClimate::register_float_listener(const char *id, float *member, bool 
   if (id && *id) {
     this->parent_->register_listener(
         id, this->request_mod_, this->request_once_,
-        [this, member, is_temperature](const EconetDatapoint &datapoint) {
+        [this, id, member, is_temperature](const EconetDatapoint &datapoint) {
+          if (datapoint.type == EconetDatapointType::UNSUPPORTED) {
+            return;
+          }
+          if (datapoint.type != EconetDatapointType::FLOAT) {
+            ESP_LOGW(TAG, "Unexpected datapoint type %u for climate float %s", static_cast<uint8_t>(datapoint.type),
+                     id);
+            return;
+          }
           float val = datapoint.value_float;
           if (is_temperature) {
             *member = fahrenheit_to_celsius(val);
@@ -96,11 +98,19 @@ void EconetClimate::register_float_listener(const char *id, float *member, bool 
   }
 }
 
-void EconetClimate::register_fan_listener(const char *id, std::string *member) {
+void EconetClimate::register_fan_listener(const char *id, const char **member) {
   if (id && *id) {
     this->parent_->register_listener(
         id, this->request_mod_, this->request_once_,
-        [this, member](const EconetDatapoint &datapoint) {
+        [this, id, member](const EconetDatapoint &datapoint) {
+          if (datapoint.type == EconetDatapointType::UNSUPPORTED) {
+            return;
+          }
+          if (datapoint.type != EconetDatapointType::ENUM_TEXT) {
+            ESP_LOGW(TAG, "Unexpected datapoint type %u for climate fan mode %s", static_cast<uint8_t>(datapoint.type),
+                     id);
+            return;
+          }
           auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
                                  [&](const EconetFanMode &m) { return m.id == datapoint.value_enum; });
           if (it == this->custom_fan_modes_.end()) {
@@ -130,16 +140,16 @@ void EconetClimate::update_active_fan_mode_() {
   if (!this->follow_schedule_.has_value()) {
     return;
   }
-  const std::string *active = nullptr;
-  if (this->uses_no_schedule_fan_mode_(this->mode) && !this->fan_mode_no_schedule_.empty()) {
-    active = &this->fan_mode_no_schedule_;
-  } else if (*this->follow_schedule_ && !this->fan_mode_.empty()) {
-    active = &this->fan_mode_;
+  const char *active = nullptr;
+  if (this->uses_no_schedule_fan_mode_(this->mode) && this->fan_mode_no_schedule_ != nullptr) {
+    active = this->fan_mode_no_schedule_;
+  } else if (*this->follow_schedule_ && this->fan_mode_ != nullptr) {
+    active = this->fan_mode_;
   }
   if (active == nullptr) {
     return;
   }
-  this->set_custom_fan_mode_(active->c_str(), active->length());
+  this->set_custom_fan_mode_(active);
 }
 
 void EconetClimate::setup() {
@@ -151,7 +161,8 @@ void EconetClimate::setup() {
     }
     this->set_supported_custom_presets(presets);
   }
-  if (this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
+  if ((this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) ||
+      (this->custom_fan_mode_no_schedule_id_ && *this->custom_fan_mode_no_schedule_id_)) {
     std::vector<const char *> fans;
     fans.reserve(this->custom_fan_modes_.size());
     for (const auto &entry : this->custom_fan_modes_) {
@@ -171,6 +182,14 @@ void EconetClimate::setup() {
     this->parent_->register_listener(
         this->mode_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
+          if (datapoint.type == EconetDatapointType::UNSUPPORTED) {
+            return;
+          }
+          if (datapoint.type != EconetDatapointType::ENUM_TEXT) {
+            ESP_LOGW(TAG, "Unexpected datapoint type %u for climate mode %s", static_cast<uint8_t>(datapoint.type),
+                     this->mode_id_);
+            return;
+          }
           auto it = std::find_if(this->modes_.begin(), this->modes_.end(),
                                  [&](const EconetClimateMode &m) { return m.id == datapoint.value_enum; });
           if (it == this->modes_.end()) {
@@ -193,6 +212,14 @@ void EconetClimate::setup() {
     this->parent_->register_listener(
         this->custom_preset_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
+          if (datapoint.type == EconetDatapointType::UNSUPPORTED) {
+            return;
+          }
+          if (datapoint.type != EconetDatapointType::ENUM_TEXT) {
+            ESP_LOGW(TAG, "Unexpected datapoint type %u for climate preset %s", static_cast<uint8_t>(datapoint.type),
+                     this->custom_preset_id_);
+            return;
+          }
           auto it = std::find_if(this->custom_presets_.begin(), this->custom_presets_.end(),
                                  [&](const EconetPreset &p) { return p.id == datapoint.value_enum; });
           if (it == this->custom_presets_.end()) {
@@ -217,6 +244,14 @@ void EconetClimate::setup() {
     this->parent_->register_listener(
         this->action_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
+          if (datapoint.type == EconetDatapointType::UNSUPPORTED) {
+            return;
+          }
+          if (datapoint.type != EconetDatapointType::ENUM_TEXT) {
+            ESP_LOGW(TAG, "Unexpected datapoint type %u for climate action %s", static_cast<uint8_t>(datapoint.type),
+                     this->action_id_);
+            return;
+          }
           auto it = std::find_if(this->actions_.begin(), this->actions_.end(),
                                  [&](const EconetClimateAction &a) { return a.id == datapoint.value_enum; });
           if (it != this->actions_.end()) {
@@ -242,6 +277,14 @@ void EconetClimate::setup() {
     this->parent_->register_listener(
         this->follow_schedule_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
+          if (datapoint.type == EconetDatapointType::UNSUPPORTED) {
+            return;
+          }
+          if (datapoint.type != EconetDatapointType::ENUM_TEXT) {
+            ESP_LOGW(TAG, "Unexpected datapoint type %u for climate follow_schedule %s",
+                     static_cast<uint8_t>(datapoint.type), this->follow_schedule_id_);
+            return;
+          }
           ESP_LOGV(TAG, "MCU reported climate sensor %s is: %s", this->follow_schedule_id_,
                    datapoint.value_string.c_str());
           this->follow_schedule_ = datapoint.value_enum > 0;
@@ -249,6 +292,9 @@ void EconetClimate::setup() {
           this->publish_state_if_reported_();
         },
         false, this->src_adr_);
+  } else {
+    // Without a follow_schedule datapoint, treat the primary custom_fan_mode_datapoint as active.
+    this->follow_schedule_ = true;
   }
 }
 
@@ -301,7 +347,9 @@ void EconetClimate::control(const climate::ClimateCall &call) {
       }
     }
   }
-  if (call.has_custom_fan_mode() && this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
+  if (call.has_custom_fan_mode() &&
+      ((this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) ||
+       (this->custom_fan_mode_no_schedule_id_ && *this->custom_fan_mode_no_schedule_id_))) {
     auto fan_mode = call.get_custom_fan_mode();
     auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
                            [&fan_mode](const EconetFanMode &m) { return m.name == fan_mode; });
@@ -311,7 +359,7 @@ void EconetClimate::control(const climate::ClimateCall &call) {
       const bool no_schedule = this->uses_no_schedule_fan_mode_(mode);
       if (no_schedule && this->custom_fan_mode_no_schedule_id_ && *this->custom_fan_mode_no_schedule_id_) {
         this->parent_->set_enum_datapoint_value(this->custom_fan_mode_no_schedule_id_, it->id, this->src_adr_);
-      } else if (*this->follow_schedule_) {
+      } else if (*this->follow_schedule_ && this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
         // Either the schedule is being followed outside of fan only mode, or there is no
         // no-schedule datapoint to write and this is the only thing left to try.
         this->parent_->set_enum_datapoint_value(this->custom_fan_mode_id_, it->id, this->src_adr_);

@@ -4,13 +4,11 @@ from esphome.components import switch
 from esphome.const import CONF_SWITCH_DATAPOINT
 
 from .. import (
-    CONF_ECONET_ID,
-    CONF_REQUEST_MOD,
-    CONF_REQUEST_ONCE,
-    CONF_SRC_ADDRESS,
     ECONET_CLIENT_SCHEMA,
     EconetClient,
+    datapoint_id,
     econet_ns,
+    register_econet_client,
 )
 
 DEPENDENCIES = ["econet"]
@@ -20,10 +18,10 @@ EconetSwitch = econet_ns.class_(
 )
 
 CONFIG_SCHEMA = (
-    switch.switch_schema(EconetSwitch)
+    switch.switch_schema(EconetSwitch, default_restore_mode="DISABLED")
     .extend(
         {
-            cv.Required(CONF_SWITCH_DATAPOINT): cv.string,
+            cv.Required(CONF_SWITCH_DATAPOINT): datapoint_id,
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
@@ -34,10 +32,5 @@ CONFIG_SCHEMA = (
 async def to_code(config):
     var = await switch.new_switch(config)
     await cg.register_component(var, config)
-
-    paren = await cg.get_variable(config[CONF_ECONET_ID])
-    cg.add(var.set_econet_parent(paren))
-    cg.add(var.set_request_mod(config[CONF_REQUEST_MOD]))
-    cg.add(var.set_request_once(config[CONF_REQUEST_ONCE]))
+    await register_econet_client(var, config)
     cg.add(var.set_switch_id(config[CONF_SWITCH_DATAPOINT]))
-    cg.add(var.set_src_adr(config[CONF_SRC_ADDRESS]))

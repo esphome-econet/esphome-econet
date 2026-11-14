@@ -4,13 +4,11 @@ from esphome.components import sensor
 from esphome.const import CONF_ID, CONF_SENSOR_DATAPOINT
 
 from .. import (
-    CONF_ECONET_ID,
-    CONF_REQUEST_MOD,
-    CONF_REQUEST_ONCE,
-    CONF_SRC_ADDRESS,
     ECONET_CLIENT_SCHEMA,
     EconetClient,
+    datapoint_id,
     econet_ns,
+    register_econet_client,
 )
 
 DEPENDENCIES = ["econet"]
@@ -23,7 +21,7 @@ CONFIG_SCHEMA = (
     sensor.sensor_schema(EconetSensor)
     .extend(
         {
-            cv.Required(CONF_SENSOR_DATAPOINT): cv.string,
+            cv.Required(CONF_SENSOR_DATAPOINT): datapoint_id,
         }
     )
     .extend(ECONET_CLIENT_SCHEMA)
@@ -35,10 +33,5 @@ async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await sensor.register_sensor(var, config)
-
-    paren = await cg.get_variable(config[CONF_ECONET_ID])
-    cg.add(var.set_econet_parent(paren))
-    cg.add(var.set_request_mod(config[CONF_REQUEST_MOD]))
-    cg.add(var.set_request_once(config[CONF_REQUEST_ONCE]))
+    await register_econet_client(var, config)
     cg.add(var.set_sensor_id(config[CONF_SENSOR_DATAPOINT]))
-    cg.add(var.set_src_adr(config[CONF_SRC_ADDRESS]))

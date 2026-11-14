@@ -4,7 +4,6 @@
 #include "esphome/components/select/select.h"
 #include "esphome/core/helpers.h"
 #include "../econet.h"
-#include <string>
 
 namespace esphome {
 namespace econet {
@@ -18,7 +17,7 @@ class EconetSelect : public select::Select, public Component, public EconetClien
   void add_select_mapping(uint8_t mapping) { this->mappings_.push_back(mapping); }
 
  protected:
-  void control(const std::string &value) override;
+  void control(size_t index) override;
 
   const char *select_id_{nullptr};
   FixedVector<uint8_t> mappings_;

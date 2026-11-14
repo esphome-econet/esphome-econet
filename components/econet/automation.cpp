@@ -7,8 +7,13 @@ EconetRawDatapointUpdateTrigger::EconetRawDatapointUpdateTrigger(Econet *parent,
                                                                  int8_t request_mod, bool request_once,
                                                                  uint32_t src_adr) {
   parent->register_listener(
-      sensor_id, request_mod, request_once, [this](const EconetDatapoint &dp) { this->trigger(dp.value_raw); }, true,
-      src_adr);
+      sensor_id, request_mod, request_once,
+      [this](const EconetDatapoint &dp) {
+        if (dp.type == EconetDatapointType::RAW) {
+          this->trigger(dp.value_raw);
+        }
+      },
+      true, src_adr);
 }
 
 }  // namespace econet

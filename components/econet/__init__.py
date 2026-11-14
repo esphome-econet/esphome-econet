@@ -8,6 +8,7 @@ from esphome.const import (
     CONF_ID,
     CONF_SENSOR_DATAPOINT,
     CONF_TRIGGER_ID,
+    CONF_UPDATE_INTERVAL,
     DEVICE_CLASS_CONNECTIVITY,
     ENTITY_CATEGORY_DIAGNOSTIC,
 )
@@ -75,6 +76,17 @@ def unique_value_map(value_validator):
     return validator
 
 
+# Object names are 8-byte fields on the wire (OBJ_NAME_SIZE in econet.cpp); longer names would
+# be truncated when transmitted and never match the response.
+datapoint_id = cv.All(cv.string_strict, cv.Length(min=1, max=8))
+optional_datapoint_id = cv.Any("", datapoint_id)
+
+positive_not_null_time_period_milliseconds = cv.All(
+    cv.positive_time_period_milliseconds,
+    cv.Range(min=cv.TimePeriod(milliseconds=1)),
+)
+
+
 def validate_request_mod_range(value):
     return cv.int_range(min=0, max=15)(value)
 
@@ -88,7 +100,7 @@ def request_mod(value):
 def validate_request_mod_update_intervals(value):
     cv.check_not_templatable(value)
     options_map_schema = cv.Schema(
-        {validate_request_mod_range: cv.positive_time_period_milliseconds}
+        {validate_request_mod_range: positive_not_null_time_period_milliseconds}
     )
     value = options_map_schema(value)
     return value
@@ -115,13 +127,16 @@ CONFIG_SCHEMA = (
         {
             cv.GenerateID(): cv.declare_id(Econet),
             cv.Required(CONF_SRC_ADDRESS): econet_address,
-            cv.Optional(CONF_DST_ADDRESS, default="0"): econet_address,
+            cv.Optional(CONF_DST_ADDRESS, default=0): econet_address,
+            cv.Optional(
+                CONF_UPDATE_INTERVAL, default="30s"
+            ): positive_not_null_time_period_milliseconds,
             cv.Optional(CONF_ON_DATAPOINT_UPDATE): automation.validate_automation(
                 {
                     cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(
                         DATAPOINT_TRIGGERS[DPTYPE_RAW]
                     ),
-                    cv.Required(CONF_SENSOR_DATAPOINT): cv.string,
+                    cv.Required(CONF_SENSOR_DATAPOINT): datapoint_id,
                     cv.Optional(CONF_REQUEST_MOD, default="none"): request_mod,
                     cv.Optional(CONF_REQUEST_ONCE, default=False): cv.boolean,
                     cv.Optional(CONF_DATAPOINT_TYPE, default=DPTYPE_RAW): cv.one_of(
@@ -138,7 +153,7 @@ CONFIG_SCHEMA = (
             cv.Optional(CONF_REQUEST_MOD_ADDRESSES): validate_request_mod_addresses,
             cv.Optional(
                 CONF_MCU_CONNECTED_TIMEOUT, default="120s"
-            ): cv.positive_time_period_milliseconds,
+            ): positive_not_null_time_period_milliseconds,
             cv.Optional(
                 CONF_MCU_CONNECTED_BINARY_SENSOR
             ): esphome_binary_sensor.binary_sensor_schema(
@@ -148,7 +163,7 @@ CONFIG_SCHEMA = (
             ),
         }
     )
-    .extend(cv.polling_component_schema("30s"))
+    .extend(cv.COMPONENT_SCHEMA)
     .extend(uart.UART_DEVICE_SCHEMA)
 )
 
@@ -163,12 +178,24 @@ ECONET_CLIENT_SCHEMA = cv.Schema(
 )
 
 
+async def register_econet_client(var, config):
+    paren = await cg.get_variable(config[CONF_ECONET_ID])
+    cg.add(var.set_econet_parent(paren))
+    if config[CONF_REQUEST_MOD] != 0:
+        cg.add(var.set_request_mod(config[CONF_REQUEST_MOD]))
+    if config[CONF_REQUEST_ONCE]:
+        cg.add(var.set_request_once(True))
+    if config[CONF_SRC_ADDRESS] != 0:
+        cg.add(var.set_src_adr(config[CONF_SRC_ADDRESS]))
+
+
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
     cg.add(var.set_src_address(config[CONF_SRC_ADDRESS]))
-    cg.add(var.set_dst_address(config[CONF_DST_ADDRESS]))
+    if config[CONF_DST_ADDRESS] != 0:
+        cg.add(var.set_dst_address(config[CONF_DST_ADDRESS]))
     if CONF_REQUEST_MOD_UPDATE_INTERVALS in config:
         request_mod_update_intervals = config[CONF_REQUEST_MOD_UPDATE_INTERVALS]
         cg.add(var.init_request_mod_update_intervals(len(request_mod_update_intervals)))
