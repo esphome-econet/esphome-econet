@@ -12,7 +12,7 @@ water_heater:
     visual:
       min_temperature: "110 °F"
       max_temperature: "140 °F"
-      target_temperature_step: "1.0 °F"
+      target_temperature_step: 1
     # Every lambda returns {} (don't publish) until the MCU has reported the mode, so the entity
     # reads as unknown rather than reporting the mode the climate is default-initialized to, which
     # is OFF and indistinguishable from the appliance really being off.
