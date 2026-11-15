@@ -235,16 +235,25 @@ void Econet::parse_message_(const uint8_t *b, bool is_tx) {
   ESP_LOGV(TAG, "  Data    : %s", format_hex_pretty(pdata, data_len).c_str());
 
   if (!is_tx) {
+    const size_t frame_len = MSG_HEADER_SIZE + static_cast<size_t>(data_len) + MSG_CRC_SIZE;
+    const bool was_awaiting_echo = this->awaiting_tx_echo_;
+    this->awaiting_tx_echo_ = false;
+    const bool in_echo_window = was_awaiting_echo && (this->loop_now_ - this->last_request_ <= RECEIVE_TIMEOUT) &&
+                                this->src_adr_ != 0 && src_adr == this->src_adr_;
+
     uint16_t crc = (b[MSG_HEADER_SIZE + data_len]) + (b[MSG_HEADER_SIZE + data_len + 1] << 8);
     uint16_t crc_check = crc16(b, MSG_HEADER_SIZE + data_len, 0);
     if (crc != crc_check) {
-      this->read_req_.awaiting_res = false;
+      if (!in_echo_window) {
+        this->read_req_.awaiting_res = false;
+        this->read_req_.from_us = false;
+      }
       ESP_LOGW(TAG, "Ignoring message with incorrect crc");
       return;
     }
 
-    if (this->src_adr_ != 0 && src_adr == this->src_adr_) {
-      ESP_LOGV(TAG, "Ignoring self-echoed message from 0x%lx", (unsigned long) src_adr);
+    if (in_echo_window && frame_len == this->last_tx_len_ && crc == this->last_tx_crc_) {
+      ESP_LOGV(TAG, "Ignoring self-echoed TX frame from 0x%lx", (unsigned long) src_adr);
       return;
     }
 
@@ -262,6 +271,7 @@ void Econet::parse_message_(const uint8_t *b, bool is_tx) {
   if (command == READ_COMMAND) {
     if (data_len < 2) {
       this->read_req_.awaiting_res = false;
+      this->read_req_.from_us = false;
       ESP_LOGD(TAG, "  READ_COMMAND payload too short (data_len=%d)", data_len);
       return;
     }
@@ -273,16 +283,18 @@ void Econet::parse_message_(const uint8_t *b, bool is_tx) {
 
     if (type != 1 && type != 2) {
       this->read_req_.awaiting_res = false;
+      this->read_req_.from_us = false;
       ESP_LOGD(TAG, "  Don't Currently Support This Class Type %hhu", type);
       return;
     }
     if (prop_type != 1) {
       this->read_req_.awaiting_res = false;
+      this->read_req_.from_us = false;
       ESP_LOGD(TAG, "  Don't Currently Support This Property Type %hhu", prop_type);
       return;
     }
 
-    if (this->read_req_.awaiting_res) {
+    if (is_tx && this->our_read_awaiting_res_) {
       this->unanswered_reads_++;
       this->log_unanswered_read_();
     }
@@ -300,18 +312,29 @@ void Econet::parse_message_(const uint8_t *b, bool is_tx) {
       this->read_req_.type = type;
       this->read_req_.obj_names = std::move(obj_names);
       this->read_req_.awaiting_res = true;
+      this->read_req_.from_us = is_tx;
+      if (is_tx) {
+        this->our_read_awaiting_res_ = true;
+        if (dst_adr == this->dst_adr_) {
+          this->dst_adr_read_requested_ = true;
+          this->dst_adr_last_read_request_ = this->loop_now_;
+        }
+      }
     } else {
       this->read_req_.awaiting_res = false;
+      this->read_req_.from_us = false;
     }
 
   } else if (command == ACK) {
     if (this->read_req_.dst_adr == src_adr && this->read_req_.src_adr == dst_adr && this->read_req_.awaiting_res) {
+      bool valid_read_ack = false;
       if (this->read_req_.type == 1 && this->read_req_.obj_names.size() == 1) {
         if (data_len < 1) {
           ESP_LOGD(TAG, "  ACK payload too short for single-object read (data_len=%d)", data_len);
         } else {
           this->handle_response_(EconetDatapointID{.name = this->read_req_.obj_names[0], .address = src_adr}, pdata,
                                  data_len);
+          valid_read_ack = true;
         }
       } else if (this->read_req_.type == 2) {
         // 1st pass to validate response and avoid any buffer over-read
@@ -345,14 +368,24 @@ void Econet::parse_message_(const uint8_t *b, bool is_tx) {
                                    item_len);
             tpos += item_len + 1;
           }
+          valid_read_ack = true;
         }
       }
+      const bool was_our_read = this->read_req_.from_us;
       this->read_req_.awaiting_res = false;
-      this->unanswered_reads_ = 0;
-      this->mcu_answers_reads_ = true;
+      this->read_req_.from_us = false;
+      if (was_our_read && valid_read_ack) {
+        this->our_read_awaiting_res_ = false;
+        this->unanswered_reads_ = 0;
+        this->mcu_answers_reads_ = true;
+        if (src_adr == this->dst_adr_) {
+          this->dst_adr_answered_ = true;
+        }
+      }
     }
   } else if (command == WRITE_COMMAND) {
     this->read_req_.awaiting_res = false;
+    this->read_req_.from_us = false;
     if (data_len < 1) {
       ESP_LOGD(TAG, "  WRITE_COMMAND payload too short (data_len=%d)", data_len);
       return;
@@ -391,10 +424,23 @@ void Econet::parse_message_(const uint8_t *b, bool is_tx) {
                  pdata[5], pdata[4], pdata[3], pdata[2]);
       }
     } else if (type == 9) {
-      if (!this->dst_adr_configured_ && this->dst_adr_ != src_adr) {
+      const bool dst_adr_unanswered =
+          this->dst_adr_ == 0 || (!this->dst_adr_answered_ && this->dst_adr_read_requested_ &&
+                                  (this->loop_now_ - this->dst_adr_last_read_request_ > RECEIVE_TIMEOUT));
+      if (src_adr != 0 && this->dst_adr_ != src_adr && dst_adr_unanswered) {
         ESP_LOGW(TAG, "Using 0x%lx as dst_address from now on. File an issue if you see this more than once.",
                  (unsigned long) src_adr);
         this->dst_adr_ = src_adr;
+        this->dst_adr_read_requested_ = false;
+        for (uint8_t mod : this->request_mods_) {
+          if (this->request_mod_addresses_[mod] == 0) {
+            this->request_mod_offset_[mod] = 0;
+            this->request_mod_requested_[mod] = false;
+          }
+        }
+        this->has_read_requested_ = false;
+        this->our_read_awaiting_res_ = false;
+        this->unanswered_reads_ = 0;
       }
     }
   }
@@ -540,7 +586,9 @@ void Econet::loop() {
   if ((now - this->last_read_data_ > RECEIVE_TIMEOUT) && !this->rx_message_.empty()) {
     ESP_LOGW(TAG, "Ignoring partially received message due to timeout");
     this->rx_message_.clear();
+    this->awaiting_tx_echo_ = false;
     this->read_req_.awaiting_res = false;
+    this->read_req_.from_us = false;
   }
 
   // Read Everything that is in the buffer
@@ -650,7 +698,7 @@ void Econet::request_strings_() {
     // Allow immediate initial boot reads and continuation slices of multi-part request_mods
     // while no previous read is still awaiting a response; otherwise enforce the pacing delay.
     bool urgent_periodic_read = !this->has_read_requested_;
-    if (!urgent_periodic_read && !this->read_req_.awaiting_res) {
+    if (!urgent_periodic_read && !this->our_read_awaiting_res_ && !this->read_req_.awaiting_res) {
       for (uint8_t mod : this->request_mods_) {
         if (!this->request_mod_requested_[mod] || this->request_mod_offset_[mod] > 0) {
           urgent_periodic_read = true;
@@ -780,6 +828,10 @@ void Econet::transmit_message_(uint8_t command, const uint8_t *data, size_t len,
   uint16_t crc = crc16(tx_message.data(), tx_message.size(), 0);
   tx_message.push_back(crc);
   tx_message.push_back(crc >> 8);
+
+  this->last_tx_crc_ = crc;
+  this->last_tx_len_ = tx_message.size();
+  this->awaiting_tx_echo_ = true;
 
   if (this->flow_control_pin_ != nullptr) {
     this->flow_control_pin_->digital_write(true);

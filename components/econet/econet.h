@@ -31,6 +31,7 @@ struct ReadRequest {
   uint32_t src_adr;
   uint8_t type;
   bool awaiting_res;
+  bool from_us;
 };
 
 struct EconetDatapointID {
@@ -113,7 +114,8 @@ class Econet : public Component, public uart::UARTDevice {
   void set_src_address(uint32_t address) { this->src_adr_ = address; }
   void set_dst_address(uint32_t address) {
     this->dst_adr_ = address;
-    this->dst_adr_configured_ = address != 0;
+    this->dst_adr_answered_ = false;
+    this->dst_adr_read_requested_ = false;
   }
   void add_request_mod_address(uint8_t mod, uint32_t address) {
     if (mod < MAX_REQUEST_MODS) {
@@ -233,15 +235,23 @@ class Econet : public Component, public uart::UARTDevice {
   uint32_t last_read_request_{0};
   uint32_t last_read_data_{0};
   uint32_t last_valid_read_{0};
+  uint32_t dst_adr_last_read_request_{0};
   uint32_t src_adr_{0};
   uint32_t dst_adr_{0};
+
+  // 2-byte types
+  uint16_t last_tx_crc_{0};
+  uint16_t last_tx_len_{0};
 
   // 1-byte types
   bool mcu_connected_{false};
   // Whether the MCU has answered at least one read request since boot. Distinguishes a busy MCU
   // from a setup that has never worked, which need very different advice.
   bool mcu_answers_reads_{false};
-  bool dst_adr_configured_{false};
+  bool dst_adr_answered_{false};
+  bool dst_adr_read_requested_{false};
+  bool our_read_awaiting_res_{false};
+  bool awaiting_tx_echo_{false};
   bool has_read_requested_{false};
   bool pending_read_active_{false};
   bool pending_read_received_{false};
