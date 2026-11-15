@@ -225,12 +225,22 @@ jobs:
         with:
           yaml-file: build-yaml/ci-addons-full-esp8266.yaml
           version: ${{ inputs.esphome-version }}
+  unit-tests:
+    name: Run C++ Host Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Run C++ unit tests (ASan + UBSan)
+        run: ./tests/run_unit_tests.sh
   build-status:  # Needed to provide an overall status on this job rather than just the various matrix jobs
     name: Compile Build Status
-    needs: [build, validate-addons]
+    needs: [build, validate-addons, unit-tests]
     runs-on: ubuntu-latest
     if: ${{ always() }}
     steps:
       - name: Check build matrix status
-        if: ${{ needs.build.result != 'success' || needs.validate-addons.result != 'success' }}
+        if: >-
+          ${{ needs.build.result != 'success' ||
+              needs.validate-addons.result != 'success' ||
+              needs.unit-tests.result != 'success' }}
         run: exit 1
