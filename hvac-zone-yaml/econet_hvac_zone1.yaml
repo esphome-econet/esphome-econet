@@ -1,11 +1,15 @@
 ---
+substitutions:
+  thermostat_address: "0x380"
+  primary_thermostat_address: ${thermostat_address}
+
 # This removes the non-zone climate entity for zone1, to be replaced below.
 climate:
   - id: !remove econet_climate
 
 econet:
   request_mod_addresses:
-    10: 0x380
+    10: ${primary_thermostat_address}
 
 packages:
   zone1: !include
@@ -15,4 +19,4 @@ packages:
       zonenumber: "1"
       zone_thermostat_requestmod: 10
       primary_thermostat_requestmod: 10
-      zone_thermostat_address: 0x380
+      zone_thermostat_address: ${primary_thermostat_address}

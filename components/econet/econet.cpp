@@ -890,6 +890,10 @@ void Econet::transmit_message_(uint8_t command, const uint8_t *data, size_t len,
 }
 
 void Econet::set_float_datapoint_value(const DatapointName &datapoint_id, float value, uint32_t address) {
+  if (!std::isfinite(value)) {
+    ESP_LOGW(TAG, "Refusing to set non-finite float value for datapoint %s", datapoint_id.c_str());
+    return;
+  }
   ESP_LOGD(TAG, "Setting datapoint %s to %f", datapoint_id.c_str(), value);
   this->set_datapoint_(
       EconetDatapointID{.name = datapoint_id, .address = address},
@@ -905,6 +909,10 @@ void Econet::set_enum_datapoint_value(const DatapointName &datapoint_id, uint8_t
 }
 
 void Econet::set_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value) {
+  if (value.type == EconetDatapointType::FLOAT && !std::isfinite(value.value_float)) {
+    ESP_LOGW(TAG, "Refusing to queue non-finite float write for datapoint %s", datapoint_id.name.c_str());
+    return;
+  }
   EconetDatapointID specific = datapoint_id;
   if (specific.address == 0) {
     specific.address = this->dst_adr_;
@@ -981,7 +989,7 @@ void Econet::send_datapoint_(const EconetDatapointID &datapoint_id, const Econet
     ESP_LOGV(TAG, "Datapoint %s unchanged", datapoint_id.name.c_str());
   }
 
-  if (this->pending_read_active_ && this->pending_read_id_.name == datapoint_id.name &&
+  if (from_mcu && this->pending_read_active_ && this->pending_read_id_.name == datapoint_id.name &&
       (this->pending_read_id_.address == 0 || this->pending_read_id_.address == datapoint_id.address)) {
     this->pending_read_result_ = value;
     this->pending_read_received_ = true;
@@ -1076,28 +1084,34 @@ std::map<std::string, std::string> Econet::homeassistant_read(const std::string 
   this->pending_read_result_ = {};
   this->pending_read_received_ = false;
 
-  const uint32_t start_time = millis();
+  auto remove_from_queue = [&](bool force_raw) {
+    auto queue_it =
+        std::find_if(this->datapoint_ids_for_read_service_.begin(), this->datapoint_ids_for_read_service_.end(),
+                     [&](const ServiceReadRequest &req) {
+                       return req.id.name == dp_name && req.id.address == address && req.force_raw == force_raw;
+                     });
+    if (queue_it != this->datapoint_ids_for_read_service_.end()) {
+      this->datapoint_ids_for_read_service_.erase(queue_it);
+    }
+  };
+
   auto wait_for_read = [&](bool force_raw) -> bool {
+    const uint32_t start_time = millis();
     this->pending_read_received_ = false;
     this->datapoint_ids_for_read_service_.push_back(
         ServiceReadRequest{.id = EconetDatapointID{.name = dp_name, .address = address}, .force_raw = force_raw});
     while (!this->pending_read_received_) {
       if (millis() - start_time > TIMEOUT_MS) {
         ESP_LOGW(TAG, "Timeout waiting for datapoint %s response", dp_name.c_str());
-        auto queue_it =
-            std::find_if(this->datapoint_ids_for_read_service_.begin(), this->datapoint_ids_for_read_service_.end(),
-                         [&](const ServiceReadRequest &req) {
-                           return req.id.name == dp_name && req.id.address == address && req.force_raw == force_raw;
-                         });
-        if (queue_it != this->datapoint_ids_for_read_service_.end()) {
-          this->datapoint_ids_for_read_service_.erase(queue_it);
-        }
+        remove_from_queue(force_raw);
         return false;
       }
       this->loop();
       App.feed_wdt();
       delay(1);
     }
+    // Passive bus traffic may have satisfied the read before make_request_() popped the entry.
+    remove_from_queue(force_raw);
     return true;
   };
 
@@ -1114,10 +1128,13 @@ std::map<std::string, std::string> Econet::homeassistant_read(const std::string 
     const EconetDatapoint &dp = this->pending_read_result_;
     data["datapoint_id"] = dp_name.c_str();
     switch (dp.type) {
-      case EconetDatapointType::FLOAT:
+      case EconetDatapointType::FLOAT: {
         data["type"] = "FLOAT";
-        data["value"] = std::to_string(dp.value_float);
+        char buf[32];
+        snprintf(buf, sizeof(buf), "%.7g", dp.value_float);
+        data["value"] = buf;
         break;
+      }
       case EconetDatapointType::ENUM_TEXT:
         data["type"] = "ENUM_TEXT";
         data["value"] = std::to_string(dp.value_enum);
@@ -1150,10 +1167,7 @@ void Econet::homeassistant_write(const std::string &datapoint_id, uint8_t value,
     ESP_LOGW(TAG, "Invalid datapoint_id '%s' (must be 1..%u characters)", datapoint_id.c_str(), OBJ_NAME_SIZE);
     return;
   }
-  this->set_datapoint_(
-      EconetDatapointID{.name = dp_name, .address = address},
-      EconetDatapoint{
-          .value_raw = {}, .value_string = "", .value_enum = value, .type = EconetDatapointType::ENUM_TEXT});
+  this->set_enum_datapoint_value(dp_name, value, address);
 }
 
 void Econet::homeassistant_write(const std::string &datapoint_id, float value, uint32_t address) {
@@ -1162,9 +1176,7 @@ void Econet::homeassistant_write(const std::string &datapoint_id, float value, u
     ESP_LOGW(TAG, "Invalid datapoint_id '%s' (must be 1..%u characters)", datapoint_id.c_str(), OBJ_NAME_SIZE);
     return;
   }
-  this->set_datapoint_(
-      EconetDatapointID{.name = dp_name, .address = address},
-      EconetDatapoint{.value_raw = {}, .value_string = "", .value_float = value, .type = EconetDatapointType::FLOAT});
+  this->set_float_datapoint_value(dp_name, value, address);
 }
 
 }  // namespace econet

@@ -547,13 +547,15 @@ void test_homeassistant_services() {
   EXPECT(res["type"] == "TEXT");
   EXPECT(res["value_string"] == "RHEEM_MODEL");
 
-  // Unknown RAW datapoint queried via homeassistant_read: Class 2 returns UNSUPPORTED, then automatic Class 1
-  // retry returns the RAW payload!
+  // Unknown RAW datapoint queried via homeassistant_read: Class 2 returns UNSUPPORTED after 1500ms, then automatic
+  // Class 1 retry gets its own fresh 2000ms budget (even if it takes another 1000ms) and returns the RAW payload!
   uart.on_tx = [&](const std::vector<uint8_t> &tx) {
     if (tx.size() >= 16 && tx[13] == 30) {
       if (tx[14] == 2) {
+        g_mock_millis += 1500;
         uart.feed_rx(build_frame(0x340, 0x380, 6, make_class2_unsupported_item()));
       } else if (tx[14] == 1) {
+        g_mock_millis += 1000;
         uart.feed_rx(build_frame(0x340, 0x380, 6, {0x04, 0xDE, 0xAD}));
       }
     }
@@ -563,14 +565,31 @@ void test_homeassistant_services() {
   EXPECT(raw_res["type"] == "RAW");
   EXPECT(raw_res["value_raw"] == "04.DE.AD");
 
+  // Passive bus traffic already in RX buffer satisfies homeassistant_read with %.7g float formatting and cleans up
+  // datapoint_ids_for_read_service_ so no orphaned read is transmitted afterward!
+  uart.tx_frames.clear();
+  uart.feed_rx(build_frame(0x380, 0x680, 30, make_read_class2_payload({"SPT"})));
+  uart.feed_rx(build_frame(0x680, 0x380, 6, make_class2_float_item(72.5f)));
+  auto float_res = eco.homeassistant_read("SPT", 0x380);
+  EXPECT(float_res["type"] == "FLOAT");
+  EXPECT(float_res["value"] == "72.5");
+  g_mock_millis += 300;
+  eco.loop();
+  EXPECT(uart.tx_frames.empty());
+
   // Unanswered read times out cleanly after ~2000ms and cleans up service queue.
   uart.tx_frames.clear();
-  auto timeout_res = eco.homeassistant_read("SPT", 0x380);
+  auto timeout_res = eco.homeassistant_read("OAT_SENS", 0x380);
   EXPECT(timeout_res.empty());
   EXPECT(!uart.tx_frames.empty());
 
-  // homeassistant_write queues WRITE_COMMAND (command 31).
+  // homeassistant_write ignores NaN and queues WRITE_COMMAND (command 31) for valid values.
   uart.tx_frames.clear();
+  eco.homeassistant_write("WHTRSETP", std::numeric_limits<float>::quiet_NaN(), 0x380);
+  g_mock_millis += 200;
+  eco.loop();
+  EXPECT(uart.tx_frames.empty());
+
   eco.homeassistant_write("WHTRSETP", 120.0f, 0x380);
   g_mock_millis += 200;
   eco.loop();
