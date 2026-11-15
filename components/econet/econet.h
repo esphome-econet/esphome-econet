@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <functional>
 #include <map>
 #include <string>
@@ -23,10 +24,44 @@ static const size_t MAX_MESSAGE_SIZE = 300;
 // (255 - 2) / 10 = 25.3, so 25 is the safe maximum number of objects per request.
 static const uint8_t MAX_OBJECTS_PER_REQUEST = 25;
 static const uint8_t MAX_REQUEST_MODS = 16;
+static const uint8_t OBJ_NAME_SIZE = 8;
 static const uint32_t DEFAULT_UPDATE_INTERVAL_MILLIS = 30000;
 
+// Wire object names are fixed 8-byte ASCII identifiers. Storing them inline avoids heap
+// allocations across listener tables, datapoint caches, and per-packet read tracking.
+struct DatapointName {
+  char str[OBJ_NAME_SIZE + 1]{};
+
+  constexpr DatapointName() = default;
+  DatapointName(const char *s, size_t len) {
+    if (s == nullptr) {
+      return;
+    }
+    size_t n = std::min(len, static_cast<size_t>(OBJ_NAME_SIZE));
+    size_t out = 0;
+    for (size_t i = 0; i < n; i++) {
+      if (s[i] != '\0') {
+        this->str[out++] = s[i];
+      }
+    }
+  }
+  DatapointName(const char *s) : DatapointName(s, s != nullptr ? strlen(s) : 0) {}
+  DatapointName(const std::string &s) : DatapointName(s.data(), s.size()) {}
+
+  const char *c_str() const { return this->str; }
+  bool empty() const { return this->str[0] == '\0'; }
+  size_t size() const { return strlen(this->str); }
+  size_t length() const { return strlen(this->str); }
+  char operator[](size_t i) const { return this->str[i]; }
+
+  friend bool operator==(const DatapointName &lhs, const DatapointName &rhs) {
+    return memcmp(lhs.str, rhs.str, OBJ_NAME_SIZE) == 0;
+  }
+  friend bool operator!=(const DatapointName &lhs, const DatapointName &rhs) { return !(lhs == rhs); }
+};
+
 struct ReadRequest {
-  std::vector<std::string> obj_names;
+  StaticVector<DatapointName, MAX_OBJECTS_PER_REQUEST> obj_names;
   uint32_t dst_adr;
   uint32_t src_adr;
   uint8_t type;
@@ -35,7 +70,7 @@ struct ReadRequest {
 };
 
 struct EconetDatapointID {
-  std::string name;
+  DatapointName name;
   uint32_t address;
 };
 inline bool operator==(const EconetDatapointID &lhs, const EconetDatapointID &rhs) {
@@ -140,11 +175,11 @@ class Econet : public Component, public uart::UARTDevice {
   }
   void set_flow_control_pin(GPIOPin *flow_control_pin) { this->flow_control_pin_ = flow_control_pin; }
 
-  void set_float_datapoint_value(const std::string &datapoint_id, float value, uint32_t address = 0);
-  void set_enum_datapoint_value(const std::string &datapoint_id, uint8_t value, uint32_t address = 0);
+  void set_float_datapoint_value(const DatapointName &datapoint_id, float value, uint32_t address = 0);
+  void set_enum_datapoint_value(const DatapointName &datapoint_id, uint8_t value, uint32_t address = 0);
 
   // Returns a listener id that can later be passed to unregister_listener(). 0 is never a valid id.
-  uint32_t register_listener(const std::string &datapoint_id, int8_t request_mod, bool request_once,
+  uint32_t register_listener(const DatapointName &datapoint_id, int8_t request_mod, bool request_once,
                              const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint = false,
                              uint32_t src_adr = 0, bool one_shot = false, bool run_existing = true,
                              bool publish_unchanged = false);
@@ -176,10 +211,10 @@ class Econet : public Component, public uart::UARTDevice {
 
   void transmit_message_(uint8_t command, const uint8_t *data, size_t len, uint32_t dst_adr = 0, uint32_t src_adr = 0);
   void request_strings_();
-  bool is_request_once_(const std::string &name, uint32_t address) const;
-  bool is_raw_datapoint_(const std::string &name, uint32_t address) const;
-  bool is_cached_from_mcu_(const std::string &name, uint32_t address) const;
-  void write_value_(const std::string &object, EconetDatapointType type, float value, uint32_t address = 0);
+  bool is_request_once_(const DatapointName &name, uint32_t address) const;
+  bool is_raw_datapoint_(const DatapointName &name, uint32_t address) const;
+  bool is_cached_from_mcu_(const DatapointName &name, uint32_t address) const;
+  void write_value_(const DatapointName &object, EconetDatapointType type, float value, uint32_t address = 0);
 
   void update_intervals_() {
     this->min_update_interval_millis_ = this->update_interval_millis_;
@@ -201,7 +236,7 @@ class Econet : public Component, public uart::UARTDevice {
   FixedVector<RequestModUpdateInterval> request_mod_update_interval_millis_map_;
   std::array<uint32_t, MAX_REQUEST_MODS>
       request_mod_update_interval_millis_{};  // Initialized in loop/update_intervals_
-  std::array<std::vector<std::string>, MAX_REQUEST_MODS> request_datapoint_ids_;
+  std::array<std::vector<DatapointName>, MAX_REQUEST_MODS> request_datapoint_ids_;
   std::array<uint32_t, MAX_REQUEST_MODS> request_mod_last_requested_{};
   std::array<size_t, MAX_REQUEST_MODS> request_mod_offset_{};
   std::array<bool, MAX_REQUEST_MODS> request_mod_requested_{};
