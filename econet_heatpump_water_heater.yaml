@@ -127,6 +127,7 @@ sensor:
     request_mod: 5
     accuracy_decimals: 1
     unit_of_measurement: "%"
+    state_class: "measurement"
     entity_category: "diagnostic"
 
 binary_sensor:

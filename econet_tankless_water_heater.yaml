@@ -101,7 +101,6 @@ sensor:
     name: "Ignition Cycles"
     id: ignition_cycles
     sensor_datapoint: IGNCYCLS
-    unit_of_measurement: ""
     accuracy_decimals: 0
     state_class: "total_increasing"
     entity_category: "diagnostic"

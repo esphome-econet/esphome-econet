@@ -50,10 +50,11 @@ wifi:
 # By default, OTA updates are enabled without a password.  To improve security,
 # specify a secure password here.
 # ota:
+#   platform: esphome
 #   password: !secret ota_password
 
 # Alternatively, you can disable OTA updates altogether:
-# ota: false
+# ota: !remove
 
 # If you have UNSUPPORTED sensors add something like the following to disable them
 # sensor:
