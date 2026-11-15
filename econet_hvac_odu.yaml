@@ -263,16 +263,16 @@ sensor:
     state_class: "total_increasing"
     entity_category: "diagnostic"
   - platform: econet
-    name: "ODU Defrost Cycles Two Week Hours"
-    id: odu_defrost_cycles_two_week_hours
+    name: "ODU Defrost Two Week Cycles"
+    id: odu_defrost_two_week_cycles
     sensor_datapoint: ODURDEFC
     request_mod: none
     accuracy_decimals: 0
     state_class: "measurement"
     entity_category: "diagnostic"
   - platform: econet
-    name: "ODU Defrost Cycles Lifetime Hours"
-    id: odu_defrost_cycles_lifetime_hours
+    name: "ODU Defrost Lifetime Cycles"
+    id: odu_defrost_lifetime_cycles
     sensor_datapoint: ODULDEFC
     request_mod: none
     accuracy_decimals: 0
@@ -389,7 +389,7 @@ text_sensor:
   - platform: econet
     name: "ODU Serial Number"
     sensor_datapoint: PRODSERN
-    id: odu_Serial_no
+    id: odu_serial_no
     request_once: true
     request_mod: 7
     src_address: ${odu_address}

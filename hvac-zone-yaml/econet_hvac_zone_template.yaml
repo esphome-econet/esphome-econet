@@ -14,13 +14,22 @@ packages:
 text_sensor:
   - platform: econet
     id: zone${zonenumber}_equipment_name
-    name: Zone${zonenumber} Equipment Name
+    name: ${zonename} Equipment Name
     src_address: ${zone_thermostat_address}
     sensor_datapoint: EQP_NAME
     request_mod: ${zone_thermostat_requestmod}
     icon: "mdi:information-box"
     entity_category: "diagnostic"
     request_once: true
+
+switch:
+  - platform: econet
+    id: zone${zonenumber}_schedule
+    name: ${zonename} Follow Schedule
+    switch_datapoint: SCHEDULE
+    src_address: ${zone_thermostat_address}
+    request_mod: ${zone_thermostat_requestmod}
+    entity_category: "config"
 
 climate:
   - platform: econet

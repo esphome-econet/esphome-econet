@@ -3,7 +3,7 @@ substitutions:
   thermostat_address: "0x380"
   primary_thermostat_address: ${thermostat_address}
 
-# This removes the non-zone climate entity for zone1, to be replaced below.
+# Replace the single-zone climate and global Follow Schedule switch with Zone 1's per-zone entities.
 climate:
   - id: !remove econet_climate
   - id: !extend zone1_climate
@@ -17,6 +17,9 @@ climate:
       3: "COOLING"
       4: "HEATING"
       5: "HEATING"
+
+switch:
+  - id: !remove schedule
 
 econet:
   request_mod_addresses:

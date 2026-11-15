@@ -366,7 +366,8 @@ sensor:
     state_class: "measurement"
     accuracy_decimals: 3
   - platform: integration
-    name: "Total Daily Gas"
+    name: "Total Gas Usage"
+    id: total_gas_usage
     sensor: gas_usage_m3_h
     time_unit: h
     integration_method: left
@@ -375,8 +376,8 @@ sensor:
     accuracy_decimals: 5
     unit_of_measurement: "m³"
   - platform: econet
-    name: "Indoor KW"
-    id: indoor_kw
+    name: "Indoor Energy"
+    id: indoor_energy
     sensor_datapoint: INDOORKW
     entity_category: "diagnostic"
     state_class: "total_increasing"
