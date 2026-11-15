@@ -6,7 +6,7 @@
 namespace esphome {
 namespace econet {
 
-static const char *const TAG = "econet.number";
+ESPHOME_LOG_TAG(TAG, "econet.number");
 
 void EconetNumber::setup() {
   this->parent_->register_listener(
@@ -55,6 +55,7 @@ void EconetNumber::control(float value) {
 void EconetNumber::dump_config() {
   LOG_NUMBER("", "Econet Number", this);
   ESP_LOGCONFIG(TAG, "  Number has datapoint ID %s", this->number_id_);
+  this->dump_client_config_(TAG);
 }
 
 }  // namespace econet

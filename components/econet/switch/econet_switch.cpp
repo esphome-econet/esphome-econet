@@ -4,7 +4,7 @@
 namespace esphome {
 namespace econet {
 
-static const char *const TAG = "econet.switch";
+ESPHOME_LOG_TAG(TAG, "econet.switch");
 
 void EconetSwitch::setup() {
   this->parent_->register_listener(
@@ -32,6 +32,7 @@ void EconetSwitch::write_state(bool state) {
 void EconetSwitch::dump_config() {
   LOG_SWITCH("", "Econet Switch", this);
   ESP_LOGCONFIG(TAG, "  Switch has datapoint ID %s", this->switch_id_);
+  this->dump_client_config_(TAG);
 }
 
 }  // namespace econet

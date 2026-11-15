@@ -4,7 +4,7 @@
 namespace esphome {
 namespace econet {
 
-static const char *const TAG = "econet.sensor";
+ESPHOME_LOG_TAG(TAG, "econet.sensor");
 
 void EconetSensor::setup() {
   this->parent_->register_listener(
@@ -21,13 +21,13 @@ void EconetSensor::setup() {
                    this->sensor_id_);
         }
       },
-      false, this->src_adr_, /*one_shot=*/false, /*run_existing=*/true,
-      /*publish_unchanged=*/this->get_force_update());
+      false, this->src_adr_, /*run_existing=*/true, /*publish_unchanged=*/this->get_force_update());
 }
 
 void EconetSensor::dump_config() {
   LOG_SENSOR("", "Econet Sensor", this);
   ESP_LOGCONFIG(TAG, "  Sensor has datapoint ID %s", this->sensor_id_);
+  this->dump_client_config_(TAG);
 }
 
 }  // namespace econet

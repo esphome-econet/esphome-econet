@@ -4,7 +4,7 @@
 namespace esphome {
 namespace econet {
 
-static const char *const TAG = "econet.binary_sensor";
+ESPHOME_LOG_TAG(TAG, "econet.binary_sensor");
 
 void EconetBinarySensor::setup() {
   this->parent_->register_listener(
@@ -27,6 +27,7 @@ void EconetBinarySensor::setup() {
 void EconetBinarySensor::dump_config() {
   LOG_BINARY_SENSOR("", "Econet Binary Sensor", this);
   ESP_LOGCONFIG(TAG, "  Binary Sensor has datapoint ID %s", this->sensor_id_);
+  this->dump_client_config_(TAG);
 }
 
 }  // namespace econet

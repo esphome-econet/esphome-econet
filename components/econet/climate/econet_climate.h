@@ -61,9 +61,9 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
     climate::ClimateAction action;
   };
 
-  void register_float_listener(const char *id, float *member, bool is_temperature);
+  void handle_float_datapoint_(const char *id, const EconetDatapoint &datapoint, float *member, bool is_temperature);
   void publish_state_if_reported_();
-  void register_fan_listener(const char *id, const char **member);
+  void handle_fan_datapoint_(const char *id, const EconetDatapoint &datapoint, const char **member);
   void update_active_fan_mode_();
   bool uses_no_schedule_fan_mode_(climate::ClimateMode mode) const;
   void set_float_datapoint(const char *id, optional<float> value, bool is_temperature);
