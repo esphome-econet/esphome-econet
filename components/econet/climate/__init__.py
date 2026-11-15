@@ -1,7 +1,7 @@
 import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import climate
-from esphome.const import CONF_CUSTOM_FAN_MODES, CONF_CUSTOM_PRESETS, CONF_ID
+from esphome.const import CONF_CUSTOM_FAN_MODES, CONF_CUSTOM_PRESETS
 
 from .. import (
     ECONET_CLIENT_SCHEMA,
@@ -107,6 +107,12 @@ def validate_mapped_datapoints(config):
             f"{CONF_CUSTOM_FAN_MODE_DATAPOINT}/{CONF_CUSTOM_FAN_MODE_NO_SCHEDULE_DATAPOINT} "
             f"and {CONF_CUSTOM_FAN_MODES} must be set together."
         )
+    if config[CONF_FOLLOW_SCHEDULE_DATAPOINT] and not has_fan_dp:
+        raise cv.Invalid(
+            f"{CONF_FOLLOW_SCHEDULE_DATAPOINT} requires "
+            f"{CONF_CUSTOM_FAN_MODE_DATAPOINT} or "
+            f"{CONF_CUSTOM_FAN_MODE_NO_SCHEDULE_DATAPOINT}."
+        )
     return config
 
 
@@ -184,9 +190,8 @@ _DATAPOINT_SETTERS = (
 
 
 async def to_code(config):
-    var = cg.new_Pvariable(config[CONF_ID])
+    var = await climate.new_climate(config)
     await cg.register_component(var, config)
-    await climate.register_climate(var, config)
     await register_econet_client(var, config)
 
     for conf_key, setter in _DATAPOINT_SETTERS:

@@ -45,15 +45,7 @@ DATAPOINT_TRIGGERS = {
 }
 
 
-def assign_declare_id(value):
-    value = value.copy()
-    value[CONF_TRIGGER_ID] = cv.declare_id(
-        DATAPOINT_TRIGGERS[value[CONF_DATAPOINT_TYPE]]
-    )(value[CONF_TRIGGER_ID].id)
-    return value
-
-
-def unique_value_map(value_validator):
+def unique_value_map(value_validator, *, min_length: int = 0):
     """Build a validator for a {uint8: value} mapping whose values must be unique.
 
     Duplicate values make one of the keys unreachable: the C++ side resolves a value back
@@ -63,6 +55,8 @@ def unique_value_map(value_validator):
     def validator(value):
         cv.check_not_templatable(value)
         value = cv.Schema({cv.uint8_t: value_validator})(value)
+        if len(value) < min_length:
+            raise cv.Invalid(f"Expected at least {min_length} mapping entry.")
         seen = {}
         for key, mapped in value.items():
             if mapped in seen:
@@ -143,8 +137,7 @@ CONFIG_SCHEMA = (
                         *DATAPOINT_TRIGGERS, lower=True
                     ),
                     cv.Optional(CONF_SRC_ADDRESS, default=0): econet_address,
-                },
-                extra_validators=assign_declare_id,
+                }
             ),
             cv.Optional(CONF_FLOW_CONTROL_PIN): pins.gpio_output_pin_schema,
             cv.Optional(
@@ -165,6 +158,16 @@ CONFIG_SCHEMA = (
     )
     .extend(cv.COMPONENT_SCHEMA)
     .extend(uart.UART_DEVICE_SCHEMA)
+)
+
+FINAL_VALIDATE_SCHEMA = uart.final_validate_device_schema(
+    "econet",
+    baud_rate=38400,
+    require_tx=False,
+    require_rx=True,
+    data_bits=8,
+    parity="NONE",
+    stop_bits=1,
 )
 
 CONF_ECONET_ID = "econet_id"

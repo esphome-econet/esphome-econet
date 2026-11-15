@@ -1,2 +1,2 @@
-esphome>=2026.9.0
+esphome>=2026.10.0
 pre-commit>=4.7.0

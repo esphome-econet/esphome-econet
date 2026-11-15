@@ -4,6 +4,7 @@
 #include "esphome/components/climate/climate_traits.h"
 #include "econet_climate.h"
 #include <algorithm>
+#include <cmath>
 #include <vector>
 
 using namespace esphome;
@@ -11,18 +12,35 @@ using namespace esphome;
 namespace esphome {
 namespace econet {
 
+static const char *const TAG = "econet.climate";
+
 namespace {
 
 inline float fahrenheit_to_celsius(float f) { return (f - 32.0f) * 5.0f / 9.0f; }
 inline float celsius_to_fahrenheit(float c) { return c * 9.0f / 5.0f + 32.0f; }
 
-}  // namespace
+void log_datapoint_if_set(const char *label, const char *id) {
+  if (id != nullptr && *id != '\0') {
+    ESP_LOGCONFIG(TAG, "  %s Datapoint: %s", label, id);
+  }
+}
 
-static const char *const TAG = "econet.climate";
+}  // namespace
 
 void EconetClimate::dump_config() {
   LOG_CLIMATE("", "Econet Climate", this);
   this->dump_traits_(TAG);
+  log_datapoint_if_set("Current Temperature", this->current_temperature_id_);
+  log_datapoint_if_set("Target Temperature", this->target_temperature_id_);
+  log_datapoint_if_set("Target Temperature Low", this->target_temperature_low_id_);
+  log_datapoint_if_set("Target Temperature High", this->target_temperature_high_id_);
+  log_datapoint_if_set("Current Humidity", this->current_humidity_id_);
+  log_datapoint_if_set("Target Dehumidification Level", this->target_dehumidification_level_id_);
+  log_datapoint_if_set("Mode", this->mode_id_);
+  log_datapoint_if_set("Custom Preset", this->custom_preset_id_);
+  log_datapoint_if_set("Custom Fan Mode", this->custom_fan_mode_id_);
+  log_datapoint_if_set("Custom Fan Mode (No Schedule)", this->custom_fan_mode_no_schedule_id_);
+  log_datapoint_if_set("Follow Schedule", this->follow_schedule_id_);
   if (this->action_id_ && *this->action_id_) {
     ESP_LOGCONFIG(TAG, "  Action datapoint: %s", this->action_id_);
     for (const auto &entry : this->actions_) {
@@ -299,7 +317,7 @@ void EconetClimate::setup() {
 }
 
 void EconetClimate::set_float_datapoint(const char *id, optional<float> value, bool is_temperature) {
-  if (value.has_value() && id && *id) {
+  if (value.has_value() && std::isfinite(*value) && id && *id) {
     float val = *value;
     if (is_temperature) {
       val = celsius_to_fahrenheit(val);
@@ -354,8 +372,8 @@ void EconetClimate::control(const climate::ClimateCall &call) {
     auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
                            [&fan_mode](const EconetFanMode &m) { return m.name == fan_mode; });
     if (it != this->custom_fan_modes_.end() && this->follow_schedule_.has_value()) {
-      // A mode change in the same call takes effect before the fan speed does.
-      const climate::ClimateMode mode = call.get_mode().value_or(this->mode);
+      // A mode change accepted earlier in this call has already updated this->mode via send_datapoint_().
+      const climate::ClimateMode mode = this->mode_state_known_ ? call.get_mode().value_or(this->mode) : this->mode;
       const bool no_schedule = this->uses_no_schedule_fan_mode_(mode);
       if (no_schedule && this->custom_fan_mode_no_schedule_id_ && *this->custom_fan_mode_no_schedule_id_) {
         this->parent_->set_enum_datapoint_value(this->custom_fan_mode_no_schedule_id_, it->id, this->src_adr_);
