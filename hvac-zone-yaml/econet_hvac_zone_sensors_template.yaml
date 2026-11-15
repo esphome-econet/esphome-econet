@@ -1,6 +1,7 @@
 ---
 substitutions:
-  primary_thermostat_address: "0x380"
+  thermostat_address: "0x380"
+  primary_thermostat_address: ${thermostat_address}
 
 sensor:
   - platform: econet
