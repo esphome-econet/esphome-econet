@@ -105,11 +105,13 @@ text_sensor:
     id: operating_mode
     icon: "mdi:hvac"
     sensor_datapoint: HVACMODE
+    src_address: ${thermostat_address}
   - platform: econet
     name: "Auto Mode"
     id: auto_mode
     icon: "mdi:hvac"
     sensor_datapoint: AUTOMODE
+    src_address: ${thermostat_address}
   - id: !extend sw_version
     name: "Thermostat SW Version"
     src_address: ${thermostat_address}
@@ -135,6 +137,7 @@ select:
       3: "Timed, 30 min"
       4: "Timed, 40 min"
     icon: "mdi:fan"
+    entity_category: "config"
     request_mod: 9
   - platform: "econet"
     name: "Humidify During"
@@ -146,6 +149,7 @@ select:
       1: "Heat/Fan"
       2: "Heat/Fan/Cool"
     icon: "mdi:knob"
+    entity_category: "config"
     request_mod: 9
   - platform: "econet"
     name: "Humidify with Fan - Level"
@@ -160,6 +164,7 @@ select:
       4: "Med. Hi"
       5: "High"
     icon: "mdi:fan"
+    entity_category: "config"
     request_mod: 9
   - platform: "econet"
     name: "Humidity Smart Control"
@@ -172,6 +177,7 @@ select:
       2: "Medium"
       3: "High"
     icon: "mdi:network-strength-2"
+    entity_category: "config"
     request_mod: 9
 
 number:
@@ -185,6 +191,7 @@ number:
     step: 1
     mode: "slider"
     icon: "mdi:air-humidifier"
+    entity_category: "config"
     request_mod: 9
   - platform: econet
     name: "Relative Humidity Offset"
@@ -196,6 +203,7 @@ number:
     step: 0.5
     mode: "slider"
     icon: "mdi:skew-more"
+    entity_category: "config"
     request_mod: 9
 
 switch:
@@ -205,15 +213,19 @@ switch:
     switch_datapoint: DHUMENAB
     src_address: ${thermostat_address}
     icon: "mdi:air-humidifier-off"
+    entity_category: "config"
+    request_mod: 9
   - platform: econet
     name: "Humidification Enable State"
     id: humidification_enable_state
     switch_datapoint: HUMDCNFG
     src_address: ${thermostat_address}
     icon: "mdi:air-humidifier-on"
+    entity_category: "config"
     request_mod: 9
   - platform: econet
     name: "Follow Schedule"
     id: schedule
     switch_datapoint: SCHEDULE
     src_address: ${thermostat_address}
+    entity_category: "config"

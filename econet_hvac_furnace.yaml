@@ -9,6 +9,16 @@ substitutions:
 packages:
   econet: !include econet_hvac.yaml
 
+globals:
+  - id: last_hwstatus_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+  - id: has_hwstatus
+    type: bool
+    restore_value: false
+    initial_value: "false"
+
 econet:
   request_mod_addresses:
     5: ${furnace_address}
@@ -22,6 +32,8 @@ econet:
             if (x.size() <= 138) {
               return;
             }
+            id(last_hwstatus_ms) = millis();
+            id(has_hwstatus) = true;
             // Fields the furnace doesn't populate read back as 0xFFFF -- issue #495 reports
             // static pressure as FFFF on an Endeavor furnace whose STATIC_P datapoint reads
             // correctly. Since these sensors also have their own datapoint, publishing that
@@ -167,7 +179,7 @@ sensor:
     request_once: true
     filters:
       - lambda: |-  # Some furnaces seem to report waste rather than efficiency; this normalizes things to traditional AFUE
-          if (x < 50) return 100-x;
+          if (x > 0.0f && x < 50.0f) return 100.0f - x;
           return x;
   - platform: econet
     name: "Furnace High Heat BTU Output"
@@ -424,11 +436,14 @@ interval:
   - interval: 5s
     then:
       - lambda: |-
-          if (std::isnan(id(furnace_hh_btus).state) || std::isnan(id(heat_capacity).state) ||
-              std::isnan(id(furnace_afue).state) || id(furnace_afue).state <= 0.0f) {
+          if (!id(has_hwstatus) || std::isnan(id(furnace_hh_btus).state) ||
+              std::isnan(id(heat_capacity).state) || std::isnan(id(furnace_afue).state) ||
+              id(furnace_afue).state <= 0.0f) {
             return;
           }
-          float furnace_kbtus = id(furnace_hh_btus).state / 1000.0f * id(heat_capacity).state / 100.0f;
+          const bool hwstatus_fresh = (millis() - id(last_hwstatus_ms)) <= 120000;
+          float furnace_kbtus =
+              hwstatus_fresh ? (id(furnace_hh_btus).state / 1000.0f * id(heat_capacity).state / 100.0f) : 0.0f;
           float furnace_eff = id(furnace_afue).state / 100.0f;
           float gas_m3_h = furnace_kbtus / furnace_eff / static_cast<float>(${furnace_kbtus_per_m3});
           id(instant_btu_output).publish_state(furnace_kbtus);

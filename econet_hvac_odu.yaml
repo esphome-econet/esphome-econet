@@ -1,6 +1,7 @@
 ---
 substitutions:
   odu_address: "1024"
+  thermostat_address: "0x380"
 
 econet:
   request_mod_addresses:

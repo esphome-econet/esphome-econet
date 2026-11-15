@@ -70,6 +70,11 @@ water_heater:
       return ${water_heater_default_mode};
     set_action:
       - lambda: |-
+          if (!id(econet_climate).has_reported_state()) {
+            ESP_LOGW("econet", "Ignoring water heater control before the MCU has reported state");
+            return;
+          }
+
           auto call = id(econet_climate).make_call();
           bool has_climate_change = false;
 

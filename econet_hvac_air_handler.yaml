@@ -14,6 +14,7 @@ sensor:
     sensor_datapoint: TEMP_LAT
     device_class: "temperature"
     unit_of_measurement: "°F"
+    accuracy_decimals: 1
     state_class: "measurement"
     entity_category: "diagnostic"
     filters:
@@ -24,6 +25,7 @@ sensor:
     sensor_datapoint: TEMP_RAT
     device_class: "temperature"
     unit_of_measurement: "°F"
+    accuracy_decimals: 1
     state_class: "measurement"
     entity_category: "diagnostic"
     filters:

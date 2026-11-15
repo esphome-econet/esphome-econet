@@ -2,6 +2,9 @@
 substitutions:
   sensor_power_filters_lambda: return x;
   water_heater_set_away_code: |-
+    if (!id(econet_climate).has_reported_state() || !id(vaca_net).has_state()) {
+      return;
+    }
     if (id(econet_water_heater).is_away()) {
       if (id(vaca_net).current_option() != "Permanent") {
         auto call = id(vaca_net).make_call();
@@ -120,6 +123,7 @@ select:
       # 1: "Timed"
       2: "Permanent"
     icon: "mdi:bag-suitcase"
+    entity_category: "config"
 
 # https://github.com/esphome-econet/esphome-econet/issues/301
 # number:
