@@ -1,7 +1,11 @@
 ---
+substitutions:
+  thermostat_address: "0x380"
+  primary_thermostat_address: ${thermostat_address}
+
 econet:
   request_mod_addresses:
-    10: 0x380
+    10: ${primary_thermostat_address}
 
 packages:  # Comment out the bypass section if your system has a mechanical (non-electrical) for the bypass zone
   bypasszone6: !include

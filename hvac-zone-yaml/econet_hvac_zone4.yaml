@@ -1,8 +1,13 @@
 ---
+substitutions:
+  thermostat_address: "0x380"
+  primary_thermostat_address: ${thermostat_address}
+  zone4_thermostat_address: "0x682"
+
 econet:
   request_mod_addresses:
-    10: 0x380
-    13: 0x682
+    10: ${primary_thermostat_address}
+    13: ${zone4_thermostat_address}
 
 packages:
   zone4: !include
@@ -12,4 +17,4 @@ packages:
       zonenumber: "4"
       zone_thermostat_requestmod: 13
       primary_thermostat_requestmod: 10
-      zone_thermostat_address: 0x682
+      zone_thermostat_address: ${zone4_thermostat_address}
