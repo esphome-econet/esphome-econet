@@ -12,6 +12,7 @@ void EconetNumber::setup() {
   this->parent_->register_listener(
       this->number_id_, this->request_mod_, this->request_once_,
       [this](const EconetDatapoint &datapoint) {
+        this->type_ = datapoint.type;
         if (datapoint.type == EconetDatapointType::FLOAT) {
           ESP_LOGV(TAG, "MCU reported number %s is: %f", this->number_id_, datapoint.value_float);
           this->publish_state(datapoint.value_float);
@@ -22,12 +23,15 @@ void EconetNumber::setup() {
           ESP_LOGW(TAG, "Unexpected datapoint type %u for number %s", static_cast<uint8_t>(datapoint.type),
                    this->number_id_);
         }
-        this->type_ = datapoint.type;
       },
       false, this->src_adr_);
 }
 
 void EconetNumber::control(float value) {
+  if (!std::isfinite(value)) {
+    ESP_LOGW(TAG, "Refusing to set non-finite value for number %s", this->number_id_);
+    return;
+  }
   ESP_LOGV(TAG, "Setting number %s: %f", this->number_id_, value);
   if (this->type_ == EconetDatapointType::FLOAT) {
     this->parent_->set_float_datapoint_value(this->number_id_, value, this->src_adr_);

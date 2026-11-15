@@ -19,7 +19,7 @@ EconetSelect = econet_ns.class_(
 )
 
 
-ensure_option_map = unique_value_map(cv.string_strict)
+ensure_option_map = unique_value_map(cv.string_strict, min_length=1)
 
 
 CONFIG_SCHEMA = (
