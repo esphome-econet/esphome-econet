@@ -27,7 +27,9 @@ void EconetSelect::setup() {
           return;
         }
         size_t mapping_idx = std::distance(mappings.begin(), it);
-        this->publish_state(mapping_idx);
+        if (this->active_index() != mapping_idx) {
+          this->publish_state(mapping_idx);
+        }
       },
       false, this->src_adr_);
 }

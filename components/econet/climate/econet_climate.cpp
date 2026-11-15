@@ -89,7 +89,22 @@ void EconetClimate::publish_state_if_reported_() {
   if (!this->has_reported_state() || !this->action_state_known_) {
     return;
   }
+  if (this->in_control_ || this->parent_->is_in_batch_response()) {
+    this->publish_pending_ = true;
+    return;
+  }
+  this->publish_pending_ = false;
   this->publish_state();
+}
+
+void EconetClimate::flush_pending_publish_() {
+  if (!this->publish_pending_ || this->in_control_ || this->parent_->is_in_batch_response()) {
+    return;
+  }
+  this->publish_pending_ = false;
+  if (this->has_reported_state() && this->action_state_known_) {
+    this->publish_state();
+  }
 }
 
 void EconetClimate::handle_float_datapoint_(const char *id, const EconetDatapoint &datapoint, float *member,
@@ -101,12 +116,11 @@ void EconetClimate::handle_float_datapoint_(const char *id, const EconetDatapoin
     ESP_LOGW(TAG, "Unexpected datapoint type %u for climate float %s", static_cast<uint8_t>(datapoint.type), id);
     return;
   }
-  float val = datapoint.value_float;
-  if (is_temperature) {
-    *member = fahrenheit_to_celsius(val);
-  } else {
-    *member = val;
+  float val = is_temperature ? fahrenheit_to_celsius(datapoint.value_float) : datapoint.value_float;
+  if (*member == val || (std::isnan(*member) && std::isnan(val))) {
+    return;
   }
+  *member = val;
   this->publish_state_if_reported_();
 }
 
@@ -120,12 +134,15 @@ void EconetClimate::handle_fan_datapoint_(const char *id, const EconetDatapoint 
   }
   auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
                          [&](const EconetFanMode &m) { return m.id == datapoint.value_enum; });
+  const char *matched = nullptr;
   if (it == this->custom_fan_modes_.end()) {
     ESP_LOGW(TAG, "In custom_fan_modes of your yaml add: %d: \"%s\"", datapoint.value_enum,
              datapoint.value_string.c_str());
   } else {
-    *member = it->name;
-    this->update_active_fan_mode_();
+    matched = it->name;
+  }
+  *member = matched;
+  if (this->update_active_fan_mode_()) {
     this->publish_state_if_reported_();
   }
 }
@@ -140,20 +157,26 @@ bool EconetClimate::uses_no_schedule_fan_mode_(climate::ClimateMode mode) const 
 
 // Reflect whichever of the two is in charge, falling back to the regular one while the schedule is
 // being followed so that a config without a no-schedule datapoint keeps reporting what it used to.
-void EconetClimate::update_active_fan_mode_() {
+bool EconetClimate::update_active_fan_mode_() {
   if (!this->follow_schedule_.has_value()) {
-    return;
+    return false;
   }
+  const bool has_no_schedule_dp =
+      this->custom_fan_mode_no_schedule_id_ != nullptr && *this->custom_fan_mode_no_schedule_id_ != '\0';
   const char *active = nullptr;
-  if (this->uses_no_schedule_fan_mode_(this->mode) && this->fan_mode_no_schedule_ != nullptr) {
+  if (this->uses_no_schedule_fan_mode_(this->mode) && has_no_schedule_dp) {
     active = this->fan_mode_no_schedule_;
-  } else if (*this->follow_schedule_ && this->fan_mode_ != nullptr) {
+  } else if (*this->follow_schedule_) {
     active = this->fan_mode_;
   }
   if (active == nullptr) {
-    return;
+    if (!this->has_custom_fan_mode()) {
+      return false;
+    }
+    this->clear_custom_fan_mode_();
+    return true;
   }
-  this->set_custom_fan_mode_(active);
+  return this->set_custom_fan_mode_(active);
 }
 
 void EconetClimate::setup() {
@@ -174,6 +197,8 @@ void EconetClimate::setup() {
     }
     this->set_supported_custom_fan_modes(fans);
   }
+
+  this->parent_->add_on_batch_complete_callback([this]() { this->flush_pending_publish_(); });
 
   if (this->current_temperature_id_ && *this->current_temperature_id_) {
     this->parent_->register_listener(
@@ -242,11 +267,14 @@ void EconetClimate::setup() {
             ESP_LOGW(TAG, "In modes of your yaml add a ClimateMode that corresponds to: %d: \"%s\"",
                      datapoint.value_enum, datapoint.value_string.c_str());
           } else {
+            bool changed = !this->mode_state_known_ || this->mode != it->mode;
             this->mode = it->mode;
             this->mode_state_known_ = true;
             // Which fan speed datapoint is in charge depends on the mode.
-            this->update_active_fan_mode_();
-            this->publish_state_if_reported_();
+            changed |= this->update_active_fan_mode_();
+            if (changed) {
+              this->publish_state_if_reported_();
+            }
           }
         },
         false, this->src_adr_);
@@ -268,12 +296,19 @@ void EconetClimate::setup() {
           }
           auto it = std::find_if(this->custom_presets_.begin(), this->custom_presets_.end(),
                                  [&](const EconetPreset &p) { return p.id == datapoint.value_enum; });
+          bool changed = !this->custom_preset_state_known_;
           if (it == this->custom_presets_.end()) {
             ESP_LOGW(TAG, "In custom_presets of your yaml add: %d: \"%s\"", datapoint.value_enum,
                      datapoint.value_string.c_str());
-          } else {
-            this->set_custom_preset_(it->name);
-            this->custom_preset_state_known_ = true;
+            if (this->has_custom_preset()) {
+              this->clear_custom_preset_();
+              changed = true;
+            }
+          } else if (this->set_custom_preset_(it->name)) {
+            changed = true;
+          }
+          this->custom_preset_state_known_ = true;
+          if (changed) {
             this->publish_state_if_reported_();
           }
         },
@@ -312,20 +347,25 @@ void EconetClimate::setup() {
                      this->action_id_);
             return;
           }
+          climate::ClimateAction next_action;
           auto it = std::find_if(this->actions_.begin(), this->actions_.end(),
                                  [&](const EconetClimateAction &a) { return a.id == datapoint.value_enum; });
           if (it != this->actions_.end()) {
-            this->action = it->action;
+            next_action = it->action;
           } else if (this->default_action_.has_value()) {
-            this->action = *this->default_action_;
+            next_action = *this->default_action_;
           } else {
             // Like an unmapped mode: keep the last action, and hold the first publish until a mapped value.
             ESP_LOGW(TAG, "In actions of your yaml add a ClimateAction that corresponds to: %d: \"%s\"",
                      datapoint.value_enum, datapoint.value_string.c_str());
             return;
           }
+          bool changed = !this->action_state_known_ || this->action != next_action;
+          this->action = next_action;
           this->action_state_known_ = true;
-          this->publish_state_if_reported_();
+          if (changed) {
+            this->publish_state_if_reported_();
+          }
         },
         false, this->src_adr_);
   } else {
@@ -348,8 +388,9 @@ void EconetClimate::setup() {
           ESP_LOGV(TAG, "MCU reported climate sensor %s is: %s", this->follow_schedule_id_,
                    datapoint.value_string.c_str());
           this->follow_schedule_ = datapoint.value_enum > 0;
-          this->update_active_fan_mode_();
-          this->publish_state_if_reported_();
+          if (this->update_active_fan_mode_()) {
+            this->publish_state_if_reported_();
+          }
         },
         false, this->src_adr_);
   } else {
@@ -369,6 +410,8 @@ void EconetClimate::set_float_datapoint(const char *id, optional<float> value, b
 }
 
 void EconetClimate::control(const climate::ClimateCall &call) {
+  this->in_control_ = true;
+
   this->set_float_datapoint(this->target_temperature_id_, call.get_target_temperature(), true);
   this->set_float_datapoint(this->target_temperature_low_id_, call.get_target_temperature_low(), true);
   this->set_float_datapoint(this->target_temperature_high_id_, call.get_target_temperature_high(), true);
@@ -428,6 +471,9 @@ void EconetClimate::control(const climate::ClimateCall &call) {
       }
     }
   }
+
+  this->in_control_ = false;
+  this->flush_pending_publish_();
 }
 
 }  // namespace econet
