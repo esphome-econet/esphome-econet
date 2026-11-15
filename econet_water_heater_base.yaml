@@ -151,3 +151,8 @@ water_heater:
           }
       - lambda: |-
           ${water_heater_set_away_code}
+      - lambda: |-
+          // Sync derived flags (is_on, mode, away) immediately from econet_climate/vaca_net so
+          // TemplateWaterHeater::control() does not publish an inconsistent intermediate state or
+          // misread is_on() on back-to-back calls within the same loop tick.
+          id(econet_water_heater).loop();
