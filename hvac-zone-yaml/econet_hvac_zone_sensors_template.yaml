@@ -8,8 +8,12 @@ sensor:
     src_address: ${primary_thermostat_address}
     id: zone${zonenumber}_cfm
     name: ${zonename} CFM
+    icon: "mdi:fan"
     sensor_datapoint: Z${zonenumber}CFMDSP
     request_mod: ${primary_thermostat_requestmod}
+    unit_of_measurement: "cfm"
+    accuracy_decimals: 0
     state_class: "measurement"
     entity_category: "diagnostic"
-    unit_of_measurement: "cfm"
+    filters:
+      - delta: 9.9
