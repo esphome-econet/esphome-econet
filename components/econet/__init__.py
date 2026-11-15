@@ -109,18 +109,21 @@ def econet_address(value):
     return cv.int_range(min=0, max=MAX_ADDRESS)(value)
 
 
+def econet_nonzero_address(value):
+    return cv.int_range(min=1, max=MAX_ADDRESS)(value)
+
+
 def validate_request_mod_addresses(value):
     cv.check_not_templatable(value)
-    options_map_schema = cv.Schema({validate_request_mod_range: econet_address})
-    value = options_map_schema(value)
-    return value
+    options_map_schema = cv.Schema({validate_request_mod_range: econet_nonzero_address})
+    return options_map_schema(value)
 
 
 CONFIG_SCHEMA = (
     cv.Schema(
         {
             cv.GenerateID(): cv.declare_id(Econet),
-            cv.Required(CONF_SRC_ADDRESS): econet_address,
+            cv.Required(CONF_SRC_ADDRESS): econet_nonzero_address,
             cv.Optional(CONF_DST_ADDRESS, default=0): econet_address,
             cv.Optional(
                 CONF_UPDATE_INTERVAL, default="30s"
