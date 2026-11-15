@@ -62,16 +62,17 @@ struct DatapointName {
 
 struct ReadRequest {
   StaticVector<DatapointName, MAX_OBJECTS_PER_REQUEST> obj_names;
-  uint32_t dst_adr;
-  uint32_t src_adr;
-  uint8_t type;
-  bool awaiting_res;
-  bool from_us;
+  uint32_t dst_adr{0};
+  uint32_t src_adr{0};
+  uint32_t timestamp{0};
+  uint8_t type{0};
+  bool awaiting_res{false};
+  bool from_us{false};
 };
 
 struct EconetDatapointID {
   DatapointName name;
-  uint32_t address;
+  uint32_t address{0};
 };
 inline bool operator==(const EconetDatapointID &lhs, const EconetDatapointID &rhs) {
   return lhs.name == rhs.name && lhs.address == rhs.address;
@@ -211,8 +212,10 @@ class Econet : public Component, public uart::UARTDevice {
 
   void make_request_();
   void read_buffer_(int bytes_available);
+  void advance_to_next_sync_();
+  void drain_rx_frames_(bool timeout_flush);
   void parse_message_(const uint8_t *b, bool is_tx);
-  void parse_rx_message_();
+  bool parse_rx_frame_(const uint8_t *b, size_t frame_len);
   void handle_response_(const EconetDatapointID &datapoint_id, const uint8_t *p, uint8_t len);
   // Warns about a read request issued while the previous one is still unanswered, rate limited,
   // and adds a hint about the usual causes while no read has ever been answered.
@@ -288,6 +291,7 @@ class Econet : public Component, public uart::UARTDevice {
   uint32_t dst_adr_last_read_request_{0};
   uint32_t src_adr_{0};
   uint32_t dst_adr_{0};
+  size_t next_request_mod_index_{0};
 
   // 2-byte types
   uint16_t request_mod_interval_override_mask_{0};

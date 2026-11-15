@@ -383,6 +383,85 @@ void test_stray_0x80_resync_crc_and_timeout() {
   g_mock_millis = 7000;
   eco.loop();
   EXPECT(!eco.mcu_connected_ && !conn.state);
+
+  // 1) Stray noise + back-to-back READ + ACK in a single RX chunk drains both frames in one loop()!
+  auto ack_76 = build_frame(0x680, 0x380, 6, make_class2_float_item(76.0f));
+  std::vector<uint8_t> immediate_burst = {0x00, 0xFF, 0x80};
+  immediate_burst.insert(immediate_burst.end(), read_f.begin(), read_f.end());
+  immediate_burst.insert(immediate_burst.end(), ack_76.begin(), ack_76.end());
+  g_mock_millis = 7050;
+  uart.feed_rx(immediate_burst);
+  eco.loop();
+  EXPECT(oat == 76.0f);
+
+  // 2) Corrupt frame + two stray 0x80 bytes (forming a false 144-byte header candidate against 0x0380/0x0680)
+  // followed by valid READ + ACK recovers both queued frames on RECEIVE_TIMEOUT flush instead of discarding them!
+  auto corrupt_f = build_frame(0x380, 0x680, 31, {0x07, 0x00});
+  corrupt_f.back() ^= 0x55;
+  auto ack_f = build_frame(0x680, 0x380, 6, make_class2_float_item(77.0f));
+  std::vector<uint8_t> burst = corrupt_f;
+  burst.push_back(0x80);
+  burst.push_back(0x80);
+  burst.insert(burst.end(), read_f.begin(), read_f.end());
+  burst.insert(burst.end(), ack_f.begin(), ack_f.end());
+  g_mock_millis = 7100;
+  uart.feed_rx(burst);
+  eco.loop();
+  g_mock_millis = 7210;  // > RECEIVE_TIMEOUT (100ms): drain_rx_frames_(true) flushes false prefix and parses READ + ACK
+  eco.loop();
+  EXPECT(oat == 77.0f);
+
+  // Half-duplex collision holdoff (READ_RESPONSE_TIMEOUT = 250ms) and immediate release on NAK (0x15):
+  // 1) Receiving NAK at +20ms clears awaiting_res so a queued write transmits at +130ms (< 250ms holdoff).
+  uart.tx_frames.clear();
+  eco.set_float_datapoint_value("SPT", 70.0f, 0x380);
+  g_mock_millis = 7300;
+  uart.feed_rx(read_f);
+  eco.loop();
+  g_mock_millis = 7320;
+  uart.feed_rx(build_frame(0x680, 0x380, 0x15, {}));  // NAK ends read transaction immediately
+  eco.loop();
+  g_mock_millis = 7430;  // 110ms after NAK (> REQUEST_DELAY), 130ms after READ (< 250ms READ_RESPONSE_TIMEOUT)
+  eco.loop();
+  EXPECT(uart.tx_frames.size() == 1);
+
+  // 2) Without ACK/NAK, a queued write is held off at +150ms and proceeds once >= 250ms have elapsed.
+  uart.tx_frames.clear();
+  eco.set_float_datapoint_value("SPT", 71.0f, 0x380);
+  g_mock_millis = 8000;
+  uart.feed_rx(read_f);
+  eco.loop();
+  g_mock_millis = 8150;  // +150ms: held off
+  eco.loop();
+  EXPECT(uart.tx_frames.empty());
+  g_mock_millis = 8260;  // +260ms (>= 250ms READ_RESPONSE_TIMEOUT): write proceeds!
+  eco.loop();
+  EXPECT(uart.tx_frames.size() == 1);
+
+  // Fair round-robin request_mod scheduling: when mod 0 and mod 1 are both due simultaneously,
+  // consecutive poll cycles alternate between them rather than starving mod 1 behind mod 0.
+  uart::MockUART rr_uart;
+  TestableEconet rr_eco;
+  rr_eco.set_uart_parent(&rr_uart);
+  rr_eco.set_update_interval(200);
+  rr_eco.set_src_address(0x340);
+  rr_eco.set_dst_address(0x380);
+  rr_eco.add_request_mod_address(0, 0x380);
+  rr_eco.add_request_mod_address(1, 0x500);
+  rr_eco.register_listener("MOD0_DP", 0, false, [](const EconetDatapoint &) {}, false, 0x380);
+  rr_eco.register_listener("MOD1_DP", 1, false, [](const EconetDatapoint &) {}, false, 0x500);
+  rr_eco.setup();
+
+  g_mock_millis = 9000;
+  rr_eco.loop();  // Initial poll: mod 0 (0x380)
+  EXPECT(rr_uart.tx_frames.size() == 1 && rr_uart.tx_frames[0][2] == 0x03 && rr_uart.tx_frames[0][3] == 0x80);
+  g_mock_millis = 9020;
+  rr_uart.feed_rx(build_frame(0x340, 0x380, 6, make_class2_float_item(1.0f)));
+  rr_eco.loop();
+
+  g_mock_millis = 9250;  // Both mod 0 (last=9000, interval=200) and mod 1 (unrequested) are due -> mod 1 (0x500) wins!
+  rr_eco.loop();
+  EXPECT(rr_uart.tx_frames.size() == 2 && rr_uart.tx_frames[1][2] == 0x05 && rr_uart.tx_frames[1][3] == 0x00);
 }
 
 void test_pagination_request_once_and_raw_class1() {
@@ -565,6 +644,26 @@ void test_homeassistant_services() {
   EXPECT(raw_res["type"] == "RAW");
   EXPECT(raw_res["value_raw"] == "04.DE.AD");
 
+  // Unsupported datapoint where Class 2 returns UNSUPPORTED and Class 1 retry receives NAK (0x15):
+  // completes immediately with UNSUPPORTED without burning the 2000ms timeout or leaving our_read_awaiting_res_ set!
+  uart.on_tx = [&](const std::vector<uint8_t> &tx) {
+    if (tx.size() >= 16 && tx[13] == 30) {
+      g_mock_millis += 20;
+      if (tx[14] == 2) {
+        uart.feed_rx(build_frame(0x340, 0x380, 6, make_class2_unsupported_item()));
+      } else if (tx[14] == 1) {
+        uart.feed_rx(build_frame(0x340, 0x380, 0x15, {}));
+      }
+    }
+  };
+  const uint32_t before_nak_read = g_mock_millis;
+  auto nak_res = eco.homeassistant_read("BOGUS_DP", 0x380);
+  uart.on_tx = nullptr;
+  EXPECT(nak_res["type"] == "UNSUPPORTED");
+  EXPECT(g_mock_millis - before_nak_read < 500);
+  EXPECT(!eco.our_read_awaiting_res_);
+  EXPECT(eco.unanswered_reads_ == 0);
+
   // Passive bus traffic already in RX buffer satisfies homeassistant_read with %.7g float formatting and cleans up
   // datapoint_ids_for_read_service_ so no orphaned read is transmitted afterward!
   uart.tx_frames.clear();
@@ -577,11 +676,14 @@ void test_homeassistant_services() {
   eco.loop();
   EXPECT(uart.tx_frames.empty());
 
-  // Unanswered read times out cleanly after ~2000ms and cleans up service queue.
+  // Unanswered read times out cleanly after ~2000ms, cleans up service queue, and clears our_read_awaiting_res_
+  // so subsequent periodic reads do not log a false unanswered-read warning.
   uart.tx_frames.clear();
   auto timeout_res = eco.homeassistant_read("OAT_SENS", 0x380);
   EXPECT(timeout_res.empty());
   EXPECT(!uart.tx_frames.empty());
+  EXPECT(!eco.our_read_awaiting_res_);
+  EXPECT(eco.unanswered_reads_ == 0);
 
   // homeassistant_write ignores NaN and queues WRITE_COMMAND (command 31) for valid values.
   uart.tx_frames.clear();
