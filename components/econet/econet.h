@@ -8,7 +8,6 @@
 #include <array>
 #include <cmath>
 #include <cstring>
-#include <functional>
 #include <map>
 #include <string>
 #include <vector>
@@ -26,6 +25,7 @@ static const uint8_t MAX_OBJECTS_PER_REQUEST = 25;
 static const uint8_t MAX_REQUEST_MODS = 16;
 static const uint8_t OBJ_NAME_SIZE = 8;
 static const uint32_t DEFAULT_UPDATE_INTERVAL_MILLIS = 30000;
+static const uint32_t MIN_REQUEST_DELAY_MILLIS = 100;
 
 // Wire object names are fixed 8-byte ASCII identifiers. Storing them inline avoids heap
 // allocations across listener tables, datapoint caches, and per-packet read tracking.
@@ -113,18 +113,13 @@ inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
   return false;
 }
 
-struct EconetDatapointListener {
-  uint32_t id;
-  EconetDatapointID datapoint_id;
-  std::function<void(const EconetDatapoint &)> on_datapoint;
-  bool one_shot;
-  // Notify on every response rather than only when the value differs from the previous one.
-  bool publish_unchanged;
-};
+using DatapointCallback = Callback<void(const EconetDatapoint &)>;
 
-struct RequestModUpdateInterval {
-  uint8_t mod;
-  uint32_t interval;
+struct EconetDatapointListener {
+  EconetDatapointID datapoint_id;
+  DatapointCallback on_datapoint;
+  // Notify on every response rather than only when the value differs from the previous one.
+  bool publish_unchanged{false};
 };
 
 struct DatapointEntry {
@@ -142,6 +137,8 @@ bool extract_id_fields(const std::vector<uint8_t> &payload, std::string *first, 
 
 class Econet : public Component, public uart::UARTDevice {
  public:
+  Econet() { this->request_mod_update_interval_millis_.fill(DEFAULT_UPDATE_INTERVAL_MILLIS); }
+
   void setup() override;
   void loop() override;
   void dump_config() override;
@@ -157,12 +154,12 @@ class Econet : public Component, public uart::UARTDevice {
       this->request_mod_addresses_[mod] = address;
     }
   }
-  void init_request_mod_update_intervals(size_t size) { this->request_mod_update_interval_millis_map_.init(size); }
   void add_request_mod_update_interval(uint8_t mod, uint32_t interval) {
     if (mod >= MAX_REQUEST_MODS) {
       return;
     }
-    this->request_mod_update_interval_millis_map_.push_back({mod, interval});
+    this->request_mod_interval_override_mask_ |= static_cast<uint16_t>(1U << mod);
+    this->request_mod_update_interval_millis_[mod] = interval;
     this->update_intervals_();
   }
   void set_update_interval(uint32_t interval_millis) {
@@ -178,14 +175,13 @@ class Econet : public Component, public uart::UARTDevice {
   void set_float_datapoint_value(const DatapointName &datapoint_id, float value, uint32_t address = 0);
   void set_enum_datapoint_value(const DatapointName &datapoint_id, uint8_t value, uint32_t address = 0);
 
-  // Returns a listener id that can later be passed to unregister_listener(). 0 is never a valid id.
-  uint32_t register_listener(const DatapointName &datapoint_id, int8_t request_mod, bool request_once,
-                             const std::function<void(const EconetDatapoint &)> &func, bool is_raw_datapoint = false,
-                             uint32_t src_adr = 0, bool one_shot = false, bool run_existing = true,
-                             bool publish_unchanged = false);
-  // Removes a previously registered listener. Safe to call at any time, including from within
-  // a listener callback or with an id that has already fired (one-shot) or been unregistered.
-  bool unregister_listener(uint32_t listener_id);
+  template<typename F>
+  void register_listener(const DatapointName &datapoint_id, int8_t request_mod, bool request_once, F &&func,
+                         bool is_raw_datapoint = false, uint32_t src_adr = 0, bool run_existing = true,
+                         bool publish_unchanged = false) {
+    this->register_listener_(datapoint_id, request_mod, request_once, DatapointCallback::create(std::forward<F>(func)),
+                             is_raw_datapoint, src_adr, run_existing, publish_unchanged);
+  }
 
   std::map<std::string, std::string> homeassistant_read(const std::string &datapoint_id, uint32_t address = 0);
   void homeassistant_write(const std::string &datapoint_id, uint8_t value, uint32_t address = 0);
@@ -196,6 +192,10 @@ class Econet : public Component, public uart::UARTDevice {
     EconetDatapointID id;
     bool force_raw{false};
   };
+
+  void register_listener_(const DatapointName &datapoint_id, int8_t request_mod, bool request_once,
+                          DatapointCallback callback, bool is_raw_datapoint, uint32_t src_adr, bool run_existing,
+                          bool publish_unchanged);
 
   void set_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value);
   void send_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value, bool from_mcu = true);
@@ -216,26 +216,31 @@ class Econet : public Component, public uart::UARTDevice {
   bool is_cached_from_mcu_(const DatapointName &name, uint32_t address) const;
   void write_value_(const DatapointName &object, EconetDatapointType type, float value, uint32_t address = 0);
 
-  void update_intervals_() {
-    this->min_update_interval_millis_ = this->update_interval_millis_;
-    for (auto i = 0; i < MAX_REQUEST_MODS; i++) {
-      this->request_mod_update_interval_millis_[i] = this->update_interval_millis_;
-    }
-    for (auto &item : this->request_mod_update_interval_millis_map_) {
-      this->request_mod_update_interval_millis_[item.mod] = item.interval;
-      this->min_update_interval_millis_ = std::min(this->min_update_interval_millis_, item.interval);
+  void update_min_read_delay_() {
+    if (!this->request_mods_.empty()) {
+      this->min_delay_between_read_requests_ =
+          std::max(this->min_update_interval_millis_ / static_cast<uint32_t>(this->request_mods_.size()),
+                   MIN_REQUEST_DELAY_MILLIS);
     }
   }
 
+  void update_intervals_() {
+    this->min_update_interval_millis_ = this->update_interval_millis_;
+    for (uint8_t i = 0; i < MAX_REQUEST_MODS; i++) {
+      if ((this->request_mod_interval_override_mask_ & (1U << i)) == 0) {
+        this->request_mod_update_interval_millis_[i] = this->update_interval_millis_;
+      }
+      this->min_update_interval_millis_ =
+          std::min(this->min_update_interval_millis_, this->request_mod_update_interval_millis_[i]);
+    }
+    this->update_min_read_delay_();
+  }
+
   // Member variables - ordered for packing
-  // Large/complex types
   ReadRequest read_req_{};
   std::vector<EconetDatapointListener> listeners_;
-  uint32_t next_listener_id_{1};  // monotonic; 0 is reserved as invalid
   std::array<uint32_t, MAX_REQUEST_MODS> request_mod_addresses_{};
-  FixedVector<RequestModUpdateInterval> request_mod_update_interval_millis_map_;
-  std::array<uint32_t, MAX_REQUEST_MODS>
-      request_mod_update_interval_millis_{};  // Initialized in loop/update_intervals_
+  std::array<uint32_t, MAX_REQUEST_MODS> request_mod_update_interval_millis_{};
   std::array<std::vector<DatapointName>, MAX_REQUEST_MODS> request_datapoint_ids_;
   std::array<uint32_t, MAX_REQUEST_MODS> request_mod_last_requested_{};
   std::array<size_t, MAX_REQUEST_MODS> request_mod_offset_{};
@@ -275,6 +280,7 @@ class Econet : public Component, public uart::UARTDevice {
   uint32_t dst_adr_{0};
 
   // 2-byte types
+  uint16_t request_mod_interval_override_mask_{0};
   uint16_t last_tx_crc_{0};
   uint16_t last_tx_len_{0};
 
@@ -300,6 +306,8 @@ class EconetClient {
   void set_src_adr(uint32_t src_adr) { this->src_adr_ = src_adr; }
 
  protected:
+  void dump_client_config_(const char *tag) const;
+
   Econet *parent_{nullptr};
   uint32_t src_adr_{0};
   int8_t request_mod_{0};

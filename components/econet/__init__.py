@@ -203,13 +203,10 @@ async def to_code(config):
     if config[CONF_DST_ADDRESS] != 0:
         cg.add(var.set_dst_address(config[CONF_DST_ADDRESS]))
     if CONF_REQUEST_MOD_UPDATE_INTERVALS in config:
-        request_mod_update_intervals = config[CONF_REQUEST_MOD_UPDATE_INTERVALS]
-        cg.add(var.init_request_mod_update_intervals(len(request_mod_update_intervals)))
-        for mod, interval in request_mod_update_intervals.items():
+        for mod, interval in config[CONF_REQUEST_MOD_UPDATE_INTERVALS].items():
             cg.add(var.add_request_mod_update_interval(mod, interval))
     if CONF_REQUEST_MOD_ADDRESSES in config:
-        request_mod_addresses = config[CONF_REQUEST_MOD_ADDRESSES]
-        for mod, address in request_mod_addresses.items():
+        for mod, address in config[CONF_REQUEST_MOD_ADDRESSES].items():
             cg.add(var.add_request_mod_address(mod, address))
     if CONF_FLOW_CONTROL_PIN in config:
         pin = await gpio_pin_expression(config[CONF_FLOW_CONTROL_PIN])

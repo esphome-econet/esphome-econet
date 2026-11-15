@@ -4,7 +4,7 @@
 namespace esphome {
 namespace econet {
 
-static const char *const TAG = "econet.select";
+ESPHOME_LOG_TAG(TAG, "econet.select");
 
 void EconetSelect::setup() {
   this->parent_->register_listener(
@@ -41,6 +41,7 @@ void EconetSelect::control(size_t index) {
 void EconetSelect::dump_config() {
   LOG_SELECT("", "Econet Select", this);
   ESP_LOGCONFIG(TAG, "  Select has datapoint ID %s", this->select_id_);
+  this->dump_client_config_(TAG);
   ESP_LOGCONFIG(TAG, "  Options are:");
   for (size_t i = 0; i < this->mappings_.size(); i++) {
     ESP_LOGCONFIG(TAG, "    %u: %s", this->mappings_[i], this->option_at(i));

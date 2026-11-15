@@ -12,7 +12,7 @@ using namespace esphome;
 namespace esphome {
 namespace econet {
 
-static const char *const TAG = "econet.climate";
+ESPHOME_LOG_TAG(TAG, "econet.climate");
 
 namespace {
 
@@ -51,6 +51,7 @@ void EconetClimate::dump_config() {
                     LOG_STR_ARG(climate::climate_action_to_string(*this->default_action_)));
     }
   }
+  this->dump_client_config_(TAG);
 }
 
 climate::ClimateTraits EconetClimate::traits() {
@@ -91,56 +92,41 @@ void EconetClimate::publish_state_if_reported_() {
   this->publish_state();
 }
 
-void EconetClimate::register_float_listener(const char *id, float *member, bool is_temperature) {
-  if (id && *id) {
-    this->parent_->register_listener(
-        id, this->request_mod_, this->request_once_,
-        [this, id, member, is_temperature](const EconetDatapoint &datapoint) {
-          if (datapoint.type == EconetDatapointType::UNSUPPORTED) {
-            return;
-          }
-          if (datapoint.type != EconetDatapointType::FLOAT) {
-            ESP_LOGW(TAG, "Unexpected datapoint type %u for climate float %s", static_cast<uint8_t>(datapoint.type),
-                     id);
-            return;
-          }
-          float val = datapoint.value_float;
-          if (is_temperature) {
-            *member = fahrenheit_to_celsius(val);
-          } else {
-            *member = val;
-          }
-          this->publish_state_if_reported_();
-        },
-        false, this->src_adr_);
+void EconetClimate::handle_float_datapoint_(const char *id, const EconetDatapoint &datapoint, float *member,
+                                            bool is_temperature) {
+  if (datapoint.type == EconetDatapointType::UNSUPPORTED) {
+    return;
   }
+  if (datapoint.type != EconetDatapointType::FLOAT) {
+    ESP_LOGW(TAG, "Unexpected datapoint type %u for climate float %s", static_cast<uint8_t>(datapoint.type), id);
+    return;
+  }
+  float val = datapoint.value_float;
+  if (is_temperature) {
+    *member = fahrenheit_to_celsius(val);
+  } else {
+    *member = val;
+  }
+  this->publish_state_if_reported_();
 }
 
-void EconetClimate::register_fan_listener(const char *id, const char **member) {
-  if (id && *id) {
-    this->parent_->register_listener(
-        id, this->request_mod_, this->request_once_,
-        [this, id, member](const EconetDatapoint &datapoint) {
-          if (datapoint.type == EconetDatapointType::UNSUPPORTED) {
-            return;
-          }
-          if (datapoint.type != EconetDatapointType::ENUM_TEXT) {
-            ESP_LOGW(TAG, "Unexpected datapoint type %u for climate fan mode %s", static_cast<uint8_t>(datapoint.type),
-                     id);
-            return;
-          }
-          auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
-                                 [&](const EconetFanMode &m) { return m.id == datapoint.value_enum; });
-          if (it == this->custom_fan_modes_.end()) {
-            ESP_LOGW(TAG, "In custom_fan_modes of your yaml add: %d: \"%s\"", datapoint.value_enum,
-                     datapoint.value_string.c_str());
-          } else {
-            *member = it->name;
-            this->update_active_fan_mode_();
-            this->publish_state_if_reported_();
-          }
-        },
-        false, this->src_adr_);
+void EconetClimate::handle_fan_datapoint_(const char *id, const EconetDatapoint &datapoint, const char **member) {
+  if (datapoint.type == EconetDatapointType::UNSUPPORTED) {
+    return;
+  }
+  if (datapoint.type != EconetDatapointType::ENUM_TEXT) {
+    ESP_LOGW(TAG, "Unexpected datapoint type %u for climate fan mode %s", static_cast<uint8_t>(datapoint.type), id);
+    return;
+  }
+  auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
+                         [&](const EconetFanMode &m) { return m.id == datapoint.value_enum; });
+  if (it == this->custom_fan_modes_.end()) {
+    ESP_LOGW(TAG, "In custom_fan_modes of your yaml add: %d: \"%s\"", datapoint.value_enum,
+             datapoint.value_string.c_str());
+  } else {
+    *member = it->name;
+    this->update_active_fan_mode_();
+    this->publish_state_if_reported_();
   }
 }
 
@@ -189,12 +175,54 @@ void EconetClimate::setup() {
     this->set_supported_custom_fan_modes(fans);
   }
 
-  this->register_float_listener(this->current_temperature_id_, &this->current_temperature, true);
-  this->register_float_listener(this->target_temperature_id_, &this->target_temperature, true);
-  this->register_float_listener(this->target_temperature_low_id_, &this->target_temperature_low, true);
-  this->register_float_listener(this->target_temperature_high_id_, &this->target_temperature_high, true);
-  this->register_float_listener(this->current_humidity_id_, &this->current_humidity, false);
-  this->register_float_listener(this->target_dehumidification_level_id_, &this->target_humidity, false);
+  if (this->current_temperature_id_ && *this->current_temperature_id_) {
+    this->parent_->register_listener(
+        this->current_temperature_id_, this->request_mod_, this->request_once_,
+        [this](const EconetDatapoint &dp) {
+          this->handle_float_datapoint_(this->current_temperature_id_, dp, &this->current_temperature, true);
+        },
+        false, this->src_adr_);
+  }
+  if (this->target_temperature_id_ && *this->target_temperature_id_) {
+    this->parent_->register_listener(
+        this->target_temperature_id_, this->request_mod_, this->request_once_,
+        [this](const EconetDatapoint &dp) {
+          this->handle_float_datapoint_(this->target_temperature_id_, dp, &this->target_temperature, true);
+        },
+        false, this->src_adr_);
+  }
+  if (this->target_temperature_low_id_ && *this->target_temperature_low_id_) {
+    this->parent_->register_listener(
+        this->target_temperature_low_id_, this->request_mod_, this->request_once_,
+        [this](const EconetDatapoint &dp) {
+          this->handle_float_datapoint_(this->target_temperature_low_id_, dp, &this->target_temperature_low, true);
+        },
+        false, this->src_adr_);
+  }
+  if (this->target_temperature_high_id_ && *this->target_temperature_high_id_) {
+    this->parent_->register_listener(
+        this->target_temperature_high_id_, this->request_mod_, this->request_once_,
+        [this](const EconetDatapoint &dp) {
+          this->handle_float_datapoint_(this->target_temperature_high_id_, dp, &this->target_temperature_high, true);
+        },
+        false, this->src_adr_);
+  }
+  if (this->current_humidity_id_ && *this->current_humidity_id_) {
+    this->parent_->register_listener(
+        this->current_humidity_id_, this->request_mod_, this->request_once_,
+        [this](const EconetDatapoint &dp) {
+          this->handle_float_datapoint_(this->current_humidity_id_, dp, &this->current_humidity, false);
+        },
+        false, this->src_adr_);
+  }
+  if (this->target_dehumidification_level_id_ && *this->target_dehumidification_level_id_) {
+    this->parent_->register_listener(
+        this->target_dehumidification_level_id_, this->request_mod_, this->request_once_,
+        [this](const EconetDatapoint &dp) {
+          this->handle_float_datapoint_(this->target_dehumidification_level_id_, dp, &this->target_humidity, false);
+        },
+        false, this->src_adr_);
+  }
 
   if (this->mode_id_ && *this->mode_id_) {
     this->parent_->register_listener(
@@ -255,8 +283,22 @@ void EconetClimate::setup() {
     this->custom_preset_state_known_ = true;
   }
 
-  this->register_fan_listener(this->custom_fan_mode_id_, &this->fan_mode_);
-  this->register_fan_listener(this->custom_fan_mode_no_schedule_id_, &this->fan_mode_no_schedule_);
+  if (this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
+    this->parent_->register_listener(
+        this->custom_fan_mode_id_, this->request_mod_, this->request_once_,
+        [this](const EconetDatapoint &dp) {
+          this->handle_fan_datapoint_(this->custom_fan_mode_id_, dp, &this->fan_mode_);
+        },
+        false, this->src_adr_);
+  }
+  if (this->custom_fan_mode_no_schedule_id_ && *this->custom_fan_mode_no_schedule_id_) {
+    this->parent_->register_listener(
+        this->custom_fan_mode_no_schedule_id_, this->request_mod_, this->request_once_,
+        [this](const EconetDatapoint &dp) {
+          this->handle_fan_datapoint_(this->custom_fan_mode_no_schedule_id_, dp, &this->fan_mode_no_schedule_);
+        },
+        false, this->src_adr_);
+  }
 
   if (this->action_id_ && *this->action_id_) {
     this->parent_->register_listener(
