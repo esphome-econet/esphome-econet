@@ -11,7 +11,8 @@ sensor:
     icon: "mdi:fan"
     sensor_datapoint: Z${zonenumber}CFMDSP
     request_mod: ${primary_thermostat_requestmod}
-    unit_of_measurement: "cfm"
+    unit_of_measurement: "ft³/min"
+    device_class: "volume_flow_rate"
     accuracy_decimals: 0
     state_class: "measurement"
     entity_category: "diagnostic"
