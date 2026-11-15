@@ -62,9 +62,10 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   };
 
   void handle_float_datapoint_(const char *id, const EconetDatapoint &datapoint, float *member, bool is_temperature);
-  void publish_state_if_reported_();
   void handle_fan_datapoint_(const char *id, const EconetDatapoint &datapoint, const char **member);
-  void update_active_fan_mode_();
+  void publish_state_if_reported_();
+  void flush_pending_publish_();
+  bool update_active_fan_mode_();
   bool uses_no_schedule_fan_mode_(climate::ClimateMode mode) const;
   void set_float_datapoint(const char *id, optional<float> value, bool is_temperature);
 
@@ -91,6 +92,8 @@ class EconetClimate : public climate::Climate, public Component, public EconetCl
   bool mode_state_known_{false};
   bool custom_preset_state_known_{false};
   bool action_state_known_{false};
+  bool in_control_{false};
+  bool publish_pending_{false};
   void control(const climate::ClimateCall &call) override;
   climate::ClimateTraits traits() override;
 };

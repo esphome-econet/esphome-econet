@@ -18,10 +18,15 @@ void EconetTextSensor::setup() {
                    this->sensor_id_);
           return;
         }
+        if (datapoint.type == EconetDatapointType::ENUM_TEXT && !datapoint.has_enum_text) {
+          return;
+        }
         ESP_LOGV(TAG, "MCU reported text sensor %s is: %s", this->sensor_id_, datapoint.value_string.c_str());
-        this->publish_state(datapoint.value_string);
+        if (!this->has_state() || this->state != datapoint.value_string) {
+          this->publish_state(datapoint.value_string);
+        }
       },
-      false, this->src_adr_);
+      false, this->src_adr_, /*run_existing=*/true, /*publish_unchanged=*/false, /*notify_enum_text=*/true);
 }
 
 void EconetTextSensor::dump_config() {

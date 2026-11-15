@@ -625,6 +625,12 @@ void test_entities_and_climate() {
   mode_txt.set_request_mod(-1);
   mode_txt.set_src_adr(0x380);
 
+  EconetTextSensor vaca_txt;
+  vaca_txt.set_econet_parent(&eco);
+  vaca_txt.set_sensor_id("VACA_NET");
+  vaca_txt.set_request_mod(-1);
+  vaca_txt.set_src_adr(0x380);
+
   EconetSwitch sched_sw;
   sched_sw.set_econet_parent(&eco);
   sched_sw.set_switch_id("SCHEDULE");
@@ -685,6 +691,7 @@ void test_entities_and_climate() {
   temp_sensor.setup();
   comp_rl.setup();
   mode_txt.setup();
+  vaca_txt.setup();
   sched_sw.setup();
   vaca_sel.setup();
   enum_num.setup();
@@ -746,10 +753,15 @@ void test_entities_and_climate() {
   EXPECT(std::fabs(temp_sensor.state - 68.0f) < 0.001f);
   EXPECT(comp_rl.state == true);
   EXPECT(mode_txt.state == "Cooling");
+  EXPECT(mode_txt.publish_count == 1);
+  EXPECT(vaca_txt.state == "Permanent");
+  EXPECT(vaca_txt.publish_count == 1);
   EXPECT(sched_sw.state == true);
   EXPECT(vaca_sel.active_index().has_value() && *vaca_sel.active_index() == 1);
+  EXPECT(vaca_sel.publish_count == 1);
   EXPECT(clim.has_reported_state());
-  EXPECT(clim.publish_count > 0);
+  // All 7 climate datapoints in the Class 2 ACK must be coalesced into a single publish_state() call!
+  EXPECT(clim.publish_count == 1);
   EXPECT(std::fabs(clim.current_temperature - 20.0f) < 0.01f);
   EXPECT(clim.mode == climate::CLIMATE_MODE_COOL);
   EXPECT(clim.action == climate::CLIMATE_ACTION_COOLING);
@@ -764,25 +776,93 @@ void test_entities_and_climate() {
   EXPECT(uart.tx_frames[0][13] == 31);
   EXPECT(uart.tx_frames[0][16] == static_cast<uint8_t>(EconetDatapointType::ENUM_TEXT));
 
+  // Local numeric enum write (EconetSelect -> VACA_NET = 0) must NOT clobber vaca_txt with "", and when the MCU
+  // subsequently reports the text label for enum 0 ("Off"), vaca_txt publishes "Off" while vaca_sel deduplicates!
+  vaca_sel.select_index(0);
+  EXPECT(vaca_sel.active_index().has_value() && *vaca_sel.active_index() == 0);
+  EXPECT(vaca_sel.publish_count == 2);
+  EXPECT(vaca_txt.state == "Permanent");
+  EXPECT(vaca_txt.publish_count == 1);
+  g_mock_millis = 2310;
+  eco.loop();  // Drain VACA_NET pending write
+  EXPECT(uart.tx_frames.size() == 2);
+
+  g_mock_millis = 2340;
+  uart.feed_rx(build_frame(0x380, 0x680, 30, make_read_class2_payload({"VACA_NET"})));
+  eco.loop();
+  g_mock_millis = 2360;
+  uart.feed_rx(build_frame(0x680, 0x380, 6, make_class2_enum_item(0, "Off     ")));
+  eco.loop();
+  EXPECT(vaca_txt.state == "Off");
+  EXPECT(vaca_txt.publish_count == 2);
+  EXPECT(vaca_sel.publish_count == 2);
+
   // Verify EconetNumber rejects NaN and out-of-uint8 range values.
   uart.tx_frames.clear();
   enum_num.set(std::numeric_limits<float>::infinity());
   enum_num.set(300.0f);
-  g_mock_millis = 2400;
+  g_mock_millis = 2500;
   eco.loop();
   EXPECT(uart.tx_frames.empty());
 
-  // Switching climate to FAN_ONLY while setting fan mode "Auto" (0 != cached STATNFAN 5) writes STATMODE and STATNFAN!
+  // Multi-field ClimateCall (target_temperature + FAN_ONLY + custom_fan_mode "Auto") batches into ONE publish_state()!
   uart.tx_frames.clear();
-  clim.make_call().set_mode(climate::CLIMATE_MODE_FAN_ONLY).set_custom_fan_mode("Auto").perform();
-  g_mock_millis = 2600;
+  const size_t publishes_before_call = clim.publish_count;
+  clim.make_call()
+      .set_target_temperature(21.0f)
+      .set_mode(climate::CLIMATE_MODE_FAN_ONLY)
+      .set_custom_fan_mode("Auto")
+      .perform();
+  EXPECT(clim.publish_count == publishes_before_call + 1);
+  g_mock_millis = 2700;
   eco.loop();
-  EXPECT(uart.tx_frames.size() == 1);  // First pending write: STATMODE
-  g_mock_millis = 2800;
+  EXPECT(uart.tx_frames.size() == 1);  // First pending write: COOLSETP
+  g_mock_millis = 2900;
   eco.loop();
-  EXPECT(uart.tx_frames.size() == 2);  // Second pending write: STATNFAN
-  std::string written_fan_dp(reinterpret_cast<const char *>(&uart.tx_frames[1][20]), 8);
+  EXPECT(uart.tx_frames.size() == 2);  // Second pending write: STATMODE
+  g_mock_millis = 3100;
+  eco.loop();
+  EXPECT(uart.tx_frames.size() == 3);  // Third pending write: STATNFAN
+  std::string written_fan_dp(reinterpret_cast<const char *>(&uart.tx_frames[2][20]), 8);
   EXPECT(written_fan_dp == "STATNFAN");
+
+  // Unmapped custom_preset and custom_fan_mode values from the MCU clear stale preset/fan state atomically.
+  const size_t publishes_before_unmapped = clim.publish_count;
+  g_mock_millis = 3300;
+  uart.feed_rx(build_frame(0x380, 0x680, 30, make_read_class2_payload({"WHTRCNFG", "STATNFAN"})));
+  eco.loop();
+  g_mock_millis = 3320;
+  uart.feed_rx(build_frame(
+      0x680, 0x380, 6, concat_items({make_class2_enum_item(99, "Disabled"), make_class2_enum_item(99, "UnknownFan")})));
+  eco.loop();
+  EXPECT(!clim.has_custom_preset());
+  EXPECT(!clim.has_custom_fan_mode());
+  EXPECT(clim.publish_count == publishes_before_unmapped + 1);
+
+  // Booting a climate entity whose first MCU preset report is unmapped still marks has_reported_state() = true.
+  EconetClimate boot_clim;
+  boot_clim.set_econet_parent(&eco);
+  boot_clim.set_request_mod(-1);
+  boot_clim.set_src_adr(0x380);
+  boot_clim.set_mode_id("BOOTMODE");
+  boot_clim.set_custom_preset_id("BOOTPRES");
+  boot_clim.init_modes(1);
+  boot_clim.add_mode(1, climate::CLIMATE_MODE_COOL);
+  boot_clim.init_custom_presets(1);
+  boot_clim.add_custom_preset(1, "Eco");
+  boot_clim.setup();
+  EXPECT(!boot_clim.has_reported_state());
+
+  g_mock_millis = 3500;
+  uart.feed_rx(build_frame(0x380, 0x680, 30, make_read_class2_payload({"BOOTMODE", "BOOTPRES"})));
+  eco.loop();
+  g_mock_millis = 3520;
+  uart.feed_rx(build_frame(0x680, 0x380, 6,
+                           concat_items({make_class2_enum_item(1, "Cooling"), make_class2_enum_item(99, "Vacation")})));
+  eco.loop();
+  EXPECT(boot_clim.has_reported_state());
+  EXPECT(!boot_clim.has_custom_preset());
+  EXPECT(boot_clim.publish_count == 1);
 }
 
 }  // namespace

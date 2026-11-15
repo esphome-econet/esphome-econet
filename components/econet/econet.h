@@ -92,7 +92,9 @@ struct EconetDatapoint {
     float value_float;
     uint8_t value_enum;
   };
-  EconetDatapointType type;
+  EconetDatapointType type{EconetDatapointType::FLOAT};
+  // False on locally synthesized ENUM_TEXT writes, where only the numeric enum id is known.
+  bool has_enum_text{true};
 };
 inline bool operator==(const EconetDatapoint &lhs, const EconetDatapoint &rhs) {
   if (lhs.type != rhs.type) {
@@ -120,6 +122,8 @@ struct EconetDatapointListener {
   DatapointCallback on_datapoint;
   // Notify on every response rather than only when the value differs from the previous one.
   bool publish_unchanged{false};
+  // Also notify when an ENUM_TEXT datapoint's text label arrives or changes for the same enum id.
+  bool notify_enum_text{false};
 };
 
 struct DatapointEntry {
@@ -178,10 +182,15 @@ class Econet : public Component, public uart::UARTDevice {
   template<typename F>
   void register_listener(const DatapointName &datapoint_id, int8_t request_mod, bool request_once, F &&func,
                          bool is_raw_datapoint = false, uint32_t src_adr = 0, bool run_existing = true,
-                         bool publish_unchanged = false) {
+                         bool publish_unchanged = false, bool notify_enum_text = false) {
     this->register_listener_(datapoint_id, request_mod, request_once, DatapointCallback::create(std::forward<F>(func)),
-                             is_raw_datapoint, src_adr, run_existing, publish_unchanged);
+                             is_raw_datapoint, src_adr, run_existing, publish_unchanged, notify_enum_text);
   }
+
+  template<typename F> void add_on_batch_complete_callback(F &&cb) {
+    this->batch_complete_callbacks_.add(std::forward<F>(cb));
+  }
+  bool is_in_batch_response() const { return this->in_batch_response_; }
 
   std::map<std::string, std::string> homeassistant_read(const std::string &datapoint_id, uint32_t address = 0);
   void homeassistant_write(const std::string &datapoint_id, uint8_t value, uint32_t address = 0);
@@ -195,7 +204,7 @@ class Econet : public Component, public uart::UARTDevice {
 
   void register_listener_(const DatapointName &datapoint_id, int8_t request_mod, bool request_once,
                           DatapointCallback callback, bool is_raw_datapoint, uint32_t src_adr, bool run_existing,
-                          bool publish_unchanged);
+                          bool publish_unchanged, bool notify_enum_text);
 
   void set_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value);
   void send_datapoint_(const EconetDatapointID &datapoint_id, const EconetDatapoint &value, bool from_mcu = true);
@@ -239,6 +248,7 @@ class Econet : public Component, public uart::UARTDevice {
   // Member variables - ordered for packing
   ReadRequest read_req_{};
   std::vector<EconetDatapointListener> listeners_;
+  CallbackManager<void()> batch_complete_callbacks_;
   std::array<uint32_t, MAX_REQUEST_MODS> request_mod_addresses_{};
   std::array<uint32_t, MAX_REQUEST_MODS> request_mod_update_interval_millis_{};
   std::array<std::vector<DatapointName>, MAX_REQUEST_MODS> request_datapoint_ids_;
@@ -296,6 +306,7 @@ class Econet : public Component, public uart::UARTDevice {
   bool has_read_requested_{false};
   bool pending_read_active_{false};
   bool pending_read_received_{false};
+  bool in_batch_response_{false};
 };
 
 class EconetClient {
