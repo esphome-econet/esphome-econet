@@ -1,4 +1,16 @@
 ---
+substitutions:
+  thermostat_address: "0x380"
+  primary_thermostat_address: ${thermostat_address}
+
+packages:
+  zone${zonenumber}_sensors: !include
+    file: econet_hvac_zone_sensors_template.yaml
+    vars:
+      zonename: ${zonename}
+      zonenumber: "${zonenumber}"
+      primary_thermostat_requestmod: ${primary_thermostat_requestmod}
+
 text_sensor:
   - platform: econet
     id: zone${zonenumber}_equipment_name
@@ -6,6 +18,7 @@ text_sensor:
     src_address: ${zone_thermostat_address}
     sensor_datapoint: EQP_NAME
     request_mod: ${zone_thermostat_requestmod}
+    icon: "mdi:information-box"
     entity_category: "diagnostic"
     request_once: true
 
@@ -45,5 +58,3 @@ climate:
       5: "Speed 5 (High)"
     current_humidity_datapoint: RELH7005
     target_dehumidification_level_datapoint: DHUMSETP
-
-<<: !include econet_hvac_zone_sensors_template.yaml

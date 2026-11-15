@@ -108,7 +108,7 @@ sensor:
     sensor_datapoint: HOTWATER
     unit_of_measurement: "%"
     accuracy_decimals: 0
-    device_class: "moisture"
+    icon: "mdi:water-thermometer"
     state_class: "measurement"
 
 select:

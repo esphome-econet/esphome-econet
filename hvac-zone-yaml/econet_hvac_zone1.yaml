@@ -6,6 +6,17 @@ substitutions:
 # This removes the non-zone climate entity for zone1, to be replaced below.
 climate:
   - id: !remove econet_climate
+  - id: !extend zone1_climate
+    # HVACMODE reads "Off" (also when idle), "Fan", "Low Cool", "High Cool", "Low Heat", or
+    # "High Heat" on the primary thermostat.
+    action_datapoint: HVACMODE
+    actions:
+      0: "IDLE"
+      1: "FAN"
+      2: "COOLING"
+      3: "COOLING"
+      4: "HEATING"
+      5: "HEATING"
 
 econet:
   request_mod_addresses:
@@ -17,6 +28,6 @@ packages:
     vars:
       zonename: ${zone1name}
       zonenumber: "1"
-      zone_thermostat_requestmod: 10
+      zone_thermostat_requestmod: 0
       primary_thermostat_requestmod: 10
       zone_thermostat_address: ${primary_thermostat_address}

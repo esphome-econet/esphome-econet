@@ -361,6 +361,7 @@ sensor:
     name: "Instant Gas Usage"
     id: gas_usage_m3_h
     unit_of_measurement: "m³/h"
+    device_class: "volume_flow_rate"
     icon: "mdi:meter-gas"
     state_class: "measurement"
     accuracy_decimals: 3
@@ -381,6 +382,7 @@ sensor:
     state_class: "total_increasing"
     device_class: energy
     unit_of_measurement: "kWh"
+    accuracy_decimals: 1
   - platform: template
     name: "Heating Capacity"
     id: heat_capacity
