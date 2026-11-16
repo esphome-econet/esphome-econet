@@ -186,7 +186,8 @@ sensor:
     id: furnace_hh_btus
     sensor_datapoint: FURNHBTU
     entity_category: "diagnostic"
-    unit_of_measurement: "btu/h"
+    unit_of_measurement: "BTU/h"
+    state_class: "measurement"
     icon: "mdi:gas-burner"
     request_once: true
   - platform: econet
@@ -194,7 +195,8 @@ sensor:
     id: furnace_lh_btus
     sensor_datapoint: FURNLBTU
     entity_category: "diagnostic"
-    unit_of_measurement: "btu/h"
+    unit_of_measurement: "BTU/h"
+    state_class: "measurement"
     icon: "mdi:gas-burner"
     request_once: true
   - platform: template
@@ -342,7 +344,7 @@ sensor:
   - platform: template
     name: "Instant BTU Output"
     id: instant_btu_output
-    unit_of_measurement: "kbtu/h"
+    unit_of_measurement: "kBTU/h"
     icon: "mdi:gas-burner"
     state_class: "measurement"
     accuracy_decimals: 3
@@ -351,7 +353,7 @@ sensor:
   - platform: template
     name: "Instant BTU Usage"
     id: instant_btu_usage
-    unit_of_measurement: "kbtu/h"
+    unit_of_measurement: "kBTU/h"
     icon: "mdi:gas-burner"
     state_class: "measurement"
     accuracy_decimals: 3

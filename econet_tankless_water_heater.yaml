@@ -65,7 +65,7 @@ sensor:
     name: "BTUs Used"
     id: btus
     sensor_datapoint: WTR_BTUS
-    unit_of_measurement: "kbtu"
+    unit_of_measurement: "kBTU"
     accuracy_decimals: 3
     state_class: "total_increasing"
     entity_category: "diagnostic"
@@ -89,7 +89,8 @@ sensor:
     name: "Flow Rate"
     id: flow_rate
     sensor_datapoint: FLOWRATE
-    unit_of_measurement: "gpm"
+    unit_of_measurement: "gal/min"
+    device_class: "volume_flow_rate"
     accuracy_decimals: 1
     state_class: "measurement"
     entity_category: "diagnostic"
@@ -108,7 +109,7 @@ sensor:
   - platform: template
     name: "Instant BTUs"
     id: instant_btus
-    unit_of_measurement: "kbtu/hr"
+    unit_of_measurement: "kBTU/h"
     accuracy_decimals: 3
     state_class: "measurement"
     entity_category: "diagnostic"
