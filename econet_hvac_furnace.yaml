@@ -75,13 +75,17 @@ econet:
             id(low_heat_2week_hrs).publish_state((x[122] << 8) + x[123]);
             id(high_heat_2week_hrs).publish_state((x[124] << 8) + x[125]);
             id(blower_2week_hrs).publish_state((x[126] << 8) + x[127]);
-            id(low_heat_lifetime_cycles).publish_state((x[111] << 8) + x[112]);
-            id(high_heat_lifetime_cycles).publish_state((x[114] << 8) + x[115]);
-            id(blower_lifetime_cycles).publish_state((x[117] << 8) + x[118]);
-            id(powered_lifetime_cycles).publish_state((x[120] << 8) + x[121]);
-            id(low_heat_lifetime_hrs).publish_state((x[129] << 8) + x[130]);
-            id(high_heat_lifetime_hrs).publish_state((x[132] << 8) + x[133]);
-            id(blower_lifetime_hrs).publish_state((x[135] << 8) + x[136]);
+            const auto u24 = [&](size_t offset) -> uint32_t {
+              return (static_cast<uint32_t>(x[offset]) << 16) | (static_cast<uint32_t>(x[offset + 1]) << 8) |
+                     x[offset + 2];
+            };
+            id(low_heat_lifetime_cycles).publish_state(u24(110));
+            id(high_heat_lifetime_cycles).publish_state(u24(113));
+            id(blower_lifetime_cycles).publish_state(u24(116));
+            id(powered_lifetime_cycles).publish_state(u24(119));
+            id(low_heat_lifetime_hrs).publish_state(u24(128));
+            id(high_heat_lifetime_hrs).publish_state(u24(131));
+            id(blower_lifetime_hrs).publish_state(u24(134));
             id(powered_lifetime_days).publish_state((x[137] << 8) + x[138]);
             if (x.size() <= 146) {
               return;
