@@ -1050,6 +1050,162 @@ void test_active_mod_intervals_short_reads_and_pending_writes() {
   EXPECT(std::strlen(format_hex_pretty_to(tiny, sample, sizeof(sample), '.')) == 0);
 }
 
+void test_climate_action_unblock_fan_routing_and_text_sensor_raw_state() {
+  std::cout << "[TEST] Climate action UNSUPPORTED/unmapped unblock, fan routing, and TextSensor get_raw_state()...\n";
+  g_mock_millis = 1000;
+  uart::MockUART uart;
+  TestableEconet eco;
+  eco.set_uart_parent(&uart);
+  eco.set_src_address(0x340);
+  eco.set_dst_address(0x380);
+
+  // 1) UNSUPPORTED action_datapoint unblocks initial climate publishing, whereas UNSUPPORTED custom_preset does NOT.
+  EconetClimate unsup_action_clim;
+  unsup_action_clim.set_econet_parent(&eco);
+  unsup_action_clim.set_request_mod(-1);
+  unsup_action_clim.set_src_adr(0x380);
+  unsup_action_clim.set_mode_id("ACTMODE1");
+  unsup_action_clim.set_action_id("ACTDP1");
+  unsup_action_clim.init_modes(1);
+  unsup_action_clim.add_mode(1, climate::CLIMATE_MODE_COOL);
+  unsup_action_clim.init_actions(1);
+  unsup_action_clim.add_action(2, climate::CLIMATE_ACTION_COOLING);
+
+  EconetClimate unmapped_action_clim;
+  unmapped_action_clim.set_econet_parent(&eco);
+  unmapped_action_clim.set_request_mod(-1);
+  unmapped_action_clim.set_src_adr(0x380);
+  unmapped_action_clim.set_mode_id("ACTMODE2");
+  unmapped_action_clim.set_action_id("ACTDP2");
+  unmapped_action_clim.init_modes(1);
+  unmapped_action_clim.add_mode(1, climate::CLIMATE_MODE_COOL);
+  unmapped_action_clim.init_actions(1);
+  unmapped_action_clim.add_action(2, climate::CLIMATE_ACTION_COOLING);
+
+  EconetClimate unsup_preset_clim;
+  unsup_preset_clim.set_econet_parent(&eco);
+  unsup_preset_clim.set_request_mod(-1);
+  unsup_preset_clim.set_src_adr(0x380);
+  unsup_preset_clim.set_mode_id("PRESMOD");
+  unsup_preset_clim.set_custom_preset_id("PRESDP");
+  unsup_preset_clim.init_modes(1);
+  unsup_preset_clim.add_mode(1, climate::CLIMATE_MODE_HEAT);
+  unsup_preset_clim.init_custom_presets(1);
+  unsup_preset_clim.add_custom_preset(1, "Eco");
+
+  // 2) Climate whose modes_ does NOT include FAN_ONLY: rejected FAN_ONLY in ClimateCall must not route fan to STATNFAN.
+  EconetClimate fan_clim;
+  fan_clim.set_econet_parent(&eco);
+  fan_clim.set_request_mod(-1);
+  fan_clim.set_src_adr(0x380);
+  fan_clim.set_mode_id("FANMODE");
+  fan_clim.set_follow_schedule_id("FANSCHED");
+  fan_clim.set_custom_fan_mode_id("STAT_FAN");
+  fan_clim.set_custom_fan_mode_no_schedule_id("STATNFAN");
+  fan_clim.init_modes(2);
+  fan_clim.add_mode(0, climate::CLIMATE_MODE_OFF);
+  fan_clim.add_mode(1, climate::CLIMATE_MODE_COOL);
+  fan_clim.init_custom_fan_modes(2);
+  fan_clim.add_custom_fan_mode(0, "Auto");
+  fan_clim.add_custom_fan_mode(5, "High");
+
+  // 3) Filtered EconetTextSensor comparing against get_raw_state() instead of filtered state.
+  EconetTextSensor filtered_txt;
+  filtered_txt.set_econet_parent(&eco);
+  filtered_txt.set_sensor_id("FILT_TXT");
+  filtered_txt.set_request_mod(-1);
+  filtered_txt.set_src_adr(0x380);
+  filtered_txt.filter_fn = [](const std::string &raw) -> std::string {
+    if (raw == "Cooling") {
+      return "Active";
+    }
+    if (raw == "Active") {
+      return "Other";
+    }
+    return raw;
+  };
+
+  eco.setup();
+  unsup_action_clim.setup();
+  unmapped_action_clim.setup();
+  unsup_preset_clim.setup();
+  fan_clim.setup();
+  filtered_txt.setup();
+
+  // Attempting to write fan mode before FANSCHED is reported must be ignored safely.
+  fan_clim.make_call().set_custom_fan_mode("High").perform();
+  g_mock_millis = 1200;
+  eco.loop();
+  EXPECT(uart.tx_frames.empty());
+
+  // Deliver initial batch.
+  g_mock_millis = 1400;
+  uart.feed_rx(build_frame(0x380, 0x680, 30,
+                           make_read_class2_payload({"ACTMODE1", "ACTDP1", "ACTMODE2", "ACTDP2", "PRESMOD", "PRESDP",
+                                                     "FANMODE", "FANSCHED", "FILT_TXT"})));
+  eco.loop();
+  g_mock_millis = 1420;
+  uart.feed_rx(build_frame(0x680, 0x380, 6,
+                           concat_items({
+                               make_class2_enum_item(1, "Cooling "),  // ACTMODE1 = COOL
+                               make_class2_unsupported_item(),        // ACTDP1 = UNSUPPORTED -> unblocks climate!
+                               make_class2_enum_item(1, "Cooling "),  // ACTMODE2 = COOL
+                               make_class2_enum_item(9, "Defrost "),  // ACTDP2 = unmapped enum -> unblocks climate!
+                               make_class2_enum_item(1, "Heating "),  // PRESMOD = HEAT
+                               make_class2_unsupported_item(),        // PRESDP = UNSUPPORTED -> stays held back!
+                               make_class2_enum_item(1, "Cooling "),  // FANMODE = COOL
+                               make_class2_enum_item(1, "Yes     "),  // FANSCHED = true
+                               make_class2_enum_item(2, "Cooling "),  // FILT_TXT raw="Cooling", filtered="Active"
+                           })));
+  eco.loop();
+
+  EXPECT(unsup_action_clim.has_reported_state());
+  EXPECT(unsup_action_clim.publish_count == 1);
+  EXPECT(unsup_action_clim.action == climate::CLIMATE_ACTION_OFF);
+
+  EXPECT(unmapped_action_clim.has_reported_state());
+  EXPECT(unmapped_action_clim.publish_count == 1);
+  EXPECT(unmapped_action_clim.action == climate::CLIMATE_ACTION_OFF);
+
+  // Control-critical UNSUPPORTED custom_preset must keep climate held back as unknown.
+  EXPECT(!unsup_preset_clim.has_reported_state());
+  EXPECT(unsup_preset_clim.publish_count == 0);
+
+  // Subsequent mapped action on unmapped_action_clim still publishes cleanly.
+  g_mock_millis = 1500;
+  uart.feed_rx(build_frame(0x380, 0x680, 30, make_read_class2_payload({"ACTDP2"})));
+  eco.loop();
+  g_mock_millis = 1520;
+  uart.feed_rx(build_frame(0x680, 0x380, 6, make_class2_enum_item(2, "Cooling ")));
+  eco.loop();
+  EXPECT(unmapped_action_clim.action == climate::CLIMATE_ACTION_COOLING);
+  EXPECT(unmapped_action_clim.publish_count == 2);
+
+  // Rejected FAN_ONLY mode in ClimateCall must keep this->mode == COOL and write STAT_FAN (not STATNFAN).
+  uart.tx_frames.clear();
+  fan_clim.make_call().set_mode(climate::CLIMATE_MODE_FAN_ONLY).set_custom_fan_mode("High").perform();
+  g_mock_millis = 1700;
+  eco.loop();
+  EXPECT(uart.tx_frames.size() == 1);
+  std::string written_dp(reinterpret_cast<const char *>(&uart.tx_frames[0][20]), 8);
+  EXPECT(written_dp == "STAT_FAN");
+
+  // Filtered TextSensor: raw="Cooling" -> filtered="Active"; next raw="Active" MUST publish filtered="Other"!
+  EXPECT(filtered_txt.get_raw_state() == "Cooling");
+  EXPECT(filtered_txt.state == "Active");
+  EXPECT(filtered_txt.publish_count == 1);
+
+  g_mock_millis = 1800;
+  uart.feed_rx(build_frame(0x380, 0x680, 30, make_read_class2_payload({"FILT_TXT"})));
+  eco.loop();
+  g_mock_millis = 1820;
+  uart.feed_rx(build_frame(0x680, 0x380, 6, make_class2_enum_item(3, "Active  ")));
+  eco.loop();
+  EXPECT(filtered_txt.get_raw_state() == "Active");
+  EXPECT(filtered_txt.state == "Other");
+  EXPECT(filtered_txt.publish_count == 2);
+}
+
 }  // namespace
 
 int main() {
@@ -1063,6 +1219,7 @@ int main() {
   test_homeassistant_services();
   test_entities_and_climate();
   test_active_mod_intervals_short_reads_and_pending_writes();
+  test_climate_action_unblock_fan_routing_and_text_sensor_raw_state();
   std::cout << "\nAll EcoNet C++ unit tests passed!\n";
   return 0;
 }

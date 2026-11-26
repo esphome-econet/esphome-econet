@@ -340,6 +340,12 @@ void EconetClimate::setup() {
         this->action_id_, this->request_mod_, this->request_once_,
         [this](const EconetDatapoint &datapoint) {
           if (datapoint.type == EconetDatapointType::UNSUPPORTED) {
+            // Action is informational: do not hold the entire climate entity as unknown forever
+            // if this appliance does not support action_datapoint.
+            if (!this->action_state_known_) {
+              this->action_state_known_ = true;
+              this->publish_state_if_reported_();
+            }
             return;
           }
           if (datapoint.type != EconetDatapointType::ENUM_TEXT) {
@@ -355,9 +361,14 @@ void EconetClimate::setup() {
           } else if (this->default_action_.has_value()) {
             next_action = *this->default_action_;
           } else {
-            // Like an unmapped mode: keep the last action, and hold the first publish until a mapped value.
+            // Keep the last (or default-initialized) action without fabricating one, but unblock
+            // initial publishing so an unmapped enum value cannot wedge the climate entity.
             ESP_LOGW(TAG, "In actions of your yaml add a ClimateAction that corresponds to: %d: \"%s\"",
                      datapoint.value_enum, datapoint.value_string.c_str());
+            if (!this->action_state_known_) {
+              this->action_state_known_ = true;
+              this->publish_state_if_reported_();
+            }
             return;
           }
           bool changed = !this->action_state_known_ || this->action != next_action;
@@ -456,18 +467,24 @@ void EconetClimate::control(const climate::ClimateCall &call) {
     auto fan_mode = call.get_custom_fan_mode();
     auto it = std::find_if(this->custom_fan_modes_.begin(), this->custom_fan_modes_.end(),
                            [&fan_mode](const EconetFanMode &m) { return m.name == fan_mode; });
-    if (it != this->custom_fan_modes_.end() && this->follow_schedule_.has_value()) {
-      // A mode change accepted earlier in this call has already updated this->mode via send_datapoint_().
-      const climate::ClimateMode mode = this->mode_state_known_ ? call.get_mode().value_or(this->mode) : this->mode;
-      const bool no_schedule = this->uses_no_schedule_fan_mode_(mode);
-      if (no_schedule && this->custom_fan_mode_no_schedule_id_ && *this->custom_fan_mode_no_schedule_id_) {
-        this->parent_->set_enum_datapoint_value(this->custom_fan_mode_no_schedule_id_, it->id, this->src_adr_);
-      } else if (*this->follow_schedule_ && this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
-        // Either the schedule is being followed outside of fan only mode, or there is no
-        // no-schedule datapoint to write and this is the only thing left to try.
-        this->parent_->set_enum_datapoint_value(this->custom_fan_mode_id_, it->id, this->src_adr_);
+    if (it != this->custom_fan_modes_.end()) {
+      if (!this->follow_schedule_.has_value()) {
+        ESP_LOGW(TAG, "Not writing fan mode %s before %s has been reported", fan_mode.c_str(),
+                 this->follow_schedule_id_);
       } else {
-        ESP_LOGW(TAG, "Not following the schedule but custom_fan_mode_no_schedule_datapoint is not configured");
+        // A mode change accepted earlier in this call has already updated this->mode via send_datapoint_().
+        const bool no_schedule = this->uses_no_schedule_fan_mode_(this->mode);
+        if (no_schedule && this->custom_fan_mode_no_schedule_id_ && *this->custom_fan_mode_no_schedule_id_) {
+          this->parent_->set_enum_datapoint_value(this->custom_fan_mode_no_schedule_id_, it->id, this->src_adr_);
+        } else if (*this->follow_schedule_ && this->custom_fan_mode_id_ && *this->custom_fan_mode_id_) {
+          // Either the schedule is being followed outside of fan only mode, or there is no
+          // no-schedule datapoint to write and this is the only thing left to try.
+          this->parent_->set_enum_datapoint_value(this->custom_fan_mode_id_, it->id, this->src_adr_);
+        } else if (!*this->follow_schedule_) {
+          ESP_LOGW(TAG, "Not following the schedule, but custom_fan_mode_no_schedule_datapoint is not configured");
+        } else {
+          ESP_LOGW(TAG, "Following the schedule, but custom_fan_mode_datapoint is not configured");
+        }
       }
     }
   }
