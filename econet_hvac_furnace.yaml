@@ -176,6 +176,7 @@ sensor:
     accuracy_decimals: 0
     unit_of_measurement: "%"
     icon: "mdi:fire-circle"
+    request_mod: 4
     request_once: true
     filters:
       - lambda: |-  # Some furnaces seem to report waste rather than efficiency; this normalizes things to traditional AFUE
@@ -188,6 +189,7 @@ sensor:
     entity_category: "diagnostic"
     unit_of_measurement: "btu/h"
     icon: "mdi:gas-burner"
+    request_mod: 4
     request_once: true
   - platform: econet
     name: "Furnace Low Heat BTU Output"
@@ -196,6 +198,7 @@ sensor:
     entity_category: "diagnostic"
     unit_of_measurement: "btu/h"
     icon: "mdi:gas-burner"
+    request_mod: 4
     request_once: true
   - platform: template
     name: "Two Week Cycles - Low Heat"
@@ -447,9 +450,17 @@ interval:
           float furnace_kbtus =
               hwstatus_fresh ? (id(furnace_hh_btus).state / 1000.0f * id(heat_capacity).state / 100.0f) : 0.0f;
           float furnace_eff = id(furnace_afue).state / 100.0f;
-          float gas_m3_h = furnace_kbtus / furnace_eff / static_cast<float>(${furnace_kbtus_per_m3});
-          id(instant_btu_output).publish_state(furnace_kbtus);
-          id(instant_btu_usage).publish_state(furnace_kbtus / furnace_eff);
+          float btu_usage = furnace_kbtus / furnace_eff;
+          float gas_m3_h = btu_usage / static_cast<float>(${furnace_kbtus_per_m3});
+          if (furnace_kbtus > 0.0f || !id(instant_btu_output).has_state() || id(instant_btu_output).state != 0.0f) {
+            id(instant_btu_output).publish_state(furnace_kbtus);
+          }
+          if (btu_usage > 0.0f || !id(instant_btu_usage).has_state() || id(instant_btu_usage).state != 0.0f) {
+            id(instant_btu_usage).publish_state(btu_usage);
+          }
           if (gas_m3_h > 0.0f || !id(gas_usage_m3_h).has_state() || id(gas_usage_m3_h).state != 0.0f) {
             id(gas_usage_m3_h).publish_state(gas_m3_h);
+          }
+          if (!hwstatus_fresh) {
+            id(has_hwstatus) = false;
           }

@@ -4,6 +4,14 @@ globals:
     type: bool
     restore_value: false
     initial_value: "false"
+  - id: irtc_last_update_ms
+    type: uint32_t
+    restore_value: false
+    initial_value: "0"
+  - id: irtc_has_update_time
+    type: bool
+    restore_value: false
+    initial_value: "false"
 
 script:
   - id: sync_mcu_time
@@ -18,14 +26,24 @@ script:
             // Defer until request_mod 8 has read the MCU clock fields.
             return;
           }
+          const float raw_year = id(irtc_year).state;
+          const float raw_month = id(irtc_month).state;
+          const float raw_day = id(irtc_day).state;
+          const float raw_hour = id(irtc_hour).state;
+          const float raw_minute = id(irtc_minute).state;
+          const float raw_second = id(irtc_seconds).state;
+          if (!std::isfinite(raw_year) || !std::isfinite(raw_month) || !std::isfinite(raw_day) ||
+              !std::isfinite(raw_hour) || !std::isfinite(raw_minute) || !std::isfinite(raw_second)) {
+            return;
+          }
           id(irtc_initial_sync_done) = true;
 
-          const int year = static_cast<int>(std::lround(id(irtc_year).state)) + 2000;
-          const int month = static_cast<int>(std::lround(id(irtc_month).state));
-          const int day = static_cast<int>(std::lround(id(irtc_day).state));
-          const int hour = static_cast<int>(std::lround(id(irtc_hour).state));
-          const int minute = static_cast<int>(std::lround(id(irtc_minute).state));
-          const int second = static_cast<int>(std::lround(id(irtc_seconds).state));
+          const int year = static_cast<int>(std::lround(raw_year)) + 2000;
+          const int month = static_cast<int>(std::lround(raw_month));
+          const int day = static_cast<int>(std::lround(raw_day));
+          const int hour = static_cast<int>(std::lround(raw_hour));
+          const int minute = static_cast<int>(std::lround(raw_minute));
+          const int second = static_cast<int>(std::lround(raw_second));
 
           bool in_sync = false;
           if (year >= 2019 && year <= 2099 && month >= 1 && month <= 12 && day >= 1 && day <= 31 &&
@@ -40,8 +58,14 @@ script:
             if (mcu_time.is_valid(false, false)) {
               mcu_time.recalc_timestamp_local();
               if (mcu_time.timestamp >= 0) {
-                const long long drift =
-                    std::llabs(static_cast<long long>(now.timestamp) - static_cast<long long>(mcu_time.timestamp));
+                long long estimated_mcu_ts = static_cast<long long>(mcu_time.timestamp);
+                if (id(irtc_has_update_time)) {
+                  const uint32_t age_ms = millis() - id(irtc_last_update_ms);
+                  if (age_ms <= 600000) {
+                    estimated_mcu_ts += static_cast<long long>(age_ms / 1000);
+                  }
+                }
+                const long long drift = std::llabs(static_cast<long long>(now.timestamp) - estimated_mcu_ts);
                 in_sync = drift <= 30;
               }
             }
@@ -88,12 +112,22 @@ text_sensor:
         // Return undefined if values haven't been successfully fetched yet
         return {};
       }
-      const int year = static_cast<int>(std::lround(id(irtc_year).state)) + 2000;
-      const int month = static_cast<int>(std::lround(id(irtc_month).state));
-      const int day = static_cast<int>(std::lround(id(irtc_day).state));
-      const int hour = static_cast<int>(std::lround(id(irtc_hour).state));
-      const int minute = static_cast<int>(std::lround(id(irtc_minute).state));
-      const int second = static_cast<int>(std::lround(id(irtc_seconds).state));
+      const float raw_year = id(irtc_year).state;
+      const float raw_month = id(irtc_month).state;
+      const float raw_day = id(irtc_day).state;
+      const float raw_hour = id(irtc_hour).state;
+      const float raw_minute = id(irtc_minute).state;
+      const float raw_second = id(irtc_seconds).state;
+      if (!std::isfinite(raw_year) || !std::isfinite(raw_month) || !std::isfinite(raw_day) ||
+          !std::isfinite(raw_hour) || !std::isfinite(raw_minute) || !std::isfinite(raw_second)) {
+        return {};
+      }
+      const int year = static_cast<int>(std::lround(raw_year)) + 2000;
+      const int month = static_cast<int>(std::lround(raw_month));
+      const int day = static_cast<int>(std::lround(raw_day));
+      const int hour = static_cast<int>(std::lround(raw_hour));
+      const int minute = static_cast<int>(std::lround(raw_minute));
+      const int second = static_cast<int>(std::lround(raw_second));
       if (year < 2019 || year > 2099 || month < 1 || month > 12 || day < 1 || day > 31 ||
           hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 60) {
         return {};
@@ -182,6 +216,10 @@ number:
     icon: mdi:calendar-clock
     request_mod: 8
     internal: true
+    on_value:
+      - lambda: |-
+          id(irtc_last_update_ms) = millis();
+          id(irtc_has_update_time) = true;
   - platform: econet
     name: "IRTC Seconds"
     id: irtc_seconds
@@ -196,8 +234,11 @@ number:
     request_mod: 8
     internal: true
     on_value:
-      if:
-        condition:
-          lambda: "return !id(irtc_initial_sync_done);"
-        then:
-          - script.execute: sync_mcu_time
+      - lambda: |-
+          id(irtc_last_update_ms) = millis();
+          id(irtc_has_update_time) = true;
+      - if:
+          condition:
+            lambda: "return !id(irtc_initial_sync_done);"
+          then:
+            - script.execute: sync_mcu_time

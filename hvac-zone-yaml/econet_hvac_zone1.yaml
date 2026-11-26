@@ -18,7 +18,12 @@ climate:
       4: "HEATING"
       5: "HEATING"
 
+text_sensor:
+  - id: !extend zone1_equipment_name
+    request_mod: 10
+
 econet:
+  dst_address: ${primary_thermostat_address}
   request_mod_addresses:
     10: ${primary_thermostat_address}
 
