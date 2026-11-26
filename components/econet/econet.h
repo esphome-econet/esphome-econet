@@ -191,7 +191,7 @@ class Econet : public Component, public uart::UARTDevice {
   template<typename F> void add_on_batch_complete_callback(F &&cb) {
     this->batch_complete_callbacks_.add(std::forward<F>(cb));
   }
-  bool is_in_batch_response() const { return this->in_batch_response_; }
+  bool is_in_batch_response() const { return this->batch_response_depth_ > 0; }
 
   std::map<std::string, std::string> homeassistant_read(const std::string &datapoint_id, uint32_t address = 0);
   void homeassistant_write(const std::string &datapoint_id, uint8_t value, uint32_t address = 0);
@@ -221,7 +221,7 @@ class Econet : public Component, public uart::UARTDevice {
   void advance_to_next_sync_();
   void drain_rx_frames_(bool timeout_flush);
   void parse_message_(const uint8_t *b, bool is_tx);
-  bool parse_rx_frame_(const uint8_t *b, size_t frame_len);
+  bool parse_rx_frame_(size_t frame_len);
   void handle_response_(const EconetDatapointID &datapoint_id, const uint8_t *p, uint8_t len);
   // Warns about a read request issued while the previous one is still unanswered, rate limited,
   // and adds a hint about the usual causes while no read has ever been answered.
@@ -271,6 +271,7 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<uint8_t> request_mods_;
   std::vector<EconetDatapointID> raw_datapoint_ids_;
   std::vector<EconetDatapointID> request_once_datapoint_ids_;
+  std::vector<EconetDatapointID> periodic_datapoint_ids_;
   std::vector<DatapointEntry> datapoints_;
   std::vector<PendingWrite> pending_writes_;
   std::vector<ServiceReadRequest> datapoint_ids_for_read_service_;
@@ -301,6 +302,7 @@ class Econet : public Component, public uart::UARTDevice {
   uint32_t dst_adr_last_read_request_{0};
   uint32_t src_adr_{0};
   uint32_t dst_adr_{0};
+  uint32_t read_req_seq_{0};
   size_t next_request_mod_index_{0};
 
   // 2-byte types
@@ -320,7 +322,7 @@ class Econet : public Component, public uart::UARTDevice {
   bool has_read_requested_{false};
   bool pending_read_active_{false};
   bool pending_read_received_{false};
-  bool in_batch_response_{false};
+  uint8_t batch_response_depth_{0};
 };
 
 class EconetClient {

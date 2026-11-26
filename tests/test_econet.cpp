@@ -1206,6 +1206,344 @@ void test_climate_action_unblock_fan_routing_and_text_sensor_raw_state() {
   EXPECT(filtered_txt.publish_count == 2);
 }
 
+void test_echo_resilience_and_slow_tx_timing() {
+  std::cout << "[TEST] Corrupt prefix before TX echo, slow blocking TX timing, and ClssType=9 window...\n";
+  // 1) A corrupt candidate frame immediately preceding a TX self-echo must NOT clear awaiting_tx_echo_.
+  {
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_update_interval(30000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x380);
+
+    float spt = -1.0f;
+    eco.register_listener("SPT", 0, false, [&](const EconetDatapoint &dp) { spt = dp.value_float; }, false, 0x380);
+    eco.setup();
+
+    g_mock_millis = 1200;
+    eco.loop();
+    EXPECT(uart.tx_frames.size() == 1);
+    const auto tx_echo = uart.tx_frames[0];
+
+    // Inject a corrupt 16-byte frame (bad CRC) followed immediately by our real TX self-echo.
+    auto bad_prefix = build_frame(0x380, 0x680, 31, {});
+    bad_prefix.back() ^= 0xFF;
+    std::vector<uint8_t> burst = bad_prefix;
+    burst.insert(burst.end(), tx_echo.begin(), tx_echo.end());
+    g_mock_millis = 1210;
+    uart.feed_rx(burst);
+    eco.loop();
+    EXPECT(!eco.mcu_connected_);
+    EXPECT(eco.our_read_awaiting_res_);
+
+    // Now the real MCU ACK arrives and completes our read cleanly.
+    g_mock_millis = 1230;
+    uart.feed_rx(build_frame(0x340, 0x380, 6, make_class2_float_item(71.5f)));
+    eco.loop();
+    EXPECT(std::fabs(spt - 71.5f) < 0.001f);
+    EXPECT(eco.mcu_connected_);
+    EXPECT(eco.mcu_answers_reads_);
+    EXPECT(!eco.our_read_awaiting_res_);
+  }
+
+  // 2) Slow blocking TX (+70ms during write_array/flush) measures echo, holdoff, and ClssType=9 from post-TX time.
+  {
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_update_interval(30000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x1C0);
+    eco.register_listener("SPT", 0, false, [](const EconetDatapoint &) {}, false, 0);
+    eco.setup();
+
+    std::vector<uint8_t> last_tx;
+    uart.on_tx = [&](const std::vector<uint8_t> &frame) {
+      last_tx = frame;
+      g_mock_millis += 70;  // Simulate ~70ms blocking TX at 38400 baud
+    };
+
+    g_mock_millis = 1200;
+    eco.loop();  // TX starts at 1200, finishes at 1270
+    uart.on_tx = nullptr;
+    EXPECT(uart.tx_frames.size() == 1);
+    EXPECT(g_mock_millis == 1270);
+
+    // Self-echo arrives 50ms after TX completion (1320ms: 120ms after loop entry, 50ms <= 100ms post-TX).
+    g_mock_millis = 1320;
+    uart.feed_rx(last_tx);
+    eco.loop();
+    EXPECT(!eco.mcu_connected_);
+    EXPECT(eco.our_read_awaiting_res_);
+
+    // Queue a write: held off at 1490ms (+220ms post-TX < 250ms READ_RESPONSE_TIMEOUT, even though 290ms
+    // have elapsed since loop entry at 1200ms) and sent at 1530ms (+260ms post-TX >= 250ms).
+    uart.tx_frames.clear();
+    eco.set_float_datapoint_value("SPT", 70.0f, 0x1C0);
+    g_mock_millis = 1490;
+    eco.loop();
+    EXPECT(uart.tx_frames.empty());
+    g_mock_millis = 1530;
+    eco.loop();
+    EXPECT(uart.tx_frames.size() == 1);
+
+    // ClssType=9 from 0x380 at 1650ms (+380ms after unanswered read at 1270ms, < 500ms window): must NOT hijack 0x1C0!
+    g_mock_millis = 1650;
+    uart.feed_rx(build_frame(0xF1, 0x380, 31, {0x09, 0x01}));
+    eco.loop();
+    EXPECT(eco.dst_adr_ == 0x1C0);
+
+    // ClssType=9 at >500ms after unanswered read to 0x1C0 (1270 + 550 = 1820) auto-discovers 0x1000.
+    g_mock_millis = 1820;
+    uart.feed_rx(build_frame(0xF1, 0x1000, 31, {0x09, 0x01}));
+    eco.loop();
+    EXPECT(eco.dst_adr_ == 0x1000);
+  }
+}
+
+void test_timeout_recovery_reentrancy_zero_dst_and_request_once() {
+  std::cout
+      << "[TEST] Timeout ACK recovery, callback reentrancy, dst_address=0 guard, and request_once precedence...\n";
+  // 1) Corrupt prefix followed by ONLY the ACK to our in-flight READ is recovered on RECEIVE_TIMEOUT flush.
+  {
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_update_interval(30000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x380);
+
+    float spt = -1.0f;
+    eco.register_listener("SPT", 0, false, [&](const EconetDatapoint &dp) { spt = dp.value_float; }, false, 0x380);
+    eco.setup();
+
+    g_mock_millis = 1200;
+    eco.loop();
+    EXPECT(uart.tx_frames.size() == 1);
+    EXPECT(eco.our_read_awaiting_res_);
+
+    // Corrupt frame + two stray 0x80 bytes (forming a false oversized length candidate) + valid ACK for our read.
+    auto corrupt_f = build_frame(0x380, 0x680, 31, {0x07, 0x00});
+    corrupt_f.back() ^= 0x55;
+    auto ack_f = build_frame(0x340, 0x380, 6, make_class2_float_item(73.5f));
+    std::vector<uint8_t> burst = corrupt_f;
+    burst.push_back(0x80);
+    burst.push_back(0x80);
+    burst.insert(burst.end(), ack_f.begin(), ack_f.end());
+
+    g_mock_millis = 1220;
+    uart.feed_rx(burst);
+    eco.loop();
+    EXPECT(spt < 0.0f);  // Still stuck on false candidate length
+
+    g_mock_millis = 1330;  // > RECEIVE_TIMEOUT (100ms): drain_rx_frames_(true) recovers our ACK!
+    eco.loop();
+    EXPECT(std::fabs(spt - 73.5f) < 0.001f);
+    EXPECT(!eco.our_read_awaiting_res_);
+    EXPECT(eco.mcu_answers_reads_);
+    EXPECT(eco.dst_adr_answered_);
+
+    // Corrupt prefix followed by ONLY a new READ_COMMAND preserves read_req_ across timeout flush so its ACK works.
+    auto read_f = build_frame(0x380, 0x680, 30, make_read_class2_payload({"SPT"}));
+    std::vector<uint8_t> read_burst = corrupt_f;
+    read_burst.push_back(0x80);
+    read_burst.push_back(0x80);
+    read_burst.insert(read_burst.end(), read_f.begin(), read_f.end());
+    g_mock_millis = 1500;
+    uart.feed_rx(read_burst);
+    eco.loop();
+    g_mock_millis = 1610;  // Timeout flush recovers read_f and keeps read_req_.awaiting_res = true
+    eco.loop();
+    g_mock_millis = 1620;
+    uart.feed_rx(build_frame(0x680, 0x380, 6, make_class2_float_item(75.0f)));
+    eco.loop();
+    EXPECT(std::fabs(spt - 75.0f) < 0.001f);
+  }
+
+  // 2) Reentrant listener callback invoking homeassistant_read() inside a Class 2 ACK.
+  {
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_update_interval(30000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x380);
+
+    struct ReentrancyCtx {
+      TestableEconet *eco;
+      float spt{-1.0f};
+      float oat{-1.0f};
+      bool oat_saw_batch{false};
+      int batch_completes{0};
+      std::map<std::string, std::string> nested_res{};
+    } ctx{.eco = &eco};
+
+    eco.register_listener(
+        "SPT", 0, false,
+        [&ctx](const EconetDatapoint &dp) {
+          ctx.spt = dp.value_float;
+          ctx.nested_res = ctx.eco->homeassistant_read("NESTED", 0x380);
+        },
+        false, 0x380);
+    eco.register_listener(
+        "OAT_SENS", 0, false,
+        [&ctx](const EconetDatapoint &dp) {
+          ctx.oat = dp.value_float;
+          ctx.oat_saw_batch = ctx.eco->is_in_batch_response();
+        },
+        false, 0x380);
+    eco.add_on_batch_complete_callback([&ctx]() { ctx.batch_completes++; });
+    eco.setup();
+
+    // Poll mod 0 (SPT + OAT_SENS).
+    g_mock_millis = 1200;
+    eco.loop();
+    EXPECT(uart.tx_frames.size() == 1);
+
+    // Reply immediately when homeassistant_read("NESTED") transmits.
+    uart.on_tx = [&](const std::vector<uint8_t> &tx) {
+      if (tx.size() >= 16 && tx[13] == 30) {
+        g_mock_millis += 10;
+        uart.feed_rx(build_frame(0x340, 0x380, 6, make_class2_float_item(99.5f)));
+      }
+    };
+
+    // Feed our Class 2 ACK along with a trailing third-party frame in the same RX chunk.
+    g_mock_millis = 1220;
+    auto ack =
+        build_frame(0x340, 0x380, 6, concat_items({make_class2_float_item(68.0f), make_class2_float_item(55.0f)}));
+    auto trailing = build_frame(0xF1, 0x380, 31, {0x07, 0x00});
+    std::vector<uint8_t> combined = ack;
+    combined.insert(combined.end(), trailing.begin(), trailing.end());
+    uart.feed_rx(combined);
+    eco.loop();
+    uart.on_tx = nullptr;
+
+    EXPECT(std::fabs(ctx.spt - 68.0f) < 0.001f);
+    EXPECT(std::fabs(ctx.oat - 55.0f) < 0.001f);
+    EXPECT(ctx.nested_res["type"] == "FLOAT" && ctx.nested_res["value"] == "99.5");
+    EXPECT(ctx.oat_saw_batch);         // Nested Class 2 ACK must not clear outer batch depth early
+    EXPECT(ctx.batch_completes == 1);  // Fires once when outermost batch completes
+    EXPECT(!eco.is_in_batch_response());
+    EXPECT(!eco.our_read_awaiting_res_);
+    EXPECT(eco.unanswered_reads_ == 0);
+  }
+
+  // 3) Omitted dst_address (0) must never transmit frames, write optimistic state, or block homeassistant_read
+  // before ClssType=9 discovery.
+  {
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_update_interval(30000);
+    eco.set_src_address(0x340);
+    // dst_address intentionally omitted (0).
+    int optimistic_cb = 0;
+    eco.register_listener(
+        "WHTRSETP", 0, false, [&optimistic_cb](const EconetDatapoint &) { optimistic_cb++; }, false, 0);
+    eco.setup();
+
+    eco.set_float_datapoint_value("WHTRSETP", 120.0f, 0);
+    EXPECT(optimistic_cb == 0);
+    const uint32_t before_read = g_mock_millis;
+    auto empty_read = eco.homeassistant_read("WHTRSETP", 0);
+    EXPECT(empty_read.empty());
+    EXPECT(g_mock_millis == before_read);  // Returned immediately instead of blocking 2000ms
+
+    for (int i = 0; i < 5; i++) {
+      g_mock_millis += 200;
+      eco.loop();
+    }
+    EXPECT(uart.tx_frames.empty());
+
+    // ClssType=9 discovers 0x1000; next loop() immediately polls 0x1000!
+    g_mock_millis += 100;
+    uart.feed_rx(build_frame(0xF1, 0x1000, 31, {0x09, 0x01}));
+    eco.loop();
+    EXPECT(eco.dst_adr_ == 0x1000);
+
+    g_mock_millis += 150;
+    eco.loop();
+    EXPECT(uart.tx_frames.size() == 1);
+    EXPECT(uart.tx_frames[0][13] == 30);
+    EXPECT(uart.tx_frames[0][2] == 0x10 && uart.tx_frames[0][3] == 0x00);
+  }
+
+  // 4) Periodic (request_once=false) listeners take precedence over request_once=true regardless of registration
+  // order, and default-address (src_adr=0) listeners on mod 0 do not bleed into another device's mod.
+  {
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_update_interval(5000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x380);
+    eco.add_request_mod_address(1, 0x500);
+
+    // Order 1: request_once=true then request_once=false on 0x380
+    eco.register_listener("DP_A", 0, true, [](const EconetDatapoint &) {}, false, 0x380);
+    eco.register_listener("DP_A", 0, false, [](const EconetDatapoint &) {}, false, 0x380);
+    // Order 2: request_once=false then request_once=true on 0x380
+    eco.register_listener("DP_B", 0, false, [](const EconetDatapoint &) {}, false, 0x380);
+    eco.register_listener("DP_B", 0, true, [](const EconetDatapoint &) {}, false, 0x380);
+    // Cross-device: request_once=true with src_adr=0 on mod 0 (0x380) + periodic on mod 1 (0x500)
+    eco.register_listener("DP_C", 0, true, [](const EconetDatapoint &) {}, false, 0);
+    eco.register_listener("DP_C", 1, false, [](const EconetDatapoint &) {}, false, 0);
+    // Reverse cross-device: periodic with src_adr=0 on mod 0 (0x380) + request_once=true on mod 1 (0x500)
+    eco.register_listener("DP_D", 0, false, [](const EconetDatapoint &) {}, false, 0);
+    eco.register_listener("DP_D", 1, true, [](const EconetDatapoint &) {}, false, 0x500);
+    eco.setup();
+
+    // Initial poll mod 0 (0x380): DP_A, DP_B, DP_C, DP_D (4 items -> payload len = 2 + 40 = 42)
+    g_mock_millis = 1200;
+    eco.loop();
+    EXPECT(uart.tx_frames.size() == 1 && uart.tx_frames[0][10] == 42);
+    g_mock_millis = 1220;
+    uart.feed_rx(build_frame(0x340, 0x380, 6,
+                             concat_items({make_class2_float_item(1.0f), make_class2_float_item(2.0f),
+                                           make_class2_float_item(3.0f), make_class2_float_item(4.0f)})));
+    eco.loop();
+
+    // Initial poll mod 1 (0x500): DP_C, DP_D (2 items -> payload len = 2 + 20 = 22)
+    g_mock_millis = 1330;
+    eco.loop();
+    EXPECT(uart.tx_frames.size() == 2 && uart.tx_frames[1][10] == 22);
+    g_mock_millis = 1350;
+    uart.feed_rx(
+        build_frame(0x340, 0x500, 6, concat_items({make_class2_float_item(5.0f), make_class2_float_item(6.0f)})));
+    eco.loop();
+
+    // After update_interval (5000ms):
+    // - mod 0 (0x380) skips cached request_once DP_C, but MUST still poll DP_A, DP_B, DP_D (3 items -> len = 32)!
+    // - mod 1 (0x500) skips cached request_once DP_D (not overridden by mod 0's src_adr=0 periodic DP_D!),
+    //   and MUST still poll periodic DP_C (1 item -> len = 12)!
+    uart.tx_frames.clear();
+    g_mock_millis = 7000;
+    eco.loop();
+    EXPECT(uart.tx_frames.size() == 1);
+    EXPECT(uart.tx_frames[0][2] == 0x03 && uart.tx_frames[0][3] == 0x80);
+    EXPECT(uart.tx_frames[0][10] == 32);
+    g_mock_millis = 7020;
+    uart.feed_rx(build_frame(
+        0x340, 0x380, 6,
+        concat_items({make_class2_float_item(1.0f), make_class2_float_item(2.0f), make_class2_float_item(4.0f)})));
+    eco.loop();
+
+    g_mock_millis = 10000;
+    eco.loop();
+    EXPECT(uart.tx_frames.size() == 2);
+    EXPECT(uart.tx_frames[1][2] == 0x05 && uart.tx_frames[1][3] == 0x00);
+    EXPECT(uart.tx_frames[1][10] == 12);
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -1220,6 +1558,8 @@ int main() {
   test_entities_and_climate();
   test_active_mod_intervals_short_reads_and_pending_writes();
   test_climate_action_unblock_fan_routing_and_text_sensor_raw_state();
+  test_echo_resilience_and_slow_tx_timing();
+  test_timeout_recovery_reentrancy_zero_dst_and_request_once();
   std::cout << "\nAll EcoNet C++ unit tests passed!\n";
   return 0;
 }
