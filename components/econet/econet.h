@@ -203,6 +203,12 @@ class Econet : public Component, public uart::UARTDevice {
     bool force_raw{false};
   };
 
+  struct PendingWrite {
+    EconetDatapointID id;
+    float value{0};
+    EconetDatapointType type{EconetDatapointType::FLOAT};
+  };
+
   void register_listener_(const DatapointName &datapoint_id, int8_t request_mod, bool request_once,
                           DatapointCallback callback, bool is_raw_datapoint, uint32_t src_adr, bool run_existing,
                           bool publish_unchanged, bool notify_enum_text);
@@ -229,21 +235,25 @@ class Econet : public Component, public uart::UARTDevice {
   void write_value_(const DatapointName &object, EconetDatapointType type, float value, uint32_t address = 0);
 
   void update_min_read_delay_() {
-    if (!this->request_mods_.empty()) {
-      this->min_delay_between_read_requests_ =
-          std::max(this->min_update_interval_millis_ / static_cast<uint32_t>(this->request_mods_.size()),
-                   MIN_REQUEST_DELAY_MILLIS);
+    if (this->request_mods_.empty()) {
+      this->min_update_interval_millis_ = this->update_interval_millis_;
+      return;
     }
+    uint32_t min_interval = this->request_mod_update_interval_millis_[this->request_mods_[0]];
+    for (size_t i = 1; i < this->request_mods_.size(); i++) {
+      min_interval = std::min(min_interval, this->request_mod_update_interval_millis_[this->request_mods_[i]]);
+    }
+    this->min_update_interval_millis_ = min_interval;
+    this->min_delay_between_read_requests_ =
+        std::max(this->min_update_interval_millis_ / static_cast<uint32_t>(this->request_mods_.size()),
+                 MIN_REQUEST_DELAY_MILLIS);
   }
 
   void update_intervals_() {
-    this->min_update_interval_millis_ = this->update_interval_millis_;
     for (uint8_t i = 0; i < MAX_REQUEST_MODS; i++) {
       if ((this->request_mod_interval_override_mask_ & (1U << i)) == 0) {
         this->request_mod_update_interval_millis_[i] = this->update_interval_millis_;
       }
-      this->min_update_interval_millis_ =
-          std::min(this->min_update_interval_millis_, this->request_mod_update_interval_millis_[i]);
     }
     this->update_min_read_delay_();
   }
@@ -262,7 +272,7 @@ class Econet : public Component, public uart::UARTDevice {
   std::vector<EconetDatapointID> raw_datapoint_ids_;
   std::vector<EconetDatapointID> request_once_datapoint_ids_;
   std::vector<DatapointEntry> datapoints_;
-  std::vector<DatapointEntry> pending_writes_;
+  std::vector<PendingWrite> pending_writes_;
   std::vector<ServiceReadRequest> datapoint_ids_for_read_service_;
   StaticVector<uint8_t, MAX_MESSAGE_SIZE> rx_message_;
 
