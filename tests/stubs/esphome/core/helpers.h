@@ -86,12 +86,12 @@ constexpr size_t format_hex_pretty_size(size_t count) { return count == 0 ? 1 : 
 
 template<size_t N>
 inline const char *format_hex_pretty_to(char (&buf)[N], const uint8_t *data, size_t len, char sep = '.') {
+  if (N > 0) {
+    buf[0] = '\0';
+  }
   size_t pos = 0;
   for (size_t i = 0; i < len && pos + 4 < N; i++) {
     pos += std::snprintf(buf + pos, N - pos, i + 1 < len ? "%02X%c" : "%02X", data[i], sep);
-  }
-  if (len == 0 && N > 0) {
-    buf[0] = '\0';
   }
   return buf;
 }
@@ -118,8 +118,9 @@ template<typename R, typename... Args> class Callback<R(Args...)> {
     } else {
       std::memcpy(&cb.ctx_, &fn, sizeof(Fn));
       cb.fn_ = [](void *ctx, Args... args) -> R {
-        Fn f = *reinterpret_cast<Fn *>(&ctx);
-        return f(std::forward<Args>(args)...);
+        alignas(Fn) char buf[sizeof(Fn)];
+        std::memcpy(buf, &ctx, sizeof(Fn));
+        return (*reinterpret_cast<Fn *>(buf))(std::forward<Args>(args)...);
       };
     }
     return cb;

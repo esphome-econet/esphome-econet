@@ -122,6 +122,7 @@ class TestableEconet : public Econet {
   using Econet::dst_adr_answered_;
   using Econet::mcu_answers_reads_;
   using Econet::mcu_connected_;
+  using Econet::min_delay_between_read_requests_;
   using Econet::our_read_awaiting_res_;
   using Econet::unanswered_reads_;
 };
@@ -967,6 +968,88 @@ void test_entities_and_climate() {
   EXPECT(boot_clim.publish_count == 1);
 }
 
+void test_active_mod_intervals_short_reads_and_pending_writes() {
+  std::cout << "[TEST] Active request_mod intervals, short READ_COMMAND payloads, and compact PendingWrite...\n";
+  g_mock_millis = 1000;
+  uart::MockUART uart;
+  TestableEconet eco;
+  eco.set_uart_parent(&uart);
+  eco.set_src_address(0x340);
+  eco.set_dst_address(0x380);
+  eco.set_update_interval(30000);
+  // Configure a fast override on an unused request_mod (mod 2) before registering listeners.
+  eco.add_request_mod_update_interval(2, 5000);
+
+  eco.register_listener("SPT", 0, false, [](const EconetDatapoint &) {}, false, 0x380);
+  eco.register_listener("OAT_SENS", 1, false, [](const EconetDatapoint &) {}, false, 0x380);
+  // Unused mod 2's 5s override must NOT shrink min_delay_between_read_requests_ below 30000 / 2 = 15000.
+  EXPECT(eco.min_delay_between_read_requests_ == 15000);
+
+  // Registering an entity on mod 2 activates its 5s interval -> 5000 / 3 = 1666 ms.
+  eco.register_listener("STATMODE", 2, false, [](const EconetDatapoint &) {}, false, 0x380);
+  EXPECT(eco.min_delay_between_read_requests_ == 5000 / 3);
+
+  // Short/truncated READ_COMMAND payloads (data_len = 2, 3, 4, 5) must not perform out-of-bounds pointer arithmetic.
+  float got_x = -1.0f;
+  eco.register_listener("X", -1, false, [&](const EconetDatapoint &dp) { got_x = dp.value_float; }, false, 0x380);
+  eco.setup();
+
+  g_mock_millis = 1200;
+  uart.feed_rx(build_frame(0x380, 0x680, 30, {0x02, 0x01}));
+  eco.loop();
+  uart.feed_rx(build_frame(0x380, 0x680, 30, {0x02, 0x01, 0x00}));
+  eco.loop();
+  uart.feed_rx(build_frame(0x380, 0x680, 30, {0x02, 0x01, 0x00, 0x00}));
+  eco.loop();
+  // 5-byte payload has a single 1-byte name "X" at offset 4.
+  uart.feed_rx(build_frame(0x380, 0x680, 30, {0x02, 0x01, 0x00, 0x00, 'X'}));
+  eco.loop();
+  g_mock_millis = 1210;
+  uart.feed_rx(build_frame(0x680, 0x380, 6, make_class2_float_item(42.5f)));
+  eco.loop();
+  EXPECT(std::fabs(got_x - 42.5f) < 0.001f);
+
+  // PendingWrite coalescing: prime MCU values for SPT and STATMODE, queue multiple writes, and verify exact 18B frames.
+  g_mock_millis = 1400;
+  uart.feed_rx(build_frame(0x380, 0x680, 30, make_read_class2_payload({"SPT", "STATMODE"})));
+  eco.loop();
+  g_mock_millis = 1410;
+  uart.feed_rx(build_frame(0x680, 0x380, 6,
+                           concat_items({make_class2_float_item(70.0f), make_class2_enum_item(1, "Cooling ")})));
+  eco.loop();
+  uart.tx_frames.clear();
+
+  // Overwrite SPT twice in-place while STATMODE is also queued; verify FIFO order (SPT first, then STATMODE).
+  eco.set_float_datapoint_value("SPT", 72.0f, 0x380);
+  eco.set_enum_datapoint_value("STATMODE", 2, 0x380);
+  // Reverting to the MCU's cached value while a write is still pending must update the pending write.
+  eco.set_float_datapoint_value("SPT", 70.0f, 0x380);
+
+  g_mock_millis = 1600;
+  eco.loop();
+  EXPECT(uart.tx_frames.size() == 1);
+  EXPECT(uart.tx_frames[0][10] == 18);  // WRITE_DATA_POS (14) + FLOAT_SIZE (4)
+  EXPECT(uart.tx_frames[0][13] == 31);  // WRITE_COMMAND
+  EXPECT(uart.tx_frames[0][16] == static_cast<uint8_t>(EconetDatapointType::FLOAT));
+  EXPECT(std::memcmp(&uart.tx_frames[0][20], "SPT\0\0\0\0\0", 8) == 0);
+  auto expected_70 = float_be(70.0f);
+  EXPECT(std::memcmp(&uart.tx_frames[0][28], expected_70.data(), 4) == 0);
+
+  g_mock_millis = 1800;
+  eco.loop();
+  EXPECT(uart.tx_frames.size() == 2);
+  EXPECT(uart.tx_frames[1][10] == 18);
+  EXPECT(uart.tx_frames[1][16] == static_cast<uint8_t>(EconetDatapointType::ENUM_TEXT));
+  EXPECT(std::memcmp(&uart.tx_frames[1][20], "STATMODE", 8) == 0);
+  auto expected_2 = float_be(2.0f);
+  EXPECT(std::memcmp(&uart.tx_frames[1][28], expected_2.data(), 4) == 0);
+
+  // format_hex_pretty_to stub must NUL-terminate even on tiny buffers.
+  char tiny[2] = {'Z', 'Z'};
+  const uint8_t sample[2] = {0xAB, 0xCD};
+  EXPECT(std::strlen(format_hex_pretty_to(tiny, sample, sizeof(sample), '.')) == 0);
+}
+
 }  // namespace
 
 int main() {
@@ -979,6 +1062,7 @@ int main() {
   test_malformed_packets_and_unsupported_write_guard();
   test_homeassistant_services();
   test_entities_and_climate();
+  test_active_mod_intervals_short_reads_and_pending_writes();
   std::cout << "\nAll EcoNet C++ unit tests passed!\n";
   return 0;
 }
