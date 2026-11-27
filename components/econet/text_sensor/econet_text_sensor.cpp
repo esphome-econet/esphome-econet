@@ -22,7 +22,7 @@ void EconetTextSensor::setup() {
           return;
         }
         ESP_LOGV(TAG, "MCU reported text sensor %s is: %s", this->sensor_id_, datapoint.value_string.c_str());
-        if (!this->has_state() || this->state != datapoint.value_string) {
+        if (!this->has_state() || this->get_raw_state() != datapoint.value_string) {
           this->publish_state(datapoint.value_string);
         }
       },
