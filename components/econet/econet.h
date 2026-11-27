@@ -66,8 +66,17 @@ struct ReadRequest {
   uint32_t src_adr{0};
   uint32_t timestamp{0};
   uint8_t type{0};
+  int8_t request_mod{-1};
+  bool request_mod_continuation{false};
   bool awaiting_res{false};
   bool from_us{false};
+
+  void clear() {
+    this->awaiting_res = false;
+    this->from_us = false;
+    this->request_mod = -1;
+    this->request_mod_continuation = false;
+  }
 };
 
 struct EconetDatapointID {
@@ -226,8 +235,10 @@ class Econet : public Component, public uart::UARTDevice {
   // Warns about a read request issued while the previous one is still unanswered, rate limited,
   // and adds a hint about the usual causes while no read has ever been answered.
   void log_unanswered_read_();
+  void mark_our_read_answered_(uint32_t src_adr, int8_t answered_mod, bool answered_continuation);
 
-  void transmit_message_(uint8_t command, const uint8_t *data, size_t len, uint32_t dst_adr = 0, uint32_t src_adr = 0);
+  void transmit_message_(uint8_t command, const uint8_t *data, size_t len, uint32_t dst_adr = 0, uint32_t src_adr = 0,
+                         int8_t request_mod = -1, bool request_mod_continuation = false);
   void request_strings_();
   bool is_request_once_(const DatapointName &name, uint32_t address) const;
   bool is_raw_datapoint_(const DatapointName &name, uint32_t address) const;
@@ -320,6 +331,7 @@ class Econet : public Component, public uart::UARTDevice {
   bool our_read_awaiting_res_{false};
   bool awaiting_tx_echo_{false};
   bool has_read_requested_{false};
+  bool first_boot_retry_done_{false};
   bool pending_read_active_{false};
   bool pending_read_received_{false};
   uint8_t batch_response_depth_{0};
