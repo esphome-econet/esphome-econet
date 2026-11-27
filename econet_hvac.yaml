@@ -64,7 +64,9 @@ sensor:
     id: airhandler_cfm
     icon: "mdi:fan"
     sensor_datapoint: F_ACTCFM
-    unit_of_measurement: "cfm"
+    unit_of_measurement: "ft³/min"
+    device_class: "volume_flow_rate"
+    accuracy_decimals: 0
     state_class: "measurement"
     entity_category: "diagnostic"
     filters:
@@ -83,8 +85,9 @@ sensor:
     id: static_pressure
     icon: "mdi:air-filter"
     sensor_datapoint: STATIC_P
-    accuracy_decimals: 6
-    unit_of_measurement: "in"
+    accuracy_decimals: 2
+    unit_of_measurement: "inH₂O"
+    device_class: "pressure"
     state_class: "measurement"
     entity_category: "diagnostic"
     filters:
