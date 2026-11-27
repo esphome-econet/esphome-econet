@@ -344,6 +344,12 @@ sensor:
     request_mod: none
     accuracy_decimals: 0
     internal: true
+    on_value:
+      then:
+        - lambda: |-
+            if (!std::isnan(x)) {
+              id(odu_defrost).publish_state(x == 1.0f);
+            }
   - platform: econet
     name: "ODU Size (Tons)"
     id: odu_size
@@ -370,11 +376,6 @@ binary_sensor:
     id: odu_defrost
     device_class: running
     entity_category: "diagnostic"
-    lambda: |-
-      if (std::isnan(id(odu_defrost_sensor).state)) {
-        return {};
-      }
-      return (id(odu_defrost_sensor).state == 1);
 
 text_sensor:
   - platform: econet
@@ -400,6 +401,7 @@ text_sensor:
     id: odu_sw_version
     sensor_datapoint: ODUSWVER
     request_once: true
+    request_mod: 4
     src_address: ${thermostat_address}
     icon: "mdi:information-box"
     entity_category: "diagnostic"
