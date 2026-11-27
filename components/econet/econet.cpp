@@ -16,6 +16,10 @@ static const uint32_t RECEIVE_TIMEOUT = 100;
 static const uint32_t REQUEST_DELAY = MIN_REQUEST_DELAY_MILLIS;
 // Maximum time to hold pending writes or subsequent reads while awaiting an ACK to an in-flight read.
 static const uint32_t READ_RESPONSE_TIMEOUT = 250;
+// Minimum elapsed time after an unanswered read to dst_address before a ClssType=9 announcement
+// from another device may replace dst_address. Must exceed READ_RESPONSE_TIMEOUT so a slow-responding
+// appliance is not hijacked before its ACK arrives.
+static const uint32_t CLSS9_UNANSWERED_READ_TIMEOUT = READ_RESPONSE_TIMEOUT * 2;
 
 // A silent bus produces one unanswered read per update interval, forever. Log the first few at
 // full rate so a transient stall is still visible, then back off to one message per interval so
@@ -281,22 +285,24 @@ void Econet::log_unanswered_read_() {
   }
 }
 
-bool Econet::parse_rx_frame_(const uint8_t *b, size_t frame_len) {
+bool Econet::parse_rx_frame_(size_t frame_len) {
+  const uint8_t *b = this->rx_message_.data();
   const uint32_t dst_adr = bytes_to_address(b + DST_ADR_POS);
   const uint32_t src_adr = bytes_to_address(b + SRC_ADR_POS);
   const uint8_t data_len = b[LEN_POS];
   const uint8_t command = b[COMMAND_POS];
-  const bool was_awaiting_echo = this->awaiting_tx_echo_;
-  this->awaiting_tx_echo_ = false;
-  const bool in_echo_window = was_awaiting_echo && (this->loop_now_ - this->last_request_ <= RECEIVE_TIMEOUT) &&
-                              this->src_adr_ != 0 && src_adr == this->src_adr_;
+  if (this->awaiting_tx_echo_ && (this->loop_now_ - this->last_request_ > RECEIVE_TIMEOUT)) {
+    this->awaiting_tx_echo_ = false;
+  }
+  const bool in_echo_window = this->awaiting_tx_echo_ && this->src_adr_ != 0 && src_adr == this->src_adr_;
 
   const uint16_t crc = static_cast<uint16_t>(b[MSG_HEADER_SIZE + data_len]) |
                        (static_cast<uint16_t>(b[MSG_HEADER_SIZE + data_len + 1]) << 8);
   const uint16_t crc_check = crc16(b, MSG_HEADER_SIZE + data_len, 0);
   if (crc != crc_check) {
     // Only clear awaiting_res if the corrupted frame looks like the expected ACK rather than a
-    // corrupted TX self-echo or unrelated bus glitch.
+    // corrupted TX self-echo or unrelated bus glitch. Keep awaiting_tx_echo_ intact so a stray
+    // prefix byte before our real self-echo does not cause the echo to be parsed as MCU traffic.
     if (!in_echo_window && this->read_req_.awaiting_res && src_adr != this->src_adr_ &&
         src_adr == this->read_req_.dst_adr && dst_adr == this->read_req_.src_adr && command == ACK) {
       this->read_req_.awaiting_res = false;
@@ -305,11 +311,26 @@ bool Econet::parse_rx_frame_(const uint8_t *b, size_t frame_len) {
     ESP_LOGW(TAG, "Ignoring message with incorrect crc");
     return false;
   }
-  if (in_echo_window && frame_len == this->last_tx_len_ && crc == this->last_tx_crc_) {
+
+  this->awaiting_tx_echo_ = false;
+  const bool is_self_echo = in_echo_window && frame_len == this->last_tx_len_ && crc == this->last_tx_crc_;
+  // Copy the validated frame and remove it from rx_message_ before invoking parse_message_() so
+  // reentrant callbacks (e.g. calling homeassistant_read()) cannot re-parse it or underflow rx_message_.
+  uint8_t frame[MAX_FRAME_SIZE];
+  if (!is_self_echo) {
+    memcpy(frame, b, frame_len);
+  }
+  const size_t tail = this->rx_message_.size() - frame_len;
+  if (tail > 0) {
+    memmove(this->rx_message_.data(), this->rx_message_.data() + frame_len, tail);
+  }
+  this->rx_message_.resize(tail);
+
+  if (is_self_echo) {
     ESP_LOGV(TAG, "Ignoring self-echoed TX frame from 0x%lx", (unsigned long) src_adr);
     return true;
   }
-  this->parse_message_(b, false);
+  this->parse_message_(frame, false);
   return true;
 }
 
@@ -379,6 +400,7 @@ void Econet::parse_message_(const uint8_t *b, bool is_tx) {
       this->read_req_.obj_names = obj_names;
       this->read_req_.awaiting_res = true;
       this->read_req_.from_us = is_tx;
+      this->read_req_seq_++;
       if (is_tx) {
         this->our_read_awaiting_res_ = true;
         if (dst_adr == this->dst_adr_) {
@@ -393,16 +415,30 @@ void Econet::parse_message_(const uint8_t *b, bool is_tx) {
 
   } else if (command == ACK) {
     if (this->read_req_.dst_adr == src_adr && this->read_req_.src_adr == dst_adr && this->read_req_.awaiting_res) {
-      bool valid_read_ack = false;
-      if (this->read_req_.type == 1 && this->read_req_.obj_names.size() == 1) {
+      const bool was_our_read = this->read_req_.from_us;
+      const uint8_t req_type = this->read_req_.type;
+      auto mark_read_answered = [&]() {
+        if (was_our_read) {
+          this->our_read_awaiting_res_ = false;
+          this->unanswered_reads_ = 0;
+          this->mcu_answers_reads_ = true;
+          if (src_adr == this->dst_adr_) {
+            this->dst_adr_answered_ = true;
+          }
+        }
+      };
+
+      if (req_type == 1 && this->read_req_.obj_names.size() == 1) {
+        const DatapointName obj_name = this->read_req_.obj_names[0];
+        this->read_req_.awaiting_res = false;
+        this->read_req_.from_us = false;
         if (data_len < 1) {
           ESP_LOGD(TAG, "  ACK payload too short for single-object read (data_len=%d)", data_len);
         } else {
-          this->handle_response_(EconetDatapointID{.name = this->read_req_.obj_names[0], .address = src_adr}, pdata,
-                                 data_len);
-          valid_read_ack = true;
+          mark_read_answered();
+          this->handle_response_(EconetDatapointID{.name = obj_name, .address = src_adr}, pdata, data_len);
         }
-      } else if (this->read_req_.type == 2) {
+      } else if (req_type == 2) {
         // 1st pass to validate response and avoid any buffer over-read
         // We expect: this->read_req_.obj_names.size() sections where each section has 1 byte representing the item_len
         // followed by item_len bytes (see handle_response_).
@@ -420,11 +456,18 @@ void Econet::parse_message_(const uint8_t *b, bool is_tx) {
         if (item_num != this->read_req_.obj_names.size()) {
           ESP_LOGE(TAG, "We requested %zu objects but we received %d. Ignoring response.",
                    this->read_req_.obj_names.size(), item_num);
+          this->read_req_.awaiting_res = false;
+          this->read_req_.from_us = false;
         } else {
-          // Copy obj_names on the stack in case a listener callback invokes something that mutates read_req_.
+          // Copy obj_names and clear in-flight read state before invoking callbacks so reentrant calls
+          // (e.g. homeassistant_read()) observe a completed read transaction instead of stale state.
           const auto obj_names = this->read_req_.obj_names;
+          this->read_req_.awaiting_res = false;
+          this->read_req_.from_us = false;
+          mark_read_answered();
+
           // 2nd pass to handle response
-          this->in_batch_response_ = true;
+          this->batch_response_depth_++;
           tpos = 0;
           for (size_t i = 0; i < obj_names.size(); i++) {
             if (tpos >= data_len) {
@@ -436,21 +479,14 @@ void Econet::parse_message_(const uint8_t *b, bool is_tx) {
                                    item_len);
             tpos += item_len + 1;
           }
-          this->in_batch_response_ = false;
-          this->batch_complete_callbacks_.call();
-          valid_read_ack = true;
+          this->batch_response_depth_--;
+          if (this->batch_response_depth_ == 0) {
+            this->batch_complete_callbacks_.call();
+          }
         }
-      }
-      const bool was_our_read = this->read_req_.from_us;
-      this->read_req_.awaiting_res = false;
-      this->read_req_.from_us = false;
-      if (was_our_read && valid_read_ack) {
-        this->our_read_awaiting_res_ = false;
-        this->unanswered_reads_ = 0;
-        this->mcu_answers_reads_ = true;
-        if (src_adr == this->dst_adr_) {
-          this->dst_adr_answered_ = true;
-        }
+      } else {
+        this->read_req_.awaiting_res = false;
+        this->read_req_.from_us = false;
       }
     }
   } else if (command == WRITE_COMMAND) {
@@ -496,7 +532,7 @@ void Econet::parse_message_(const uint8_t *b, bool is_tx) {
     } else if (type == 9) {
       const bool dst_adr_unanswered =
           this->dst_adr_ == 0 || (!this->dst_adr_answered_ && this->dst_adr_read_requested_ &&
-                                  (this->loop_now_ - this->dst_adr_last_read_request_ > RECEIVE_TIMEOUT));
+                                  (this->loop_now_ - this->dst_adr_last_read_request_ > CLSS9_UNANSWERED_READ_TIMEOUT));
       if (src_adr != 0 && this->dst_adr_ != src_adr && dst_adr_unanswered) {
         ESP_LOGW(TAG, "Using 0x%lx as dst_address from now on. File an issue if you see this more than once.",
                  (unsigned long) src_adr);
@@ -676,13 +712,7 @@ void Econet::drain_rx_frames_(bool timeout_flush) {
       }
       return;
     }
-    if (this->parse_rx_frame_(this->rx_message_.data(), frame_len)) {
-      const size_t tail = this->rx_message_.size() - frame_len;
-      if (tail > 0) {
-        memmove(this->rx_message_.data(), this->rx_message_.data() + frame_len, tail);
-      }
-      this->rx_message_.resize(tail);
-    } else {
+    if (!this->parse_rx_frame_(frame_len)) {
       this->advance_to_next_sync_();
     }
   }
@@ -724,10 +754,13 @@ void Econet::loop() {
 
   if ((now - this->last_read_data_ > RECEIVE_TIMEOUT) && !this->rx_message_.empty()) {
     ESP_LOGW(TAG, "Ignoring partially received message due to timeout");
-    this->awaiting_tx_echo_ = false;
-    this->read_req_.awaiting_res = false;
-    this->read_req_.from_us = false;
+    const uint32_t prev_req_seq = this->read_req_seq_;
     this->drain_rx_frames_(true);
+    this->awaiting_tx_echo_ = false;
+    if (this->read_req_.awaiting_res && this->read_req_seq_ == prev_req_seq) {
+      this->read_req_.awaiting_res = false;
+      this->read_req_.from_us = false;
+    }
   }
 
   // Read Everything that is in the buffer
@@ -790,7 +823,24 @@ static bool matches_datapoint_id(const std::vector<EconetDatapointID> &ids, cons
 }
 
 bool Econet::is_request_once_(const DatapointName &name, uint32_t address) const {
-  return matches_datapoint_id(this->request_once_datapoint_ids_, name, address);
+  if (address == 0) {
+    return false;
+  }
+  // Resolve stored address 0 to dst_adr_ (rather than wildcarding across all devices) so a
+  // mod-0 periodic/request_once listener with src_adr=0 does not bleed into another device's mod.
+  auto matches_resolved = [&](const std::vector<EconetDatapointID> &ids) {
+    for (const auto &id : ids) {
+      const uint32_t resolved = id.address != 0 ? id.address : this->dst_adr_;
+      if (id.name == name && resolved == address) {
+        return true;
+      }
+    }
+    return false;
+  };
+  if (matches_resolved(this->periodic_datapoint_ids_)) {
+    return false;
+  }
+  return matches_resolved(this->request_once_datapoint_ids_);
 }
 
 bool Econet::is_raw_datapoint_(const DatapointName &name, uint32_t address) const {
@@ -850,7 +900,6 @@ void Econet::request_strings_() {
     if (!urgent_periodic_read && this->loop_now_ - this->last_read_request_ < this->min_delay_between_read_requests_) {
       return;
     }
-    this->has_read_requested_ = true;
 
     const size_t mod_count = this->request_mods_.size();
     for (size_t step = 0; step < mod_count; step++) {
@@ -872,6 +921,10 @@ void Econet::request_strings_() {
       dst_adr = this->request_mod_addresses_[request_mod];
       if (dst_adr == 0) {
         dst_adr = this->dst_adr_;
+      }
+      if (dst_adr == 0) {
+        // Wait for ClssType=9 auto-discovery before polling mods without a destination address.
+        continue;
       }
 
       size_t idx = this->request_mod_offset_[request_mod];
@@ -920,8 +973,6 @@ void Econet::request_strings_() {
     return;
   }
 
-  this->last_read_request_ = this->loop_now_;
-
   StaticVector<uint8_t, MAX_MESSAGE_SIZE> data;
 
   // Read Class
@@ -943,6 +994,10 @@ void Econet::request_strings_() {
   }
 
   this->transmit_message_(READ_COMMAND, data.data(), data.size(), dst_adr);
+  if (!is_service_call) {
+    this->has_read_requested_ = true;
+  }
+  this->last_read_request_ = this->loop_now_;
 }
 
 void Econet::transmit_message_(uint8_t command, const uint8_t *data, size_t len, uint32_t dst_adr, uint32_t src_adr) {
@@ -953,10 +1008,13 @@ void Econet::transmit_message_(uint8_t command, const uint8_t *data, size_t len,
   if (dst_adr == 0) {
     dst_adr = this->dst_adr_;
   }
+  if (dst_adr == 0) {
+    ESP_LOGW(TAG, "Skipping transmit of command %u: dst_address is unknown", command);
+    return;
+  }
   if (src_adr == 0) {
     src_adr = this->src_adr_;
   }
-  this->last_request_ = this->loop_now_;
 
   StaticVector<uint8_t, MAX_MESSAGE_SIZE> tx_message;
 
@@ -990,6 +1048,10 @@ void Econet::transmit_message_(uint8_t command, const uint8_t *data, size_t len,
     this->flow_control_pin_->digital_write(false);
   }
 
+  // Refresh loop_now_ after blocking TX/flush (up to ~70ms at 38400 baud) so echo, request-delay,
+  // and response-timeout windows are measured from transmission completion rather than loop entry.
+  this->loop_now_ = millis();
+  this->last_request_ = this->loop_now_;
   this->parse_message_(tx_message.data(), true);
 }
 
@@ -1027,6 +1089,10 @@ void Econet::set_datapoint_(const EconetDatapointID &datapoint_id, const EconetD
   EconetDatapointID specific = datapoint_id;
   if (specific.address == 0) {
     specific.address = this->dst_adr_;
+  }
+  if (specific.address == 0) {
+    ESP_LOGW(TAG, "Cannot write datapoint %s: dst_address is unknown", datapoint_id.name.c_str());
+    return;
   }
   EconetDatapoint resolved_value = value;
 
@@ -1145,11 +1211,11 @@ void Econet::register_listener_(const DatapointName &datapoint_id, int8_t reques
       this->request_mods_.push_back(request_mod);
       this->update_min_read_delay_();
     }
-    if (request_once) {
-      if (std::find(this->request_once_datapoint_ids_.begin(), this->request_once_datapoint_ids_.end(), dp_id) ==
-          this->request_once_datapoint_ids_.end()) {
-        this->request_once_datapoint_ids_.push_back(dp_id);
-      }
+    const EconetDatapointID req_id{.name = datapoint_id,
+                                   .address = src_adr != 0 ? src_adr : this->request_mod_addresses_[request_mod]};
+    auto &target = request_once ? this->request_once_datapoint_ids_ : this->periodic_datapoint_ids_;
+    if (std::find(target.begin(), target.end(), req_id) == target.end()) {
+      target.push_back(req_id);
     }
   }
   if (is_raw_datapoint) {
@@ -1193,6 +1259,10 @@ std::map<std::string, std::string> Econet::homeassistant_read(const std::string 
 
   if (address == 0) {
     address = this->dst_adr_;
+  }
+  if (address == 0) {
+    ESP_LOGW(TAG, "Cannot read datapoint %s: dst_address is unknown", dp_name.c_str());
+    return {};
   }
 
   // homeassistant_read() blocks (see the loop below), so under normal operation two
