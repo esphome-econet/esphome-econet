@@ -2,6 +2,7 @@
 #include "binary_sensor/econet_binary_sensor.h"
 #include "climate/econet_climate.h"
 #include "econet.h"
+#include "esphome/core/log.h"
 #include "number/econet_number.h"
 #include "select/econet_select.h"
 #include "sensor/econet_sensor.h"
@@ -199,11 +200,12 @@ void test_issue_721_hpwh_autodiscovery() {
   EXPECT(eco.our_read_awaiting_res_);
 
   // 800ms later, 0x1280 has not answered; HPWH at 0x1000 broadcasts ClssType=9.
+  // Passive broadcast must NOT mark an actively-polling config connected before a read is answered.
   g_mock_millis = 2000;
   uart.feed_rx(build_frame(0xF1, 0x1000, 31, {0x09, 0x01, 0x80, 0x00, 0x10, 0x00, 0x00}));
   eco.loop();
   EXPECT(eco.dst_adr_ == 0x1000);
-  EXPECT(eco.mcu_connected_ && conn.state);
+  EXPECT(!eco.mcu_connected_ && !conn.state);
   EXPECT(!eco.dst_adr_answered_);
 
   uart.tx_frames.clear();
@@ -216,6 +218,7 @@ void test_issue_721_hpwh_autodiscovery() {
   uart.feed_rx(build_frame(0x340, 0x1000, 6, make_class2_float_item(125.0f)));
   eco.loop();
   EXPECT(got_setp == 125.0f);
+  EXPECT(eco.mcu_connected_ && conn.state);
   EXPECT(eco.dst_adr_answered_);
   EXPECT(eco.mcu_answers_reads_);
   EXPECT(eco.unanswered_reads_ == 0);
@@ -304,16 +307,18 @@ void test_tx_self_echo_and_coexisting_wifi_module() {
   EXPECT(eco.our_read_awaiting_res_);
 
   // Coexisting 0x340 Rheem WiFi module sends a different READ_COMMAND and receives an ACK.
+  // Snooped datapoints still update, but mcu_connected_ must remain false while our own reads are unanswered.
   g_mock_millis = 1250;
   uart.feed_rx(build_frame(0x380, 0x340, 30, make_read_class2_payload({"OAT_SENS"})));
   eco.loop();
-  EXPECT(eco.mcu_connected_);
+  EXPECT(!eco.mcu_connected_);
 
   g_mock_millis = 1270;
   uart.feed_rx(build_frame(0x340, 0x380, 6, make_class2_float_item(68.5f)));
   eco.loop();
   EXPECT(oat == 68.5f);
   EXPECT(spt == -1.0f);
+  EXPECT(!eco.mcu_connected_);
   EXPECT(eco.our_read_awaiting_res_);
   EXPECT(!eco.mcu_answers_reads_);
 
@@ -325,6 +330,17 @@ void test_tx_self_echo_and_coexisting_wifi_module() {
   uart.feed_rx(build_frame(0x380, 0x340, 6, make_class2_text_item("EW240100   ")));
   eco.loop();
   EXPECT(wifi_sw == "EW240100");
+  EXPECT(!eco.mcu_connected_);
+
+  // Once our own SPT read is sent and answered, mcu_connected_ flips true.
+  g_mock_millis = 2300;
+  eco.loop();
+  g_mock_millis = 2320;
+  uart.feed_rx(build_frame(0x340, 0x380, 6, make_class2_float_item(70.5f)));
+  eco.loop();
+  EXPECT(std::fabs(spt - 70.5f) < 0.001f);
+  EXPECT(eco.mcu_connected_);
+  EXPECT(eco.mcu_answers_reads_);
 }
 
 void test_stray_0x80_resync_crc_and_timeout() {
@@ -1895,6 +1911,391 @@ void test_boot_polling_recovery_pre_tx_parse_and_zero_copy_rx() {
   }
 }
 
+void test_mcu_connected_echo_window_and_rx_diagnostics() {
+  std::cout << "[TEST] mcu_connected rules, widened TX echo window, RX-aware hints, and error backoff...\n";
+
+  auto has_warning = [](const std::string &needle) {
+    for (const auto &w : esphome::test_log::warnings) {
+      if (w.find(needle) != std::string::npos) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  struct LogCaptureGuard {
+    LogCaptureGuard() {
+      esphome::test_log::reset();
+      esphome::test_log::capture_enabled = true;
+    }
+    ~LogCaptureGuard() {
+      esphome::test_log::capture_enabled = false;
+      esphome::test_log::reset();
+    }
+  } log_guard;
+
+  // 1) Active polling: passive ClssType=9 does NOT keep mcu_connected_ alive if TX breaks mid-run.
+  {
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    binary_sensor::BinarySensor conn;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_mcu_connected_binary_sensor(&conn);
+    eco.set_mcu_connected_timeout(5000);
+    eco.set_update_interval(30000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x1000);
+    eco.register_listener("WHTRSETP", 0, false, [](const EconetDatapoint &) {}, false, 0);
+    eco.setup();
+    EXPECT(!conn.state);
+
+    // Boot read answered -> Connected.
+    g_mock_millis = 1200;
+    eco.loop();
+    g_mock_millis = 1220;
+    uart.feed_rx(build_frame(0x340, 0x1000, 6, make_class2_float_item(120.0f)));
+    eco.loop();
+    EXPECT(eco.mcu_connected_ && conn.state);
+
+    // Periodic ClssType=9 broadcasts arrive at t=4000 and t=6000, but no read answers:
+    // must still disconnect once >5000ms elapses since last answered read (t=1220).
+    g_mock_millis = 4000;
+    uart.feed_rx(build_frame(0xF1, 0x1000, 31, {0x09, 0x01}));
+    eco.loop();
+    EXPECT(eco.mcu_connected_ && conn.state);
+
+    g_mock_millis = 6300;
+    uart.feed_rx(build_frame(0xF1, 0x1000, 31, {0x09, 0x01}));
+    eco.loop();
+    EXPECT(!eco.mcu_connected_ && !conn.state);
+  }
+
+  // 2) request_once-only config: stays Disconnected on ClssType=9 before first answer, flips Connected
+  //    on answer, and stays Connected via passive RX keepalive once one-shot polling stops.
+  {
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    binary_sensor::BinarySensor conn;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_mcu_connected_binary_sensor(&conn);
+    eco.set_mcu_connected_timeout(5000);
+    eco.set_update_interval(30000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x1000);
+    std::string model;
+    eco.register_listener("PRODMODN", 0, true, [&](const EconetDatapoint &dp) { model = dp.value_string; }, false, 0);
+    eco.setup();
+
+    // ClssType=9 before our one-shot read is answered must NOT mark connected.
+    g_mock_millis = 1050;
+    uart.feed_rx(build_frame(0xF1, 0x1000, 31, {0x09, 0x01}));
+    eco.loop();
+    EXPECT(!eco.mcu_connected_ && !conn.state);
+
+    // One-shot read sent and answered -> Connected.
+    g_mock_millis = 1200;
+    eco.loop();
+    EXPECT(uart.tx_frames.size() == 1);
+    g_mock_millis = 1220;
+    uart.feed_rx(build_frame(0x340, 0x1000, 6, make_class2_text_item("PROPH50")));
+    eco.loop();
+    EXPECT(model == "PROPH50");
+    EXPECT(eco.mcu_connected_ && conn.state);
+
+    // Polling has stopped (only request_once datapoint is cached); passive broadcast keeps it Connected.
+    g_mock_millis = 5000;
+    uart.feed_rx(build_frame(0xF1, 0x1000, 31, {0x09, 0x01}));
+    eco.loop();
+    g_mock_millis = 8000;
+    eco.loop();
+    EXPECT(eco.mcu_connected_ && conn.state);
+  }
+
+  // 3) Widened TX_ECHO_TIMEOUT (500ms): 250ms loop stall after TX with [TX_ECHO][MCU_ACK] queued
+  //    together in RX FIFO still filters self-echo and preserves read_req_.from_us for MCU_ACK.
+  {
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_update_interval(30000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x380);
+    float spt = -1.0f;
+    eco.register_listener("SPT", 0, false, [&](const EconetDatapoint &dp) { spt = dp.value_float; }, false, 0x380);
+    eco.setup();
+
+    g_mock_millis = 1200;
+    eco.loop();
+    EXPECT(uart.tx_frames.size() == 1);
+    std::vector<uint8_t> burst = uart.tx_frames[0];
+    auto ack = build_frame(0x340, 0x380, 6, make_class2_float_item(72.5f));
+    burst.insert(burst.end(), ack.begin(), ack.end());
+
+    // 250ms stall (>100ms RECEIVE_TIMEOUT, <500ms TX_ECHO_TIMEOUT).
+    g_mock_millis = 1450;
+    uart.feed_rx(burst);
+    eco.loop();
+    EXPECT(std::fabs(spt - 72.5f) < 0.001f);
+    EXPECT(eco.mcu_connected_);
+    EXPECT(eco.mcu_answers_reads_);
+    EXPECT(!eco.our_read_awaiting_res_);
+    EXPECT(eco.unanswered_reads_ == 0);
+  }
+
+  // 4a) Unanswered read hint - Case 4: complete RX silence (0 bytes).
+  {
+    esphome::test_log::reset();
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_update_interval(2000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x1280);
+    eco.register_listener("WHTRSETP", 0, false, [](const EconetDatapoint &) {}, false, 0);
+    eco.setup();
+
+    g_mock_millis = 1200;
+    eco.loop();  // 1st read
+    g_mock_millis = 2250;
+    eco.loop();  // 1st unanswered (fast boot retry)
+    g_mock_millis = 4300;
+    eco.loop();  // 2nd unanswered -> triggers hint
+    EXPECT(eco.unanswered_reads_ == 2);
+    EXPECT(has_warning("no bytes have been received on UART RX"));
+    EXPECT(has_warning("DE/RE/EN"));
+  }
+
+  // 4b) Unanswered read hint - Case 3: TX self-echo + 1 stray turnaround glitch byte per TX.
+  {
+    esphome::test_log::reset();
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_update_interval(2000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x1280);
+    eco.register_listener("WHTRSETP", 0, false, [](const EconetDatapoint &) {}, false, 0);
+    eco.setup();
+
+    uart.on_tx = [&](const std::vector<uint8_t> &frame) {
+      // Echo frame plus a single 0x80 turnaround glitch byte.
+      std::vector<uint8_t> echo = frame;
+      echo.push_back(0x80);
+      uart.feed_rx(echo);
+    };
+    g_mock_millis = 1200;
+    eco.loop();
+    g_mock_millis = 1210;
+    eco.loop();  // consumes echo, leaves stray 0x80
+    g_mock_millis = 1350;
+    eco.loop();  // flushes stray 0x80 on RECEIVE_TIMEOUT
+    g_mock_millis = 2250;
+    eco.loop();  // 1st unanswered
+    g_mock_millis = 2260;
+    eco.loop();
+    g_mock_millis = 2400;
+    eco.loop();
+    g_mock_millis = 4300;
+    eco.loop();  // 2nd unanswered -> triggers Case 3 (NOT misclassified as swapped A/B!)
+    uart.on_tx = nullptr;
+    EXPECT(!eco.mcu_connected_);
+    EXPECT(has_warning(
+        "Saw own TX echo (UART pins and RS485 transceiver look OK), but nothing received from the appliance"));
+    EXPECT(has_warning("120-ohm"));
+  }
+
+  // 4c) Unanswered read hint - Case 2a: inverted/garbage RX bytes dropped by sync resync (0 CRC errors, no echo).
+  {
+    esphome::test_log::reset();
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_update_interval(2000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x1280);
+    eco.register_listener("WHTRSETP", 0, false, [](const EconetDatapoint &) {}, false, 0);
+    eco.setup();
+
+    g_mock_millis = 1200;
+    eco.loop();
+    g_mock_millis = 1300;
+    uart.feed_rx({0x7F, 0xFF, 0xFF, 0x0E, 0xFF, 0x7F, 0xFF, 0xEF, 0xFF, 0xFF});
+    eco.loop();
+    g_mock_millis = 2250;
+    eco.loop();
+    g_mock_millis = 4300;
+    eco.loop();
+    EXPECT(has_warning("Received 10 RX bytes (0 CRC errors) but no valid EcoNet frames"));
+    EXPECT(has_warning("RS485 A and B are swapped"));
+  }
+
+  // 4d) Unanswered read hint - Case 2b: TX self-echo + corrupted frame (CRC error).
+  {
+    esphome::test_log::reset();
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    uart.echo_tx_to_rx = true;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_update_interval(2000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x1280);
+    eco.register_listener("WHTRSETP", 0, false, [](const EconetDatapoint &) {}, false, 0);
+    eco.setup();
+
+    g_mock_millis = 1200;
+    eco.loop();
+    g_mock_millis = 1210;
+    eco.loop();  // consumes TX self-echo
+    auto bad_frame = build_frame(0xF1, 0x1000, 31, {0x09, 0x01});
+    bad_frame.back() ^= 0xFF;
+    g_mock_millis = 1300;
+    uart.feed_rx(bad_frame);
+    eco.loop();
+    g_mock_millis = 2250;
+    eco.loop();
+    g_mock_millis = 2260;
+    eco.loop();
+    g_mock_millis = 4300;
+    eco.loop();
+    EXPECT(
+        has_warning("Saw own TX echo (UART pins and RS485 transceiver look OK) plus 18 other RX bytes (1 CRC errors)"));
+    EXPECT(has_warning("RS485 A and B are swapped"));
+  }
+
+  // 4e) Unanswered read hint - Case 1a: ClssType=9 switches 0x1280 -> 0x1000, then reads to 0x1000 go unanswered.
+  {
+    esphome::test_log::reset();
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_update_interval(2000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x1280);
+    eco.register_listener("WHTRSETP", 0, false, [](const EconetDatapoint &) {}, false, 0);
+    eco.setup();
+
+    g_mock_millis = 1200;
+    eco.loop();  // poll 0x1280
+    g_mock_millis = 1800;
+    uart.feed_rx(build_frame(0xF1, 0x1000, 31, {0x09, 0x01}));
+    eco.loop();  // switches 0x1280 -> 0x1000, resets unanswered_reads_
+    EXPECT(eco.dst_adr_ == 0x1000);
+    EXPECT(!eco.mcu_connected_);
+    EXPECT(has_warning("Switching dst_address from 0x1280 to 0x1000"));
+
+    g_mock_millis = 1950;
+    eco.loop();  // 1st poll to 0x1000
+    g_mock_millis = 3000;
+    eco.loop();  // 1st unanswered to 0x1000 (fast boot retry)
+    g_mock_millis = 5100;
+    eco.loop();  // 2nd unanswered to 0x1000 -> Case 1a hint
+    EXPECT(has_warning("valid EcoNet frames ARE arriving from 0x1000 (so RX and A/B polarity look OK)"));
+    EXPECT(has_warning("120-ohm termination resistor"));
+    EXPECT(has_warning("src_address (0x340)"));
+    EXPECT(!has_warning("A and B are swapped"));
+  }
+
+  // 4f) Unanswered read hint - Case 1b: valid frames arriving from 0x380 while dst_address stays 0x1280.
+  {
+    esphome::test_log::reset();
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_update_interval(2000);
+    eco.set_src_address(0x340);
+    eco.set_dst_address(0x1280);
+    eco.register_listener("WHTRSETP", 0, false, [](const EconetDatapoint &) {}, false, 0);
+    eco.setup();
+
+    g_mock_millis = 1200;
+    eco.loop();
+    // Non-ClssType=9 valid frame (DateTime ClssType=7) from 0x380 keeps dst_adr_=0x1280.
+    g_mock_millis = 1300;
+    uart.feed_rx(build_frame(0xF1, 0x380, 31, {0x07, 0x01, 0, 0, 0, 0, 1, 1, 0x07, 0xEA}));
+    eco.loop();
+    g_mock_millis = 2250;
+    eco.loop();
+    g_mock_millis = 4300;
+    eco.loop();
+    EXPECT(has_warning(
+        "No read request to 0x1280 has ever been answered, but valid EcoNet frames ARE arriving from 0x380"));
+    EXPECT(has_warning("wrong package?"));
+  }
+
+  // 4g) dst_address=0 logs "Discovered dst_address" (not "Switching dst_address").
+  {
+    esphome::test_log::reset();
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_src_address(0x340);
+    eco.setup();
+
+    g_mock_millis = 1100;
+    uart.feed_rx(build_frame(0xF1, 0x1000, 31, {0x09, 0x01}));
+    eco.loop();
+    EXPECT(eco.dst_adr_ == 0x1000);
+    EXPECT(has_warning("Discovered dst_address 0x1000 from appliance broadcast"));
+  }
+
+  // 5) Rate-limiting for CRC errors and partial-frame timeouts.
+  {
+    esphome::test_log::reset();
+    g_mock_millis = 1000;
+    uart::MockUART uart;
+    TestableEconet eco;
+    eco.set_uart_parent(&uart);
+    eco.set_src_address(0x340);
+    eco.setup();
+
+    auto bad = build_frame(0xF1, 0x1000, 31, {0x09, 0x01});
+    bad.back() ^= 0xFF;
+    for (int i = 0; i < 5; i++) {
+      g_mock_millis += 200;
+      uart.feed_rx(bad);
+      eco.loop();
+    }
+    EXPECT(esphome::test_log::warnings.size() == 3);
+
+    // After >60s backoff, next CRC error logs with "(3 since last log)".
+    g_mock_millis += 61000;
+    uart.feed_rx(bad);
+    eco.loop();
+    EXPECT(esphome::test_log::warnings.size() == 4);
+    EXPECT(has_warning("Ignoring message with incorrect crc (3 since last log)"));
+
+    // Partial-frame timeout rate-limiting + byte count.
+    esphome::test_log::reset();
+    for (int i = 0; i < 5; i++) {
+      g_mock_millis += 200;
+      uart.feed_rx({0x80, 0x00, 0x10, 0x00, 0x00, 0x80, 0x00});
+      eco.loop();
+      g_mock_millis += 150;
+      eco.loop();
+    }
+    EXPECT(esphome::test_log::warnings.size() == 3);
+    EXPECT(has_warning("Ignoring partially received message (7 bytes) due to timeout"));
+
+    g_mock_millis += 61000;
+    uart.feed_rx({0x80, 0x00, 0x10, 0x00, 0x00, 0x80, 0x00});
+    eco.loop();
+    g_mock_millis += 150;
+    eco.loop();
+    EXPECT(esphome::test_log::warnings.size() == 4);
+    EXPECT(has_warning("Ignoring partially received message (7 bytes) due to timeout (3 since last log)"));
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -1912,6 +2313,7 @@ int main() {
   test_echo_resilience_and_slow_tx_timing();
   test_timeout_recovery_reentrancy_zero_dst_and_request_once();
   test_boot_polling_recovery_pre_tx_parse_and_zero_copy_rx();
+  test_mcu_connected_echo_window_and_rx_diagnostics();
   std::cout << "\nAll EcoNet C++ unit tests passed!\n";
   return 0;
 }
