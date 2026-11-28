@@ -162,6 +162,7 @@ class Econet : public Component, public uart::UARTDevice {
     this->dst_adr_ = address;
     this->dst_adr_answered_ = false;
     this->dst_adr_read_requested_ = false;
+    this->rx_valid_from_dst_ = false;
   }
   void add_request_mod_address(uint8_t mod, uint32_t address) {
     if (mod < MAX_REQUEST_MODS) {
@@ -233,8 +234,11 @@ class Econet : public Component, public uart::UARTDevice {
   bool parse_rx_frame_(size_t frame_len);
   void handle_response_(const EconetDatapointID &datapoint_id, const uint8_t *p, uint8_t len);
   // Warns about a read request issued while the previous one is still unanswered, rate limited,
-  // and adds a hint about the usual causes while no read has ever been answered.
+  // and adds an RX-aware hint about the usual causes while no read has ever been answered.
   void log_unanswered_read_();
+  void log_rx_crc_error_();
+  void log_rx_partial_timeout_(size_t bytes);
+  void mark_mcu_connected_();
   void mark_our_read_answered_(uint32_t src_adr, int8_t answered_mod, bool answered_continuation);
 
   void transmit_message_(uint8_t command, const uint8_t *data, size_t len, uint32_t dst_adr = 0, uint32_t src_adr = 0,
@@ -296,6 +300,19 @@ class Econet : public Component, public uart::UARTDevice {
   uint32_t unanswered_reads_{0};
   uint32_t last_unanswered_read_log_{0};
 
+  // Pre-first-answer RX diagnostics used by log_unanswered_read_() to narrow down wiring/config faults.
+  uint32_t rx_bytes_{0};
+  uint32_t rx_echo_bytes_{0};
+  uint32_t rx_self_echoes_{0};
+  uint32_t rx_valid_frames_{0};
+  uint32_t last_rx_src_adr_{0};
+  uint32_t rx_crc_errors_{0};
+  uint32_t rx_crc_errors_since_log_{0};
+  uint32_t last_crc_error_log_{0};
+  uint32_t rx_timeout_errors_{0};
+  uint32_t rx_timeout_errors_since_log_{0};
+  uint32_t last_timeout_error_log_{0};
+
   // Pointers
   binary_sensor::BinarySensor *mcu_connected_binary_sensor_{nullptr};
   GPIOPin *flow_control_pin_{nullptr};
@@ -328,6 +345,7 @@ class Econet : public Component, public uart::UARTDevice {
   bool mcu_answers_reads_{false};
   bool dst_adr_answered_{false};
   bool dst_adr_read_requested_{false};
+  bool rx_valid_from_dst_{false};
   bool our_read_awaiting_res_{false};
   bool awaiting_tx_echo_{false};
   bool has_read_requested_{false};

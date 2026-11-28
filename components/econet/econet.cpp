@@ -13,6 +13,12 @@ namespace econet {
 ESPHOME_LOG_TAG(TAG, "econet");
 
 static const uint32_t RECEIVE_TIMEOUT = 100;
+// Self-echo arrives immediately over half-duplex RS-485 while TX is flushing, but a brief
+// main-loop stall (e.g. Wi-Fi/API) can delay draining the UART RX FIFO past RECEIVE_TIMEOUT.
+// Keep the echo window wide enough that a queued self-echo is not misparsed as a third-party
+// frame (which would clobber read_req_.from_us before the real ACK is drained). Matching still
+// requires exact src_adr, frame length, and CRC-16, and any valid RX frame clears awaiting_tx_echo_.
+static const uint32_t TX_ECHO_TIMEOUT = 500;
 static const uint32_t REQUEST_DELAY = MIN_REQUEST_DELAY_MILLIS;
 // Maximum time to hold pending writes or subsequent reads while awaiting an ACK to an in-flight read.
 static const uint32_t READ_RESPONSE_TIMEOUT = 250;
@@ -31,6 +37,15 @@ static const uint32_t FIRST_BOOT_RETRY_DELAY = 1000;
 static const uint32_t UNANSWERED_READS_BEFORE_WIRING_HINT = 2;
 static const uint32_t UNANSWERED_READS_BEFORE_BACKOFF = 3;
 static const uint32_t UNANSWERED_READ_LOG_INTERVAL = 60000;
+
+// Backoff for repeated CRC errors and partial-frame timeouts (e.g. swapped A/B or floating bus)
+// so wiring faults stay visible without flooding the log.
+static const uint32_t RX_ERROR_LOGS_BEFORE_BACKOFF = 3;
+static const uint32_t RX_ERROR_LOG_INTERVAL = 60000;
+
+static void add_saturating(uint32_t &counter, uint32_t delta) {
+  counter = (UINT32_MAX - counter < delta) ? UINT32_MAX : (counter + delta);
+}
 
 static const uint8_t DST_ADR_POS = 0;
 static const uint8_t SRC_ADR_POS = 5;
@@ -271,6 +286,51 @@ void Econet::make_request_() {
   this->request_strings_();
 }
 
+void Econet::mark_mcu_connected_() {
+  if (!this->mcu_connected_) {
+    ESP_LOGI(TAG, "Data received from MCU. Marking connected.");
+    this->mcu_connected_ = true;
+    if (this->mcu_connected_binary_sensor_ != nullptr) {
+      this->mcu_connected_binary_sensor_->publish_state(this->mcu_connected_);
+    }
+  }
+  this->last_valid_read_ = this->loop_now_;
+}
+
+void Econet::log_rx_crc_error_() {
+  add_saturating(this->rx_crc_errors_, 1);
+  add_saturating(this->rx_crc_errors_since_log_, 1);
+  if (this->rx_crc_errors_ > RX_ERROR_LOGS_BEFORE_BACKOFF &&
+      this->loop_now_ - this->last_crc_error_log_ < RX_ERROR_LOG_INTERVAL) {
+    return;
+  }
+  this->last_crc_error_log_ = this->loop_now_;
+  if (this->rx_crc_errors_since_log_ > 1) {
+    ESP_LOGW(TAG, "Ignoring message with incorrect crc (%" PRIu32 " since last log)", this->rx_crc_errors_since_log_);
+  } else {
+    ESP_LOGW(TAG, "Ignoring message with incorrect crc");
+  }
+  this->rx_crc_errors_since_log_ = 0;
+}
+
+void Econet::log_rx_partial_timeout_(size_t bytes) {
+  add_saturating(this->rx_timeout_errors_, 1);
+  add_saturating(this->rx_timeout_errors_since_log_, 1);
+  if (this->rx_timeout_errors_ > RX_ERROR_LOGS_BEFORE_BACKOFF &&
+      this->loop_now_ - this->last_timeout_error_log_ < RX_ERROR_LOG_INTERVAL) {
+    return;
+  }
+  this->last_timeout_error_log_ = this->loop_now_;
+  if (this->rx_timeout_errors_since_log_ > 1) {
+    ESP_LOGW(TAG, "Ignoring partially received message (%zu bytes) due to timeout (%" PRIu32 " since last log)", bytes,
+             this->rx_timeout_errors_since_log_);
+  } else {
+    ESP_LOGW(TAG, "Ignoring partially received message (%zu bytes) due to timeout", bytes);
+  }
+  this->rx_timeout_errors_since_log_ = 0;
+  (void) bytes;
+}
+
 void Econet::log_unanswered_read_() {
   if (this->unanswered_reads_ > UNANSWERED_READS_BEFORE_BACKOFF &&
       this->loop_now_ - this->last_unanswered_read_log_ < UNANSWERED_READ_LOG_INTERVAL) {
@@ -280,13 +340,59 @@ void Econet::log_unanswered_read_() {
   ESP_LOGW(TAG, "New read request while waiting for response to previous read request (%" PRIu32 " in a row)",
            this->unanswered_reads_);
   if (!this->mcu_answers_reads_ && this->unanswered_reads_ >= UNANSWERED_READS_BEFORE_WIRING_HINT) {
-    // Nothing has ever answered a read, so this is a setup problem rather than a busy MCU.
-    // These four causes account for nearly every report of this warning.
-    ESP_LOGW(TAG,
-             "No read request has ever been answered. Check that the RS485 A and B lines are not swapped, that "
-             "tx_pin and rx_pin match your board, that flow_control_pin is set if your RS485 module has a DE/RE "
-             "pin, and that dst_address (0x%lx) matches your appliance.",
-             (unsigned long) this->dst_adr_);
+    // Nothing has ever answered a read, so tailor the setup hint to what UART RX actually observed.
+    const uint32_t non_echo_rx_bytes =
+        this->rx_bytes_ > this->rx_echo_bytes_ ? this->rx_bytes_ - this->rx_echo_bytes_ : 0;
+    // Auto-direction RS-485 transceivers can emit 1-2 stray turnaround bytes right around each
+    // TX self-echo; allow that margin before blaming swapped A/B lines.
+    const uint32_t turnaround_tolerance =
+        this->rx_self_echoes_ > (UINT32_MAX / 2) ? UINT32_MAX : this->rx_self_echoes_ * 2;
+    if (this->rx_valid_frames_ > 0) {
+      if (this->rx_valid_from_dst_) {
+        ESP_LOGW(TAG,
+                 "No read request to 0x%lx has ever been answered, but valid EcoNet frames ARE arriving from 0x%lx "
+                 "(so RX and A/B polarity look OK). Check that a 120-ohm termination resistor is installed across A "
+                 "and B, that flow_control_pin is set if your RS485 module has a DE/RE/EN pin, that tx_pin matches "
+                 "your board, and that src_address (0x%lx) matches your appliance.",
+                 (unsigned long) this->dst_adr_, (unsigned long) this->dst_adr_, (unsigned long) this->src_adr_);
+      } else {
+        ESP_LOGW(TAG,
+                 "No read request to 0x%lx has ever been answered, but valid EcoNet frames ARE arriving from 0x%lx "
+                 "(so RX and A/B polarity look OK). Check that dst_address (0x%lx) matches your appliance (wrong "
+                 "package?), that a 120-ohm termination resistor is installed across A and B, that flow_control_pin "
+                 "is set if your RS485 module has a DE/RE/EN pin, and that tx_pin matches your board.",
+                 (unsigned long) this->dst_adr_, (unsigned long) this->last_rx_src_adr_,
+                 (unsigned long) this->dst_adr_);
+      }
+    } else if (non_echo_rx_bytes > turnaround_tolerance || this->rx_crc_errors_ > 0) {
+      if (this->rx_self_echoes_ > 0) {
+        ESP_LOGW(TAG,
+                 "No read request has ever been answered. Saw own TX echo (UART pins and RS485 transceiver look OK) "
+                 "plus %" PRIu32 " other RX bytes (%" PRIu32 " CRC errors) with no valid EcoNet frames. Most likely "
+                 "RS485 A and B are swapped, GND (pin 5) is missing, or a 120-ohm termination resistor is needed "
+                 "across A and B.",
+                 non_echo_rx_bytes, this->rx_crc_errors_);
+      } else {
+        ESP_LOGW(TAG,
+                 "No read request has ever been answered. Received %" PRIu32 " RX bytes (%" PRIu32 " CRC errors) "
+                 "but no valid EcoNet frames. Most likely RS485 A and B are swapped, GND (pin 5) is missing, a "
+                 "120-ohm termination resistor is needed across A and B, or tx_pin/rx_pin do not match your board.",
+                 non_echo_rx_bytes, this->rx_crc_errors_);
+      }
+    } else if (this->rx_self_echoes_ > 0) {
+      ESP_LOGW(TAG,
+               "No read request has ever been answered. Saw own TX echo (UART pins and RS485 transceiver look OK), "
+               "but nothing received from the appliance. Check RJ11/RJ12 pin numbers (ignore wire colors), RS485 A "
+               "and B polarity, GND (pin 5), a 120-ohm termination resistor across A and B, and dst_address (0x%lx).",
+               (unsigned long) this->dst_adr_);
+    } else {
+      ESP_LOGW(TAG,
+               "No read request has ever been answered and no bytes have been received on UART RX. Check that tx_pin "
+               "and rx_pin match your board, that your RS485 module is powered and wired properly, that "
+               "flow_control_pin is set if your module has a DE/RE/EN pin, and that the RJ11/RJ12 cable is connected.");
+    }
+    (void) non_echo_rx_bytes;
+    (void) turnaround_tolerance;
   }
 }
 
@@ -296,6 +402,7 @@ void Econet::mark_our_read_answered_(uint32_t src_adr, int8_t answered_mod, bool
   this->our_read_awaiting_res_ = false;
   this->unanswered_reads_ = 0;
   this->mcu_answers_reads_ = true;
+  this->mark_mcu_connected_();
   if (src_adr == this->dst_adr_) {
     this->dst_adr_answered_ = true;
   }
@@ -325,7 +432,7 @@ bool Econet::parse_rx_frame_(size_t frame_len) {
   const uint32_t src_adr = bytes_to_address(b + SRC_ADR_POS);
   const uint8_t data_len = b[LEN_POS];
   const uint8_t command = b[COMMAND_POS];
-  if (this->awaiting_tx_echo_ && (this->loop_now_ - this->last_request_ > RECEIVE_TIMEOUT)) {
+  if (this->awaiting_tx_echo_ && (this->loop_now_ - this->last_request_ > TX_ECHO_TIMEOUT)) {
     this->awaiting_tx_echo_ = false;
   }
   const bool in_echo_window = this->awaiting_tx_echo_ && this->src_adr_ != 0 && src_adr == this->src_adr_;
@@ -341,7 +448,7 @@ bool Econet::parse_rx_frame_(size_t frame_len) {
         src_adr == this->read_req_.dst_adr && dst_adr == this->read_req_.src_adr && command == ACK) {
       this->read_req_.clear();
     }
-    ESP_LOGW(TAG, "Ignoring message with incorrect crc");
+    this->log_rx_crc_error_();
     return false;
   }
 
@@ -360,6 +467,10 @@ bool Econet::parse_rx_frame_(size_t frame_len) {
   this->rx_message_.resize(tail);
 
   if (is_self_echo) {
+    if (!this->mcu_answers_reads_) {
+      add_saturating(this->rx_self_echoes_, 1);
+      add_saturating(this->rx_echo_bytes_, static_cast<uint32_t>(frame_len));
+    }
     ESP_LOGV(TAG, "Ignoring self-echoed TX frame from 0x%lx", (unsigned long) src_adr);
     return true;
   }
@@ -379,14 +490,24 @@ void Econet::parse_message_(const uint8_t *b, bool is_tx) {
 #endif
 
   if (!is_tx) {
-    if (!this->mcu_connected_) {
-      ESP_LOGI(TAG, "Data received from MCU. Marking connected.");
-      this->mcu_connected_ = true;
-      if (this->mcu_connected_binary_sensor_ != nullptr) {
-        this->mcu_connected_binary_sensor_->publish_state(this->mcu_connected_);
+    if (!this->mcu_answers_reads_) {
+      add_saturating(this->rx_valid_frames_, 1);
+      if (src_adr != 0) {
+        this->last_rx_src_adr_ = src_adr;
+      }
+      if (this->dst_adr_ != 0 && src_adr == this->dst_adr_) {
+        this->rx_valid_from_dst_ = true;
       }
     }
-    this->last_valid_read_ = this->loop_now_;
+    // When active periodic polling is configured, require an actual answer to our reads (handled
+    // in mark_our_read_answered_()) so one-way RX broadcasts or third-party bus traffic cannot
+    // mask a broken TX path. Fall back to passive RX only for pure passive listeners or once
+    // request_once-only polling has succeeded and stopped polling.
+    const bool passive_rx_counts =
+        this->periodic_datapoint_ids_.empty() && (this->request_mods_.empty() || this->mcu_answers_reads_);
+    if (passive_rx_counts) {
+      this->mark_mcu_connected_();
+    }
   }
 
   // Track Read Requests
@@ -556,9 +677,19 @@ void Econet::parse_message_(const uint8_t *b, bool is_tx) {
           this->dst_adr_ == 0 || (!this->dst_adr_answered_ && this->dst_adr_read_requested_ &&
                                   (this->loop_now_ - this->dst_adr_last_read_request_ > CLSS9_UNANSWERED_READ_TIMEOUT));
       if (src_adr != 0 && this->dst_adr_ != src_adr && dst_adr_unanswered) {
-        ESP_LOGW(TAG, "Using 0x%lx as dst_address from now on. File an issue if you see this more than once.",
-                 (unsigned long) src_adr);
+        if (this->dst_adr_ == 0) {
+          ESP_LOGW(TAG,
+                   "Discovered dst_address 0x%lx from appliance broadcast. File an issue if you see this more than "
+                   "once.",
+                   (unsigned long) src_adr);
+        } else {
+          ESP_LOGW(TAG,
+                   "Switching dst_address from 0x%lx to 0x%lx (heard appliance broadcast). File an issue if you see "
+                   "this more than once.",
+                   (unsigned long) this->dst_adr_, (unsigned long) src_adr);
+        }
         this->dst_adr_ = src_adr;
+        this->rx_valid_from_dst_ = true;
         this->dst_adr_read_requested_ = false;
         for (uint8_t mod : this->request_mods_) {
           if (this->request_mod_addresses_[mod] == 0) {
@@ -758,6 +889,9 @@ void Econet::read_buffer_(int bytes_available) {
     if (!this->read_array(this->rx_message_.data() + old_size, to_read)) {
       return;
     }
+    if (!this->mcu_answers_reads_) {
+      add_saturating(this->rx_bytes_, static_cast<uint32_t>(to_read));
+    }
     this->rx_message_.resize(old_size + static_cast<size_t>(to_read));
     remaining -= to_read;
     this->drain_rx_frames_(false);
@@ -778,7 +912,7 @@ void Econet::loop() {
   }
 
   if ((now - this->last_read_data_ > RECEIVE_TIMEOUT) && !this->rx_message_.empty()) {
-    ESP_LOGW(TAG, "Ignoring partially received message due to timeout");
+    this->log_rx_partial_timeout_(this->rx_message_.size());
     const uint32_t prev_req_seq = this->read_req_seq_;
     this->drain_rx_frames_(true);
     this->awaiting_tx_echo_ = false;
