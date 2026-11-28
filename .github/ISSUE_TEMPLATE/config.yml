@@ -1,0 +1,12 @@
+---
+blank_issues_enabled: true
+contact_links:
+  - name: Troubleshooting Guide ("all entities are unknown" / wiring issues)
+    url: https://github.com/esphome-econet/esphome-econet/wiki/Troubleshooting
+    about: Check the Troubleshooting wiki first for pinout, 120-ohm termination resistor, flow control, and log diagnostics.
+  - name: Setup & Wiring Q&A (GitHub Discussions)
+    url: https://github.com/esphome-econet/esphome-econet/discussions/categories/q-a
+    about: Ask hardware setup, wiring, or configuration questions in Discussions instead of opening an issue.
+  - name: Discord Community
+    url: https://discord.gg/cRpxtjkQQ3
+    about: Get live setup and troubleshooting help from the community on Discord.

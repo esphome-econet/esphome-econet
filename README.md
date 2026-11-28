@@ -22,17 +22,23 @@ Most modern Rheem Heat Pump Water Heaters, Tankless Water Heaters, Electric Tank
 
 ## Required ESPHome Hardware
 
-ESPHome-econet is a great first ESPHome project due to the easy hardware setup. All that's needed to run ESPHome-econet is an ESP32 or ESP8266 microcontroller and an RS485 Interface, plus a phone cord to hook it up to your Rheem appliance and a USB-C charger to power it. For simplicity, we recommend the m5Stack AtomS3 Lite paired with the m5Stack ATOMIC RS485 Base, which stack together into a single package and use preconfigured pins (`tx_pin: GPIO6`, `rx_pin: GPIO5`) in the web installer and `build-yaml/*-esp32s3.yaml` manifests (note that `econet_base.yaml` defaults to `GPIO19`/`GPIO22` if writing custom YAML directly). The m5Stack K045 Kit bundled the same combination, but m5Stack has marked it end-of-life.
+ESPHome-econet is a great first ESPHome project due to the easy hardware setup. All that's needed to run ESPHome-econet is an ESP32 or ESP8266 microcontroller, an RS485 interface, a USB-C charger to power it, and a connection to your Rheem appliance's RJ11/RJ12 port (either a cut 6P4C/6P6C phone cord or a solderless RJ12 male-to-screw-terminal breakout adapter with short jumper wires).
 
-For full details on what hardware to buy and how to set it up, head over to the [Recommended Hardware Purchase and Setup page on our wiki](https://github.com/esphome-econet/esphome-econet/wiki/Recommended-Hardware-Purchase-and-Setup-Instructions).
+For simplicity, we recommend ordering **both** the m5Stack AtomS3 Lite **and** the m5Stack ATOMIC RS485 Base—they are sold separately, stack together into a single package, and use preconfigured pins (`tx_pin: GPIO6`, `rx_pin: GPIO5`) in the web installer and `build-yaml/*-esp32s3.yaml` manifests (note that `econet_base.yaml` defaults to `GPIO19`/`GPIO22` if writing custom YAML directly). The m5Stack K045 Kit bundled the older ATOM Lite + RS485 Base combination, but m5Stack has marked it end-of-life.
+
+For full details on what hardware to buy, exact RJ11/RJ12 pinouts, optional 120-ohm bus termination, and how to wire everything up, head over to the [Recommended Hardware Purchase and Setup page on our wiki](https://github.com/esphome-econet/esphome-econet/wiki/Recommended-Hardware-Purchase-and-Setup-Instructions).
+
+**Important wiring note:** Do **not** wire by color alone. Standard telephone cords reverse wire colors from one end to the other, and the M5Stack RS485 terminal label colors (`B` = blue, `A` = green, `DC 12V` = red, `G` = grey) do not match phone-wire colors. Always match by pin number on the plug going into the appliance (`Pin 3 -> B`, `Pin 4 -> A`, `Pin 5 -> G`) using the wiki pinout diagram.
 
 <img src="https://github.com/esphome-econet/econet-docs/blob/main/photos-and-screenshots/Correctly-Wired-K045.jpeg?raw=true" alt="A correctly wired K045 unit." width=25%>
 
 ## Software Installation
 
-To install the ESPHome-econet software, connect your ESP device to your computer via USB and [visit the Installation page on the ESPHome-econet website](https://esphome-econet.github.io/install/). Simply select your Rheem hardware type and the site will allow you to image the device, connect it to Wi-Fi, and add it to Home Assistant.
+To install the ESPHome-econet software on the recommended M5Stack hardware (or an ESP8266 Wemos D1 mini wired to `GPIO4`/`GPIO5`), connect your ESP device to your computer via USB and [visit the Installation page on the ESPHome-econet website](https://esphome-econet.github.io/install/). Select your Rheem hardware type (note: Hybrid Electric Heat Pump Water Heaters use **Heat Pump / Hybrid Electric Water Heater**, not Electric Tank) and the site will flash the device, configure Wi-Fi, and let you add it to Home Assistant.
 
-For alternative software installation methods and details on how to customize your configuration, check out [the detailed Software Configuration and Installation Guide on our wiki](https://github.com/esphome-econet/esphome-econet/wiki/Initial-ESPHome%E2%80%90econet-Software-Configuration-and-Installation).
+For other boards, custom UART pins, or RS485 modules with a `DE`/`RE`/`EN` flow control pin, follow [the detailed Software Configuration and Installation Guide on our wiki](https://github.com/esphome-econet/esphome-econet/wiki/Initial-ESPHome%E2%80%90econet-Software-Configuration-and-Installation).
+
+If your device connects to Home Assistant (showing `WiFi Signal Strength`, which is the ESP's Wi-Fi) but every appliance entity stays `unknown`, check the [Troubleshooting guide on our wiki](https://github.com/esphome-econet/esphome-econet/wiki/Troubleshooting).
 
 ## Installation Overview
 

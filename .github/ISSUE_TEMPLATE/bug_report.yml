@@ -1,0 +1,63 @@
+---
+name: Bug Report / Connection Issue
+description: Report a bug, protocol issue, or persistent communication failure after checking the Troubleshooting wiki
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If all entities show `unknown`, please check the [Troubleshooting wiki](https://github.com/esphome-econet/esphome-econet/wiki/Troubleshooting) and [Recommended Hardware Setup](https://github.com/esphome-econet/esphome-econet/wiki/Recommended-Hardware-Purchase-and-Setup-Instructions) first. For general setup or wiring questions, please use [GitHub Discussions](https://github.com/esphome-econet/esphome-econet/discussions/categories/q-a) or [Discord](https://discord.gg/cRpxtjkQQ3).
+
+  - type: input
+    id: appliance
+    attributes:
+      label: Appliance model and type
+      description: Include the full Rheem/Ruud/Richmond model number and type (Heat Pump Water Heater, Electric Tank, Tankless, or HVAC).
+      placeholder: e.g. Rheem ProTerra XE50T10H45U0 (Heat Pump Water Heater)
+    validations:
+      required: true
+
+  - type: input
+    id: hardware
+    attributes:
+      label: ESP board, RS485 adapter, and cable/breakout
+      description: Specify exact board models, how you wired the RJ11/RJ12 port, how the ESP is powered (USB-C vs 12V), and whether you tried a 120-ohm resistor across A and B.
+      placeholder: e.g. M5Stack AtomS3 Lite (C124) + ATOMIC RS485 Base (A131), RJ12 screw-terminal breakout, USB-C power
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submission checks (for no-data / connection issues)
+      options:
+        - label: I checked the [Troubleshooting wiki](https://github.com/esphome-econet/esphome-econet/wiki/Troubleshooting).
+        - label: I verified RJ11/RJ12 pin numbers (`Pin 3 -> B`, `Pin 4 -> A`, `Pin 5 -> G`) directly on the plug's gold contacts (not by wire color or breakout silkscreen alone).
+        - label: I confirmed the firmware/package matches my appliance (Hybrid Electric Heat Pump uses `hpwh`, not `etwh`) and my board's `tx_pin`, `rx_pin`, and `flow_control_pin` (if the RS485 module has `DE`/`RE`/`EN`).
+        - label: I tested with USB-C power only (without connecting `DC 12V` from the appliance).
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the issue, what `Microcontroller Connected` reports in Home Assistant, and what you already tried.
+    validations:
+      required: true
+
+  - type: textarea
+    id: yaml
+    attributes:
+      label: YAML configuration (or Web Installer selection)
+      description: Paste your full ESPHome YAML (redact Wi-Fi passwords and API/OTA keys), or state which Web Installer option you flashed.
+      render: yaml
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: "ESPHome logs (with `logger_level: VERBOSE` if possible)"
+      description: Paste a log snippet including boot config (`dump_config`) and any `econet` warnings. If wiring is involved, please also drag-and-drop clear photos of both the RJ11/RJ12 plug contacts and the RS485 screw terminals below.
+      render: text
+    validations:
+      required: true
